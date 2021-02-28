@@ -1,7 +1,7 @@
 import pytest
 
 from pyconversations.cli import main
-from pyconversations.posts import Tweet, UniMessage
+from pyconversations.message import Tweet, UniMessage
 
 
 @pytest.fixture
