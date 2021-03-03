@@ -36,7 +36,7 @@ def mock_raw_tweet():
         "created_at": "Wed Jun 17 21:49:58 +0000 2020",
         "id": 123456789101112131415,
         "id_str": "123456789101112131415",
-        "full_text": "@USER1 @USER2 This is ridiculous",
+        "full_text": "@USER1 @USER2 This is ridiculous https://t.co/ https://url.co/",
         "truncated": False,
         "display_text_range": [26, 88],
         "entities": {
@@ -57,7 +57,29 @@ def mock_raw_tweet():
                     "indices": [9, 25]
                 }
             ],
-            "urls": []
+            "urls": [{
+                "url": "https://url.co/",
+                "expanded_url": "https://www.youtube.com/channel/",
+                "display_url": "youtube.com/channel/\u2026",
+                "indices": [0, 23]
+            }],
+            "media": [{
+                "id": 999999999999,
+                "id_str": "999999999999",
+                "indices": [73, 96],
+                "media_url": "http://pbs.twimg.com/tweet_video_thumb/.jpg",
+                "media_url_https": "https://pbs.twimg.com/tweet_video_thumb/.jpg",
+                "url": "https://t.co/",
+                "display_url": "pic.twitter.com/",
+                "expanded_url": "https://twitter.com//status//photo/1",
+                "type": "photo",
+                "sizes": {
+                    "thumb":  {"w": 150, "h": 150, "resize": "crop"},
+                    "large":  {"w": 498, "h": 336, "resize": "fit"},
+                    "medium": {"w": 498, "h": 336, "resize": "fit"},
+                    "small":  {"w": 498, "h": 336, "resize": "fit"}
+                }
+            }]
         },
         "metadata": {
             "iso_language_code": "en",
@@ -200,6 +222,10 @@ def test_post_redaction(mock_tweet):
     assert mock_tweet.author == 'NAME2'
 
 
+def test_tweet_repr(mock_tweet):
+    assert mock_tweet.__repr__() == 'UniMessage(Twitter::tweeter1::9999999.0::This is a tweet! @Twitter::tags=test_tag)'
+
+
 def test_tweet_datetime_parsing(null_tweet):
     from datetime import datetime
 
@@ -221,13 +247,22 @@ def test_read_raw_tweet(mock_raw_tweet):
 
     t = ts[0]
     assert t.uid == 123456789101112131415
-    assert t.text == '@USER1 @USER2 This is ridiculous'
+    assert t.text == '@USER1 @USER2 This is ridiculous pic.twitter.com/ https://www.youtube.com/channel/'
     assert t.author == 'USER3'
     assert t.created_at == datetime(2020, 6, 17, 21, 49, 58)  # Wed Jun 17 21:49:58 +0000 2020
     assert t.reply_to == {123456789101112131414}
     assert t.platform == 'Twitter'
     assert t.tags == set()
     assert t.lang == 'en'
+
+    mock_raw_tweet['text'] = mock_raw_tweet['full_text']
+    del mock_raw_tweet['full_text']
+    ts = Tweet.parse_raw(mock_raw_tweet)
+    assert len(ts) == 1
+
+    with pytest.raises(KeyError):
+        mock_raw_tweet['entities']['error'] = 'error'
+        Tweet.parse_raw(mock_raw_tweet)
 
     del mock_raw_tweet['entities']
     ts = Tweet.parse_raw(mock_raw_tweet)

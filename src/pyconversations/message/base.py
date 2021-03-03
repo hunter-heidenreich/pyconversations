@@ -48,12 +48,12 @@ class UniMessage(ABC):
         return self._uid
 
     def __repr__(self):
-        return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}, tags={self._tags})'
+        return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
 
     @staticmethod
     @abstractmethod
     def parse_raw(raw):
-        pass
+        raise NotImplementedError
 
     @property
     def uid(self):
@@ -81,7 +81,7 @@ class UniMessage(ABC):
 
     @abstractmethod
     def set_created_at(self, x):
-        pass
+        raise NotImplementedError
 
     @property
     def reply_to(self):

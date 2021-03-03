@@ -70,7 +70,7 @@ class Tweet(UniMessage):
                 cons_vals['created_at'] = Tweet.parse_datestr(value)
             elif key == 'id':
                 cons_vals['uid'] = value
-            elif key == 'full_text' and 'text' not in cons_vals:
+            elif key == 'full_text':
                 cons_vals['text'] = value
             elif key == 'text' and 'text' not in cons_vals:
                 cons_vals['text'] = value
@@ -98,14 +98,14 @@ class Tweet(UniMessage):
 
                 if key == 'media':
                     for v in value:
-                        cons_vals['text'] = re.sub(v['url'], v['display_url'], cons_vals['text'])
+                        cons_vals['text'] = re.sub(v['url'], v['display_url'], cons_vals.get('text', ''))
                 elif key == 'urls':
                     for v in value:
-                        cons_vals['text'] = re.sub(v['url'], v['expanded_url'], cons_vals['text'])
+                        cons_vals['text'] = re.sub(v['url'], v['expanded_url'], cons_vals.get('text', ''))
                 else:
                     raise KeyError(f'Tweet:parse_raw - Unrecognized key: {key} --> {value}')
 
-        if 'text' in cons_vals:
+        if 'text' in cons_vals and cons_vals['text']:
             out.append(Tweet(**cons_vals))
 
         return out
