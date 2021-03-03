@@ -18,14 +18,6 @@ class FBPost(UniMessage):
         data['created_at'] = datetime.fromtimestamp(data['created_at'])
         return FBPost(**data)
 
-    def set_created_at(self, x):
-        if type(x) == str:
-            self._created_at = FBPost.parse_datestr(x)
-        elif type(x) == float:
-            self._created_at = datetime.fromtimestamp(x)
-        else:
-            raise TypeError(f'Unrecognized created_at conversion: {type(x)} --> {x}')
-
     @staticmethod
     def parse_raw(data, post_type='post', in_reply_to=None):
         if post_type == 'post':

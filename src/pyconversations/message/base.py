@@ -1,6 +1,7 @@
 import re
 
 from abc import ABC, abstractmethod
+from datetime import datetime
 
 
 class UniMessage(ABC):
@@ -55,6 +56,11 @@ class UniMessage(ABC):
     def parse_raw(raw):
         raise NotImplementedError
 
+    @staticmethod
+    @abstractmethod
+    def parse_datestr(x):
+        raise NotImplementedError
+
     @property
     def uid(self):
         return self._uid
@@ -79,9 +85,13 @@ class UniMessage(ABC):
     def created_at(self):
         return self._created_at
 
-    @abstractmethod
     def set_created_at(self, x):
-        raise NotImplementedError
+        if type(x) == str:
+            self._created_at = self.parse_datestr(x)
+        elif type(x) == float:
+            self._created_at = datetime.fromtimestamp(x)
+        else:
+            raise TypeError(f'Unrecognized created_at conversion: {type(x)} --> {x}')
 
     @property
     def reply_to(self):
