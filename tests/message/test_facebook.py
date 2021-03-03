@@ -129,17 +129,11 @@ def test_post_from_to_json(mock_json_post):
         assert v == mock_json_post[k]
 
 
-def test_post_datetime_parsing(null_post):
+def test_post_datetime_parsing():
     from datetime import datetime
 
     dt = '2020-12-31T23:59:59+0000'
     assert datetime(2020, 12, 31, 23, 59, 59) == FBPost.parse_datestr(dt)
-
-    null_post.set_created_at(dt)
-    assert datetime(2020, 12, 31, 23, 59, 59) == null_post.created_at
-
-    with pytest.raises(TypeError):
-        null_post.set_created_at({})
 
 
 def test_read_raw_post(mock_raw_post):
