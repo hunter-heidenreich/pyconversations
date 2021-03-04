@@ -1,7 +1,20 @@
+import gcld3
 import re
 
 from abc import ABC, abstractmethod
 from datetime import datetime
+
+
+# Langauge detection module; do not initialize unless asked for!
+DETECTOR = None
+
+
+def get_detector():
+    global DETECTOR
+    if not DETECTOR:
+        DETECTOR = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
+
+    return DETECTOR
 
 
 class UniMessage(ABC):
@@ -20,7 +33,8 @@ class UniMessage(ABC):
      - set_created_at -- platform specific time parsing
     """
 
-    def __init__(self, uid, text='', author=None, created_at=None, reply_to=None, platform=None, lang=None, tags=None):
+    def __init__(self, uid, text='', author=None, created_at=None, reply_to=None, platform=None, lang=None, tags=None,
+                 lang_detect=False):
         # a unique identifier
         self._uid = uid
 
@@ -44,6 +58,8 @@ class UniMessage(ABC):
 
         # language
         self._lang = lang
+        self._lang_detect = lang_detect
+        self._detect_language()
 
     def __hash__(self):
         return self._uid
@@ -51,9 +67,14 @@ class UniMessage(ABC):
     def __repr__(self):
         return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
 
+    def _detect_language(self):
+        if not self._lang and self._lang_detect and self._text:
+            res = get_detector().FindLanguage(text=self.text)
+            self.lang = res.language if res.is_reliable else 'und'
+
     @staticmethod
     @abstractmethod
-    def parse_raw(raw):
+    def parse_raw(raw, lang_detect=False):
         raise NotImplementedError
 
     @staticmethod
@@ -72,6 +93,8 @@ class UniMessage(ABC):
     @text.setter
     def text(self, t):
         self._text = t
+        self._lang = None
+        self._detect_language()
 
     @property
     def author(self):

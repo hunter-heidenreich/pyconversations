@@ -285,3 +285,16 @@ def test_read_raw_error(mock_raw_tweet):
     mock_raw_tweet['fake'] = 'test'
     with pytest.raises(KeyError):
         Tweet.parse_raw(mock_raw_tweet)
+
+
+def test_tweet_lang_detect(mock_raw_tweet):
+    mock_raw_tweet['lang'] = None
+    ts = Tweet.parse_raw(mock_raw_tweet, lang_detect=True)
+    assert len(ts) == 1
+    assert ts[0].lang == 'en'
+
+    mock_raw_tweet['full_text'] = 'a09fuda-s9hviajosd9asvu[v9jxz0c-09k9-'
+    mock_raw_tweet['lang'] = None
+    ts = Tweet.parse_raw(mock_raw_tweet, lang_detect=True)
+    assert len(ts) == 1
+    assert ts[0].lang == 'und'

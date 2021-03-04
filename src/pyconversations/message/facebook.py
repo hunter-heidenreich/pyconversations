@@ -30,9 +30,10 @@ class FBPost(UniMessage):
             raise ValueError(f'FBPost::parse_raw - Unrecognized post_type: {post_type}')
 
     @staticmethod
-    def parse_raw_post(data):
+    def parse_raw_post(data, lang_detect=False):
         post_cons = {
             'platform': 'Facebook',
+            'lang_detect': lang_detect
         }
 
         ignore_keys = {

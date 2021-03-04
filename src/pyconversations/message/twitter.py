@@ -31,16 +31,11 @@ class Tweet(UniMessage):
         return Tweet(**data)
 
     @staticmethod
-    def parse_raw(data):
-        """
-        Takes a raw tweet and returns
-        :param data:
-        :return:
-        """
-
+    def parse_raw(data, lang_detect=False):
         cons_vals = {
             'platform': 'Twitter',
-            'reply_to': set()
+            'reply_to': set(),
+            'lang_detect': lang_detect
         }
         out = []
 

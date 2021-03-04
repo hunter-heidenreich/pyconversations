@@ -69,7 +69,7 @@ class ChanPost(UniMessage):
         return comment, rfs
 
     @staticmethod
-    def parse_raw(data):
+    def parse_raw(data, lang_detect=False):
         if 'com' not in data:
             return
 
@@ -87,5 +87,6 @@ class ChanPost(UniMessage):
             'text':       txt,
             'author':     data['name'] if 'name' in data else None,
             'platform':   '4Chan',
-            'reply_to':   reps
+            'reply_to':   reps,
+            'lang_detect': lang_detect
         })

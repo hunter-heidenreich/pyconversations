@@ -31,10 +31,11 @@ class RedditPost(UniMessage):
         return RedditPost(**data)
 
     @staticmethod
-    def parse_raw(data):
+    def parse_raw(data, lang_detect=False):
         post_cons = {
             'reply_to': set(),
-            'platform': 'Reddit'
+            'platform': 'Reddit',
+            'lang_detect': lang_detect
         }
 
         ignore_keys = {
