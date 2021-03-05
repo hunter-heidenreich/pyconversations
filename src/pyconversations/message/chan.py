@@ -1,6 +1,5 @@
 import html
 import re
-
 from datetime import datetime
 
 from .base import UniMessage
@@ -32,12 +31,12 @@ class ChanPost(UniMessage):
         and return reference to the posts that
         were replied to
         """
-        refs = re.findall('>>(\d+)', comment)
+        refs = re.findall(r'>>(\d+)', comment)
 
         lines = comment.split("\n")
-        lines = filter(lambda x: not bool(re.match(">>(\d+)", x.strip())), lines)
+        lines = filter(lambda x: not bool(re.match(r">>(\d+)", x.strip())), lines)
         comment = "\n".join(lines)
-        comment = re.sub(">>(\d+)", "", comment)
+        comment = re.sub(r">>(\d+)", "", comment)
 
         return comment, refs
 
@@ -48,21 +47,21 @@ class ChanPost(UniMessage):
         returning both the references and teh comment itself
         """
         comment = html.unescape(comment)
-        comment = re.sub("<w?br/?>", "\n", comment)
-        comment = re.sub("<a href=\".+\" class=\"(\w+)\">", " ", comment)
-        comment = re.sub("</a>", " ", comment)
-        comment = re.sub("<span class=\"(\w+)\">", " ", comment)
-        comment = re.sub("</span>", " ", comment)
-        comment = re.sub("<pre class=\"(\w+)\">", " ", comment)
-        comment = re.sub("</pre>", " ", comment)
+        comment = re.sub(r"<w?br/?>", "\n", comment)
+        comment = re.sub(r"<a href=\".+\" class=\"(\w+)\">", " ", comment)
+        comment = re.sub(r"</a>", " ", comment)
+        comment = re.sub(r"<span class=\"(\w+)\">", " ", comment)
+        comment = re.sub(r"</span>", " ", comment)
+        comment = re.sub(r"<pre class=\"(\w+)\">", " ", comment)
+        comment = re.sub(r"</pre>", " ", comment)
 
         comment, rfs = ChanPost.exclude_replies(comment)
 
-        comment = re.sub("[^\x00-\x7F]", " ", comment)
+        comment = re.sub(r"[^\x00-\x7F]", " ", comment)
 
-        comment = re.sub("&(amp|lt|gt|ge|le)(;|)", " ", comment)
+        comment = re.sub(r"&(amp|lt|gt|ge|le)(;|)", " ", comment)
 
-        comment = re.sub("\\s\\s+", " ", comment)
+        comment = re.sub(r"\\s\\s+", " ", comment)
         comment = re.sub("\n", " ", comment)
         comment = str(comment).strip()
 

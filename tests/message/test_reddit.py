@@ -32,8 +32,10 @@ def mock_post(mock_json_post):
 
 @pytest.fixture
 def mock_raw_post():
+    test_keys = ["name", "author_name", 'created_utc', "parent_id", "link_id", "score", "body", 'subreddit']
+    test_vals = ['t3_c1234', 'poster', '9999999999', 't3_c1230', '', '4', 'text here please', 'r/reddit.com']
     return {
-        k: v for k, v in zip(["name", "author_name", 'created_utc', "parent_id", "link_id", "score", "body", 'subreddit'], ['t3_c1234', 'poster', '9999999999', 't3_c1230', '', '4', 'text here please', 'r/reddit.com'])
+        k: v for k, v in zip(test_keys, test_vals)
     }
 
 

@@ -1,9 +1,9 @@
-import gcld3
 import re
-
-from abc import ABC, abstractmethod
+from abc import ABC
+from abc import abstractmethod
 from datetime import datetime
 
+import gcld3
 
 # Langauge detection module; do not initialize unless asked for!
 DETECTOR = None
