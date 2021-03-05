@@ -21,6 +21,18 @@ def mock_root_tweet():
     )
 
 
+@pytest.fixture
+def mock_multi_convo():
+    convo = Conversation()
+    for ix in range(10):
+        reps = set()
+        if ix > 1:
+            reps.add(ix - 2)
+        convo.add_post(Tweet(uid=ix, reply_to=reps))
+
+    return convo
+
+
 def test_build_conversation(mock_tweet):
     conversation = Conversation()
 
@@ -70,3 +82,12 @@ def test_add_convo(mock_tweet, mock_root_tweet):
     assert full.edges[0] == set()
     assert full.edges[1] == {0}
 
+
+def test_convo_segmentation(mock_multi_convo):
+    segs = mock_multi_convo.segment()
+    assert len(segs) == 2
+
+    even, odd = segs
+    for ix in range(5):
+        assert 2 * ix in even.posts
+        assert (2 * ix) + 1 in odd.posts

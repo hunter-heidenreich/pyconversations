@@ -72,7 +72,8 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
-        'gcld3>=3.0'
+        'gcld3>=3.0',
+        'networkx>=2.5'
     ],
     extras_require={
         # eg:
