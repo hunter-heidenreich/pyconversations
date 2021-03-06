@@ -209,6 +209,18 @@ def test_tweet_from_to_json(mock_json_tweet):
         assert v == mock_json_tweet[k]
 
 
+def test_to_from_json_null_datetime(mock_json_tweet):
+    mock_json_tweet['created_at'] = None
+    post = Tweet.from_json(mock_json_tweet)
+    out = post.to_json()
+
+    for k, v in mock_json_tweet.items():
+        assert v == out[k]
+
+    for k, v in out.items():
+        assert v == mock_json_tweet[k]
+
+
 def test_tweet_mentions(mock_tweet, null_tweet):
     assert mock_tweet.get_mentions() == {'Twitter', 'tweeter1'}
     assert null_tweet.get_mentions() == set()

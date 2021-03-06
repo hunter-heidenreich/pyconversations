@@ -129,6 +129,18 @@ def test_post_from_to_json(mock_json_post):
         assert v == mock_json_post[k]
 
 
+def test_to_from_json_null_datetime(mock_json_post):
+    mock_json_post['created_at'] = None
+    post = FBPost.from_json(mock_json_post)
+    out = post.to_json()
+
+    for k, v in mock_json_post.items():
+        assert v == out[k]
+
+    for k, v in out.items():
+        assert v == mock_json_post[k]
+
+
 def test_post_datetime_parsing():
     from datetime import datetime
 
