@@ -71,3 +71,13 @@ class Conversation:
             )
 
         return segments
+
+    def to_json(self):
+        return {
+            'posts': {uid: post.to_json() for uid, post in self._posts.items()},
+            'edges': {uid: list(reps) for uid, reps in self._edges.items()}
+        }
+
+    def from_json(self, raw, cons):
+        self._posts = {uid: cons.from_json(pjson) for uid, pjson in raw['posts'].items()}
+        self._edges = {uid: set(reps) for uid, reps in raw['edges'].items()}

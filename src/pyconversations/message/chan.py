@@ -21,7 +21,7 @@ class ChanPost(UniMessage):
         Given an exported JSON object for a Universal Message,
         this function loads the saved data into its fields
         """
-        data['created_at'] = datetime.fromtimestamp(data['created_at'])
+        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
         return ChanPost(**data)
 
     @staticmethod

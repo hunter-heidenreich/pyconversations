@@ -22,6 +22,13 @@ def mock_root_tweet():
 
 
 @pytest.fixture
+def mock_convo(mock_root_tweet):
+    convo = Conversation()
+    convo.add_post(mock_root_tweet)
+    return convo
+
+
+@pytest.fixture
 def mock_multi_convo():
     convo = Conversation()
     for ix in range(10):
@@ -91,3 +98,15 @@ def test_convo_segmentation(mock_multi_convo):
     for ix in range(5):
         assert 2 * ix in even.posts
         assert (2 * ix) + 1 in odd.posts
+
+
+def test_to_from_json(mock_convo):
+    assert 0 in mock_convo.posts
+    assert 0 in mock_convo.edges
+
+    raw_json = mock_convo.to_json()
+    new_convo = Conversation()
+    new_convo.from_json(raw_json, Tweet)
+
+    assert 0 in new_convo.posts
+    assert 0 in new_convo.edges
