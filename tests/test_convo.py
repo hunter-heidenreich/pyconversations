@@ -207,6 +207,9 @@ def test_stats_path(mock_convo_path):
 
     assert mock_convo_path.reciprocity == 0
 
+    assert mock_convo_path.duration is None
+    assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
+
 
 def test_stats_no_parent(mock_tweet):
     convo = Conversation()
@@ -271,5 +274,10 @@ def mock_temporal_convo():
 
 
 def test_ordered_properties(mock_temporal_convo):
+    from datetime import datetime
+
     assert mock_temporal_convo.time_order == list(range(4))
     assert mock_temporal_convo.text_stream == [f'tweet {i}' for i in range(4)]
+    assert mock_temporal_convo.duration == 7240.0 * 1_000_000
+    assert mock_temporal_convo.start_time == datetime(2020, 12, 1, 10, 5, 5)
+    assert mock_temporal_convo.end_time == datetime(2020, 12, 1, 12, 5, 45)

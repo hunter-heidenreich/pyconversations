@@ -1,5 +1,6 @@
 import re
 from collections import Counter
+from datetime import timedelta
 from functools import reduce
 
 import networkx as nx
@@ -434,9 +435,42 @@ class Conversation:
         try:
             return self._stats['time_order']
         except KeyError:
-            self._stats['time_order'] = sorted(self._posts.keys(), key=lambda k: self._posts[k].created_at)
+            try:
+                self._stats['time_order'] = sorted(self._posts.keys(), key=lambda k: self._posts[k].created_at)
+            except TypeError:
+                self._stats['time_order'] = None
             return self._stats['time_order']
 
     @property
     def text_stream(self):
-        return [self._posts[uid].text for uid in self.time_order]
+        if self.time_order:
+            return [self._posts[uid].text for uid in self.time_order]
+        else:
+            return [self._posts[uid].text for uid in self._posts]
+
+    @property
+    def start_time(self):
+        try:
+            return self._stats['start_time']
+        except KeyError:
+            self._stats['start_time'] = self._posts[self.time_order[0]].created_at if self.time_order else None
+            return self._stats['start_time']
+
+    @property
+    def end_time(self):
+        try:
+            return self._stats['end_time']
+        except KeyError:
+            self._stats['end_time'] = self._posts[self.time_order[-1]].created_at if self.time_order else None
+            return self._stats['end_time']
+
+    @property
+    def duration(self):
+        try:
+            return self._stats['duration']
+        except KeyError:
+            if self.end_time and self.start_time:
+                self._stats['duration'] = (self.end_time - self.start_time) / timedelta(microseconds=1)
+            else:
+                self._stats['duration'] = None
+            return self._stats['duration']
