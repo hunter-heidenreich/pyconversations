@@ -480,3 +480,13 @@ class Conversation:
             return [self._posts[uid].created_at.timestamp() for uid in self.time_order]
 
         return None
+
+    def redact(self):
+        rd = {}
+        for uid in self._posts:
+            for user in self._posts[uid].get_mentions():
+                if user not in rd:
+                    rd[user] = f'USER{len(rd)}'
+
+        for uid in self._posts:
+            self._posts[uid].redact(rd)

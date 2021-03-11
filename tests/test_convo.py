@@ -267,10 +267,10 @@ def mock_temporal_convo():
     from datetime import datetime
 
     conv = Conversation()
-    conv.add_post(Tweet(uid=0, text='tweet 0', created_at=datetime(2020, 12, 1, 10, 5, 5)))
-    conv.add_post(Tweet(uid=1, text='tweet 1', created_at=datetime(2020, 12, 1, 10, 5, 35), reply_to={0}))
-    conv.add_post(Tweet(uid=2, text='tweet 2', created_at=datetime(2020, 12, 1, 10, 5, 45), reply_to={0}))
-    conv.add_post(Tweet(uid=3, text='tweet 3', created_at=datetime(2020, 12, 1, 12, 5, 45), reply_to={1}))
+    conv.add_post(Tweet(uid=0, text='@tweet 0', created_at=datetime(2020, 12, 1, 10, 5, 5)))
+    conv.add_post(Tweet(uid=1, text='@tweet 1', created_at=datetime(2020, 12, 1, 10, 5, 35), reply_to={0}))
+    conv.add_post(Tweet(uid=2, text='@tweet 2', created_at=datetime(2020, 12, 1, 10, 5, 45), reply_to={0}))
+    conv.add_post(Tweet(uid=3, text='@tweet 3', created_at=datetime(2020, 12, 1, 12, 5, 45), reply_to={1}))
     return conv
 
 
@@ -278,8 +278,13 @@ def test_ordered_properties(mock_temporal_convo):
     from datetime import datetime
 
     assert mock_temporal_convo.time_order == list(range(4))
-    assert mock_temporal_convo.text_stream == [f'tweet {i}' for i in range(4)]
+    assert mock_temporal_convo.text_stream == [f'@tweet {i}' for i in range(4)]
     assert mock_temporal_convo.duration == 7240.0
     assert mock_temporal_convo.start_time == datetime(2020, 12, 1, 10, 5, 5)
     assert mock_temporal_convo.end_time == datetime(2020, 12, 1, 12, 5, 45)
     assert mock_temporal_convo.time_series == [1606835105.0, 1606835135.0, 1606835145.0, 1606842345.0]
+
+
+def test_convo_redaction(mock_temporal_convo):
+    mock_temporal_convo.redact()
+    assert mock_temporal_convo.text_stream == [f'@USER0 {i}' for i in range(4)]
