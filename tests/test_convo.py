@@ -256,3 +256,20 @@ def test_conversation_filter_by_after(mock_convo_path):
     assert mock_convo_path.messages == 2
     mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
     assert mock_convo_path.messages == 0
+
+
+@pytest.fixture
+def mock_temporal_convo():
+    from datetime import datetime
+
+    conv = Conversation()
+    conv.add_post(Tweet(uid=0, text='tweet 0', created_at=datetime(2020, 12, 1, 10, 5, 5)))
+    conv.add_post(Tweet(uid=1, text='tweet 1', created_at=datetime(2020, 12, 1, 10, 5, 35), reply_to={0}))
+    conv.add_post(Tweet(uid=2, text='tweet 2', created_at=datetime(2020, 12, 1, 10, 5, 45), reply_to={0}))
+    conv.add_post(Tweet(uid=3, text='tweet 3', created_at=datetime(2020, 12, 1, 12, 5, 45), reply_to={1}))
+    return conv
+
+
+def test_ordered_properties(mock_temporal_convo):
+    assert mock_temporal_convo.time_order == list(range(4))
+    assert mock_temporal_convo.text_stream == [f'tweet {i}' for i in range(4)]

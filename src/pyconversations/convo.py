@@ -428,3 +428,15 @@ class Conversation:
 
         for uid in drop:
             self.remove_post(uid)
+
+    @property
+    def time_order(self):
+        try:
+            return self._stats['time_order']
+        except KeyError:
+            self._stats['time_order'] = sorted(self._posts.keys(), key=lambda k: self._posts[k].created_at)
+            return self._stats['time_order']
+
+    @property
+    def text_stream(self):
+        return [self._posts[uid].text for uid in self.time_order]
