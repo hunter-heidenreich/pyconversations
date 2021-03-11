@@ -403,3 +403,28 @@ class Conversation:
     @property
     def reciprocity(self):
         return self._network_prop('reciprocity')
+
+    def filter(self, by_langs=None, min_chars=1, before=None, after=None, by_tags=None):
+        drop = set()
+        for uid, post in self._posts.items():
+            if len(post.text) < min_chars:
+                drop.add(uid)
+                continue
+
+            if by_langs and post.lang not in by_langs:
+                drop.add(uid)
+                continue
+
+            if before and (post.created_at is None or post.created_at > before):
+                drop.add(uid)
+                continue
+            if after and (post.created_at is None or post.created_at < after):
+                drop.add(uid)
+                continue
+
+            if by_tags and by_tags != (by_tags & post.tags):
+                drop.add(uid)
+                continue
+
+        for uid in drop:
+            self.remove_post(uid)
