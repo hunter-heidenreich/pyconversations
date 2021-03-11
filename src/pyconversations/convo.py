@@ -1,6 +1,5 @@
 import re
 from collections import Counter
-from datetime import timedelta
 from functools import reduce
 
 import networkx as nx
@@ -470,7 +469,14 @@ class Conversation:
             return self._stats['duration']
         except KeyError:
             if self.end_time and self.start_time:
-                self._stats['duration'] = (self.end_time - self.start_time) / timedelta(microseconds=1)
+                self._stats['duration'] = (self.end_time - self.start_time).total_seconds()
             else:
                 self._stats['duration'] = None
             return self._stats['duration']
+
+    @property
+    def time_series(self):
+        if self.time_order:
+            return [self._posts[uid].created_at.timestamp() for uid in self.time_order]
+
+        return None
