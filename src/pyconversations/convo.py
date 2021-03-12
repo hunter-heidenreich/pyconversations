@@ -28,8 +28,11 @@ class Conversation:
         return self._edges
 
     def add_post(self, post):
-        # to dictionary
-        self._posts[post.uid] = post
+        if post.uid in self._posts and self._posts[post.uid]:
+            self._posts[post.uid] |= post
+        else:
+            # to dictionary
+            self._posts[post.uid] = post
 
         # update knowledge of edges
         self._edges[post.uid] = post.reply_to

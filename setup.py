@@ -75,7 +75,8 @@ setup(
         'gcld3>=3.0',
         'networkx>=2.5',
         'scipy>=1.6',
-        'numpy>=1.20'
+        'numpy>=1.20',
+        'tqdm>=4.59'
     ],
     extras_require={
         # eg:

@@ -288,3 +288,49 @@ def test_ordered_properties(mock_temporal_convo):
 def test_convo_redaction(mock_temporal_convo):
     mock_temporal_convo.redact()
     assert mock_temporal_convo.text_stream == [f'@USER0 {i}' for i in range(4)]
+
+
+def test_conversation_post_merge(mock_root_tweet, mock_tweet):
+    convo = Conversation()
+    convo.add_post(mock_root_tweet)
+    m = Tweet(uid=0, text=mock_tweet.text)
+    convo.add_post(m)
+
+    assert convo.posts[0].text == 'Root tweet text'
+
+
+def test_conversation_post_merge_text():
+    t0 = Tweet(uid=0, text='test this')
+    t1 = Tweet(uid=0, text='longer text')
+    convo = Conversation()
+    convo.add_post(t0)
+    convo.add_post(t1)
+    assert convo.messages == 1
+    assert convo.posts[0].text == 'longer text'
+
+
+def test_conversation_post_merge_created_at():
+    from datetime import datetime
+
+    convo = Conversation()
+
+    convo.add_post(Tweet(uid=0, created_at=datetime(2020, 12, 1, 12, 12, 19)))
+    convo.add_post(Tweet(uid=0, created_at=datetime(2020, 12, 1, 12, 12, 12)))
+
+    convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 12)))
+    convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 19)))
+
+    assert convo.messages == 2
+    assert convo.posts[0].created_at == datetime(2020, 12, 1, 12, 12, 12)
+    assert convo.posts[1].created_at == datetime(2020, 12, 1, 12, 12, 12)
+
+
+def test_conversation_post_merge_lang():
+    convo = Conversation()
+
+    convo.add_post(Tweet(uid=0, lang=None))
+    convo.add_post(Tweet(uid=0, lang='en'))
+    convo.add_post(Tweet(uid=0, lang='en'))
+
+    assert convo.messages == 1
+    assert convo.posts[0].lang == 'en'

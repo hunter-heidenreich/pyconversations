@@ -154,12 +154,12 @@ def test_read_raw_post(mock_raw_post):
     post = FBPost.parse_raw(mock_raw_post, post_type='post')
 
     assert post.uid == "12345678_87654321"
-    assert post.text == "ZooWee!WATCH: Video"
-    assert post.author == ':page:'
+    assert post.text == ":page: WATCH: Video :page: shared :page:'s video. ZooWee!"
+    assert post.author is None
     assert post.created_at == datetime(2012, 8, 19, 3, 0, 0)
     assert post.reply_to == set()
     assert post.platform == 'Facebook'
-    assert post.tags == set()
+    assert post.tags == {'type=video'}
     assert post.lang is None
 
     mock_raw_post['error'] = 'error'

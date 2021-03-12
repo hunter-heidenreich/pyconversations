@@ -19,27 +19,36 @@ class FBPost(UniMessage):
         return FBPost(**data)
 
     @staticmethod
-    def parse_raw(data, post_type='post', in_reply_to=None):
+    def parse_raw(data, post_type='post', in_reply_to=None, lang_detect=False):
         if post_type == 'post':
-            return FBPost.parse_raw_post(data)
+            return FBPost.parse_raw_post(data, in_reply_to=None, lang_detect=lang_detect)
         elif post_type == 'comments':
-            return FBPost.parse_raw_comments(data, in_reply_to=in_reply_to)
+            return FBPost.parse_raw_comments(data, in_reply_to=in_reply_to, lang_detect=lang_detect)
         elif post_type == 'replies':
-            return FBPost.parse_raw_replies(data, in_reply_to=in_reply_to)
+            return FBPost.parse_raw_replies(data, in_reply_to=in_reply_to, lang_detect=lang_detect)
         else:
             raise ValueError(f'FBPost::parse_raw - Unrecognized post_type: {post_type}')
 
     @staticmethod
-    def parse_raw_post(data, lang_detect=False):
+    def parse_raw_post(data, lang_detect=False, in_reply_to=None):
         post_cons = {
             'platform': 'Facebook',
-            'lang_detect': lang_detect
+            'lang_detect': lang_detect,
+            'author': in_reply_to,
+            'text': '',
+            'tags': {'type=' + data['type']} if 'type' in data else set()
         }
+
+        for key in ['name', 'description', 'story', 'caption', 'message']:
+            if key in data:
+                post_cons['text'] += ' ' + data[key]
+        post_cons['text'] = post_cons['text'].strip()
 
         ignore_keys = {
             'caption', 'link', 'picture',
             'shares', 'updated_time', 'replies', 'story',
-            'source', 'type', 'first_party', 'place'
+            'source', 'type', 'first_party', 'place',
+            'name', 'description', 'message'
         }
         for key, value in data.items():
             if key in ignore_keys:
@@ -47,12 +56,6 @@ class FBPost(UniMessage):
 
             if key == 'created_time':
                 post_cons['created_at'] = FBPost.parse_datestr(value)
-            elif key == 'description':
-                post_cons['text'] = (post_cons['text'] if 'text' in post_cons else '') + value
-            elif key == 'message':
-                post_cons['text'] = (post_cons['text'] if 'text' in post_cons else '') + value
-            elif key == 'name':
-                post_cons['author'] = value
             elif key == 'id':
                 post_cons['uid'] = value
             else:
@@ -61,7 +64,7 @@ class FBPost(UniMessage):
         return FBPost(**post_cons)
 
     @staticmethod
-    def parse_raw_comments(data, in_reply_to=None):
+    def parse_raw_comments(data, in_reply_to=None, lang_detect=False):
         out = []
 
         if not data:
@@ -76,7 +79,8 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook'
+                'platform': 'Facebook',
+                'lang_detect': lang_detect,
             }
 
             if in_reply_to:
@@ -102,7 +106,7 @@ class FBPost(UniMessage):
         return out
 
     @staticmethod
-    def parse_raw_replies(data, in_reply_to=None):
+    def parse_raw_replies(data, in_reply_to=None, lang_detect=False):
         out = []
 
         if not data:
@@ -117,7 +121,8 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook'
+                'platform': 'Facebook',
+                'lang_detect': lang_detect,
             }
 
             if in_reply_to:
@@ -141,7 +146,8 @@ class FBPost(UniMessage):
                     raise KeyError(f'FBPages::parse_raw_replies - Unrecognized key in FB raw reply: {key} --> {value}')
 
             if 'replies' in comment and comment['replies']:
-                out.extend(FBPost.parse_raw_replies(comment['replies'], in_reply_to=post_cons['uid']))
+                rs = FBPost.parse_raw_replies(comment['replies'], in_reply_to=post_cons['uid'], lang_detect=lang_detect)
+                out.extend(rs)
 
             out.append(FBPost(**post_cons))
         return out

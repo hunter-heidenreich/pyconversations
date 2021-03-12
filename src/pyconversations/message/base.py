@@ -67,6 +67,27 @@ class UniMessage(ABC):
     def __repr__(self):
         return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
 
+    def __ior__(self, other):
+        # Setting this to always take the larger text chunk...
+        if len(self._text) < len(other.text):
+            self._text = other.text
+
+        if self._author is None:
+            self._author = other.author
+
+        if self._created_at is None:
+            self._created_at = other.created_at
+        elif self._created_at and other.created_at and other.created_at < self._created_at:
+            self._created_at = other.created_at
+
+        if self._lang is None:
+            self._lang = other.lang
+
+        self._reply_to |= other.reply_to
+        self._tags |= other.tags
+
+        return self
+
     def _detect_language(self):
         if not self._lang and self._lang_detect and self._text:
             res = get_detector().FindLanguage(text=self.text)
