@@ -31,6 +31,10 @@ class RawFBReader(BaseReader):
                 for f in glob(f'{post_path}/post*.json'):
                     try:
                         post = FBPost.parse_raw(json.load(open(f)), post_type='post', in_reply_to=pagename, lang_detect=ld)
+
+                        if not post:
+                            continue
+
                         pid = post.uid
                         page.add_post(post)
                         post_del = False

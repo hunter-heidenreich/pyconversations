@@ -31,6 +31,9 @@ class FBPost(UniMessage):
 
     @staticmethod
     def parse_raw_post(data, lang_detect=False, in_reply_to=None):
+        if not data:
+            return
+
         post_cons = {
             'platform': 'Facebook',
             'lang_detect': lang_detect,
