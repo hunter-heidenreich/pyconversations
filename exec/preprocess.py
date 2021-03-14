@@ -53,6 +53,7 @@ def pre_process_quote_tweets(sharding=100):
     cache = []
     shard = 0
     for convo in convo_chunks:
+        convo.redact()
         cache.append(json.dumps(convo.to_json()))
 
         if len(cache) >= cap:
@@ -73,6 +74,8 @@ def preprocess_newstweetthreads(per_file=1_000):
     cnt = 0
     for ix, convo_chunk in ThreadsReader.iter_read(data_root + f'threads/'):
         print(f'{ix}: {len(convo_chunk)} conversations')
+        for chunk in convo_chunk:
+            chunk.redact()
         write_cache.extend([json.dumps(convo.to_json()) for convo in convo_chunk])
 
         if len(write_cache) >= per_file:
@@ -107,24 +110,32 @@ def preprocess_reddit_cmv(per_file=1_000):
 
 if __name__ == '__main__':
     parser = ArgumentParser('Demo executable of how one might read raw data into conversational format.')
-    parser.add_argument('--data', dest='data', type=str, help='General directory data is located in')
+    parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
+    parser.add_argument('--out', dest='out', type=str, default='conversations/')
+    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+                        const='bf',
+                        nargs='?',
+                        choices=['cmv', 'ntt', 'ctq',
+                                 '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
+                                 '4chan-g', '4chan-pol',
+                                 'outlets', 'bf'],
+                        help='Dataset key in selection')
 
     args = parser.parse_args()
 
     data_root = args.data
-    out = data_root + 'conversations/'
+    out = data_root + args.out
 
-    # preprocess_buzzface()
-    # preprocess_outlets()
-
-    # preprocess_chunked_4chan('news')
-    # preprocess_chunked_4chan('sci')
-    # preprocess_chunked_4chan('his')
-    # preprocess_chunked_4chan('x')
-    # preprocess_chunked_4chan('g')
-    # preprocess_chunked_4chan('pol')
-
-    # pre_process_quote_tweets()
-    # preprocess_newstweetthreads()
-
-    preprocess_reddit_cmv()
+    if args.ds == 'bf':
+        preprocess_buzzface()
+    elif args.ds == 'outlets':
+        preprocess_outlets()
+    elif '4chan' in args.ds:
+        board = args.ds.split('-')[-1]
+        preprocess_chunked_4chan(board)
+    elif args.ds == 'ctq':
+        pre_process_quote_tweets()
+    elif args.ds == 'ntt':
+        preprocess_newstweetthreads()
+    elif args.ds == 'cmv':
+        preprocess_reddit_cmv()
