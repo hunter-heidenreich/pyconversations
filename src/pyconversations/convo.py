@@ -112,9 +112,11 @@ class Conversation:
             'edges': {uid: list(reps) for uid, reps in self._edges.items()}
         }
 
-    def from_json(self, raw, cons):
-        self._posts = {uid: cons.from_json(pjson) for uid, pjson in raw['posts'].items()}
-        self._edges = {uid: set(reps) for uid, reps in raw['edges'].items()}
+    @staticmethod
+    def from_json(raw, cons):
+        ps = {uid: cons.from_json(pjson) for uid, pjson in raw['posts'].items()}
+        es = {uid: set(reps) for uid, reps in raw['edges'].items()}
+        return Conversation(posts=ps, edges=es)
 
     @property
     def messages(self):
