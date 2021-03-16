@@ -216,9 +216,11 @@ class UniMessage(ABC):
         This function is mainly to use for redacting usernames
         or user mentions, so as to protect users
         """
-        for term, replacement in redact_map.items():
-            self.text = re.sub(term, replacement, self.text)
-
+        if self.text:
+            for term, replacement in redact_map.items():
+                if term in self.text:
+                    self.text = re.sub(term, replacement, self.text)
+        
         # Change the author's name if they're in our redaction map
         if self.author in redact_map:
             self.author = redact_map[self.author]
