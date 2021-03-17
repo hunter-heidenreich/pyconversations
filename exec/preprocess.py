@@ -109,12 +109,12 @@ def preprocess_reddit_cmv(per_file=1_000):
 
 
 def preprocess_reddit_dialog(board):
-    os.makedirs(out + f'Reddit/{board}/', exist_ok=True)
+    os.makedirs(out + f'Reddit/RD_{board}/', exist_ok=True)
 
     cnt = 0
     for convo_chunk in RedditReader.iter_read(data_root + f'raw_rd/[0-9][0-9][0-9][0-9]-[0-9][0-9]_{board}', rd=True):
         write = [json.dumps(convo.to_json()) for convo in convo_chunk]
-        with open(out + f'Reddit/{board}/{cnt:03d}.json', 'w+') as fp:
+        with open(out + f'Reddit/RD_{board}/{cnt:03d}.json', 'w+') as fp:
             fp.write('\n'.join(write))
         cnt += 1
 

@@ -41,7 +41,7 @@ if __name__ == '__main__':
     parser.add_argument('--ds', dest='ds', type=str, default='bf',
                         const='bf',
                         nargs='?',
-                        choices=['cmv', 'ntt', 'ctq',
+                        choices=['cmv', 'rd', 'ntt', 'ctq',
                                  '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
                                  '4chan-g', '4chan-pol',
                                  'outlets', 'bf'],
@@ -69,6 +69,9 @@ if __name__ == '__main__':
         cons = Tweet
     elif args.ds == 'cmv':
         dataset = 'Reddit/CMV/'
+        cons = RedditPost
+    elif args.ds == 'rd':
+        dataset = 'Reddit/RD_*/'
         cons = RedditPost
     else:
         raise ValueError(args)
