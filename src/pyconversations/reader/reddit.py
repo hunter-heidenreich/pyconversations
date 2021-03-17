@@ -44,8 +44,12 @@ class RedditReader(BaseReader):
                 if dt.month in {1, 4, 7, 10}:
                     # dump all  posts older than 6 months
                     out = Conversation()
+                    to_drop = set()
                     for uid, post in convo.posts.items():
                         out.add_post(post)
+                        to_drop.add(uid)
+
+                    for uid in to_drop:
                         convo.remove_post(uid)
 
                     out = out.segment()
