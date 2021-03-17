@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from glob import glob
 
 from tqdm import tqdm
@@ -15,13 +16,55 @@ class RedditReader(BaseReader):
         raise NotImplementedError
 
     @staticmethod
-    def iter_read(path_pattern, ld=True):
+    def iter_read(path_pattern, ld=True, rd=False):
+        convo = Conversation()
         for f in tqdm(sorted(glob(f'{path_pattern}*.json'))):
-            convo = Conversation()
-            with open(f) as fp:
-                for line in fp.readlines():
-                    convo.add_post(RedditPost.parse_raw(json.loads(line), lang_detect=ld))
+            if rd:
+                with open(f) as fp:
+                    for line in fp.readlines():
+                        try:
+                            data = json.loads(line)
+                            convo.add_post(RedditPost.parse_rd(data, lang_detect=ld))
+                        except json.decoder.JSONDecodeError:
+                            if '}{' in line:
+                                lxs = line.split('}{')
+                                lx0, lxs = lxs[0], lxs[1:]
+                                lx0 += '}'
+                                lxs = [lx0] + ['{' + lx for lx in lxs]
 
+                                for lx in lxs:
+                                    convo.add_post(RedditPost.parse_rd(json.loads(lx), lang_detect=ld))
+                            else:
+                                print(line)
+                                import pdb
+                                pdb.set_trace()
+
+                date_str = f.split('/')[-1][:7]
+                dt = datetime.strptime(date_str, '%Y-%m')
+                if dt.month in {1, 4, 7, 10}:
+                    # dump all  posts older than 6 months
+                    out = Conversation()
+                    for uid, post in convo.posts.items():
+                        out.add_post(post)
+                        convo.remove_post(uid)
+
+                    out = out.segment()
+                    for o in out:
+                        o.redact()
+
+                    yield out
+            else:
+                convo = Conversation()
+                with open(f) as fp:
+                    for line in fp.readlines():
+                        convo.add_post(RedditPost.parse_raw(json.loads(line), lang_detect=ld))
+
+                segs = convo.segment()
+                for s in segs:
+                    s.redact()
+                yield segs
+
+        if rd and convo.messages:
             segs = convo.segment()
             for s in segs:
                 s.redact()

@@ -65,3 +65,24 @@ class RedditPost(UniMessage):
                 raise KeyError(f'RedditPost::parse_raw - Unrecognized key: {key} --> {value}')
 
         return RedditPost(**post_cons)
+
+    @staticmethod
+    def parse_rd(data, lang_detect=True):
+        cons = {
+            'platform': 'Reddit',
+            'lang_detect': lang_detect,
+            'uid': 't3_' + data['id'],
+            'author': data['author'],
+            'created_at': RedditPost.parse_datestr(data['created_utc']),
+            'tags': {f'board={data["subreddit"]}'}
+        }
+        if data['type'] == 'comment':
+            cons['text'] = data['body']
+            cons['reply_to'] = {data['parent_id']}
+        elif data['type'] == 'submission':
+            cons['text'] = data['title'] + ' ' + data['selftext']
+            cons['reply_to'] = set()
+        else:
+            raise ValueError(f'RedditPost::parse_rd -- Unrecognized type: {data}')
+
+        return RedditPost(**cons)

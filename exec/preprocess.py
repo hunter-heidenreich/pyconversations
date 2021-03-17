@@ -108,6 +108,17 @@ def preprocess_reddit_cmv(per_file=1_000):
             fp.write('\n'.join(write_cache))
 
 
+def preprocess_reddit_dialog(board):
+    os.makedirs(out + f'Reddit/{board}/', exist_ok=True)
+
+    cnt = 0
+    for convo_chunk in RedditReader.iter_read(data_root + f'raw_rd/[0-9][0-9][0-9][0-9]-[0-9][0-9]_{board}', rd=True):
+        write = [json.dumps(convo.to_json()) for convo in convo_chunk]
+        with open(out + f'Reddit/{board}/{cnt:03d}.json', 'w+') as fp:
+            fp.write('\n'.join(write))
+        cnt += 1
+
+
 if __name__ == '__main__':
     parser = ArgumentParser('Demo executable of how one might read raw data into conversational format.')
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
@@ -115,10 +126,13 @@ if __name__ == '__main__':
     parser.add_argument('--ds', dest='ds', type=str, default='bf',
                         const='bf',
                         nargs='?',
-                        choices=['cmv', 'ntt', 'ctq',
-                                 '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
-                                 '4chan-g', '4chan-pol',
-                                 'outlets', 'bf'],
+                        choices=[
+                            'cmv',
+                            'rd-politics', 'rd-news', 'rd-worldnews',
+                            'ntt', 'ctq',
+                            '4chan-news', '4chan-sci', '4chan-his', '4chan-x', '4chan-g', '4chan-pol',
+                            'outlets', 'bf'
+                                 ],
                         help='Dataset key in selection')
 
     args = parser.parse_args()
@@ -139,3 +153,6 @@ if __name__ == '__main__':
         preprocess_newstweetthreads()
     elif args.ds == 'cmv':
         preprocess_reddit_cmv()
+    elif args.ds[:2] == 'rd':
+        board = args.ds.split('-')[-1]
+        preprocess_reddit_dialog(board)
