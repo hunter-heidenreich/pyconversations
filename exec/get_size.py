@@ -60,6 +60,7 @@ if __name__ == '__main__':
         cons = FBPost
     elif args.ds == 'outlets':
         dataset = 'Outlets/'
+        cons = FBPost
     elif '4chan' in args.ds:
         dataset = args.ds.replace('-', '/') + '/'
         cons = ChanPost
