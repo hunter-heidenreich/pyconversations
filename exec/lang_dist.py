@@ -108,13 +108,16 @@ if __name__ == '__main__':
 
     df = []
 
+    lang_lookup = json.load(open('other/langs.json'))
     for lang, cnt in sorted(langs.items(), key=lambda kv: kv[1], reverse=True):
         if cnt > min_thresh * total:
             df.append({
                 'Language':  lang,
                 'Count': cnt
             })
-            print(lang, display_num(cnt))
+
+            o = f'\t\t\t{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][lang]} ({lang}) & {display_num(cnt)} \\\\'
+            print(o)
 
     df = pd.DataFrame(df)
     sns.set_theme()
