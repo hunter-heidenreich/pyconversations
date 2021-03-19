@@ -90,7 +90,7 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print_every = 250_000
 
-        min_thresh_dt = datetime(year=1990, month=1, day=1, hour=1, minute=1, second=1)
+        min_thresh_dt = datetime(year=2005, month=1, day=1, hour=1, minute=1, second=1)
         all_posts = {
             'Posts':           0,
             'Conversations':   0,
