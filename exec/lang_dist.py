@@ -117,7 +117,7 @@ if __name__ == '__main__':
             })
 
             o = f'\t\t\t{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][lang]} ({lang}) & '
-            o += f'{display_num(cnt)} {100 * cnt / total:.1f}\\% \\\\'
+            o += f'{display_num(cnt)} ({100 * cnt / total:.1f}\\%) \\\\'
             print(o)
 
     df = pd.DataFrame(df)
