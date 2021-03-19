@@ -90,6 +90,7 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print_every = 250_000
 
+        min_thresh_dt = datetime(year=1990, month=1, day=1, hour=1, minute=1, second=1)
         all_posts = {
             'Posts':           0,
             'Conversations':   0,
@@ -98,7 +99,7 @@ if __name__ == '__main__':
             'Types (Cased)':   defaultdict(set),
             'Types (Uncased)': defaultdict(set),
             'Start datetime':  datetime(year=2050, month=1, day=1, hour=1, minute=1, second=1),
-            'End datetime':    datetime(year=1990, month=1, day=1, hour=1, minute=1, second=1),
+            'End datetime':    min_thresh_dt,
         }
 
         en_posts = deepcopy(all_posts)
@@ -126,10 +127,10 @@ if __name__ == '__main__':
                 if en_bit:
                     en_posts['Chars'] += len(post.text)
 
-                if post.created_at and post.created_at < all_posts['Start datetime']:
+                if post.created_at and all_posts['Start datetime'] > post.created_at > min_thresh_dt:
                     all_posts['Start datetime'] = post.created_at
 
-                if post.created_at and en_bit and post.created_at < en_posts['Start datetime']:
+                if post.created_at and en_bit and en_posts['Start datetime'] > post.created_at > min_thresh_dt:
                     en_posts['Start datetime'] = post.created_at
 
                 if post.created_at and post.created_at > all_posts['End datetime']:
