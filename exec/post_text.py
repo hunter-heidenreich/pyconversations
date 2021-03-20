@@ -86,7 +86,7 @@ if __name__ == '__main__':
     try:
         text = json.load(open(f'out/{args.ds}_posts_text.json', 'r+'))
     except FileNotFoundError:
-        print_every = 10_000
+        print_every = 100_000
 
         text = {'chars': defaultdict(int)}
         for tok in tokenizers:
@@ -108,7 +108,7 @@ if __name__ == '__main__':
 
                 cnt += 1
                 if cnt % print_every == 0:
-                    print(f'Processed {cnt} posts.')
+                    print(f'Processed {display_num(cnt)} posts.')
 
         # aggregate chars
         text['chars'] = dict(text['chars'])
