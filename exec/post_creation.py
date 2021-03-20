@@ -1,6 +1,5 @@
 import json
 import os
-import re
 
 import matplotlib.pyplot as plt
 import pandas as pd
@@ -11,7 +10,6 @@ from collections import defaultdict
 from datetime import datetime
 
 from pyconversations.message import *
-from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 
 
@@ -42,6 +40,7 @@ if __name__ == '__main__':
                                  '4chan-g', '4chan-pol',
                                  'outlets', 'bf'],
                         help='Dataset key in selection')
+    parser.add_argument('--year', dest='year', type=int, default=None)
 
     args = parser.parse_args()
 
@@ -94,34 +93,62 @@ if __name__ == '__main__':
                 if post.created_at < min_thresh_dt:
                     continue
 
-                dx = post.created_at
-                # days[f'{dx.year}-{dx.month}-{dx.day}'] += 1
-                days[dx.timestamp()] += 1
+                days[post.created_at.timestamp()] += 1
 
         days = dict(days)
         json.dump(days, open(f'out/{args.ds}_posts_days.json', 'w+'))
 
     df = []
     for ts, cnt in days.items():
-        # y, m, d = [int(x) for x in dstr.split('-')]
         dx = datetime.fromtimestamp(float(ts))
         df.extend([{'Creation Date': dx}] * cnt)
-        # df.append({
-        #     'Creation Date': dx,
-        #     # 'Count': cnt
-        # })
 
     df = pd.DataFrame(df)
     sns.set_theme()
 
-    size = 10
-    aspect = 2
-    # sns.set(rc={'figure.figsize': (aspect * size, size)})
+    size = 8
+    aspect = 1.5
+    min_dt = df['Creation Date'].min()
+    max_dt = df['Creation Date'].max()
 
-    # g = sns.barplot(data=df, x='Creation Date', y='Count')  # , height=2, aspect=2)
     g = sns.displot(data=df, x='Creation Date', height=size, aspect=aspect)
-    # g.set_xticklabels(g.get_xticklabels(), rotation=90)
+
     g.set_xticklabels(rotation=45)
+    g.set(xlim=(min_dt, max_dt))
+    y_mx = max([p.get_height() for p in g.ax.patches])
+    g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
+
     plt.title(f'{title} - Creation Date Distribution')
-    plt.subplots_adjust(bottom=0.1)
+    plt.subplots_adjust(bottom=0.1, top=0.95)
+
     plt.savefig(f'out/{args.ds}_posts_days.png')
+
+    if args.year:
+        df = []
+        for ts, cnt in days.items():
+            dx = datetime.fromtimestamp(float(ts))
+
+            if dx.year != args.year:
+                continue
+
+            df.extend([{'Creation Date': dx}] * cnt)
+
+        df = pd.DataFrame(df)
+        sns.set_theme()
+
+        size = 8
+        aspect = 1.5
+        min_dt = df['Creation Date'].min()
+        max_dt = df['Creation Date'].max()
+
+        g = sns.displot(data=df, x='Creation Date', height=size, aspect=aspect)
+
+        g.set_xticklabels(rotation=45)
+        g.set(xlim=(min_dt, max_dt))
+        y_mx = max([p.get_height() for p in g.ax.patches])
+        g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
+
+        plt.title(f'{title} - Creation Date Distribution ({args.year})')
+        plt.subplots_adjust(bottom=0.1, top=0.95)
+
+        plt.savefig(f'out/{args.ds}_posts_days{args.year}.png')
