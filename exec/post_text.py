@@ -2,8 +2,13 @@ import json
 import os
 import re
 
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
 from argparse import ArgumentParser
 from collections import defaultdict
+from tqdm import tqdm
 
 from pyconversations.message import *
 from pyconversations.message.base import get_detector
@@ -32,6 +37,44 @@ class SpaceTokenizer:
     @staticmethod
     def split(s):
         return re.split(r'\s+', s)
+
+
+def char_dist(subset):
+    df = []
+    for size, cnt in tqdm(text['charlen_dist'][subset].items()):
+        size = int(size)
+        df.extend([{
+            'Char Len': size
+        }] * cnt)
+    df = pd.DataFrame(df)
+    dsc = df.describe()
+    out = display_num(dsc['Char Len']['mean']) + ' & '
+    out += display_num(dsc['Char Len']['std']) + ' & '
+
+    out += display_num(dsc['Char Len']['min']) + ' & '
+    out += display_num(dsc['Char Len']['25%']) + ' & '
+    out += display_num(dsc['Char Len']['50%']) + ' & '
+    out += display_num(dsc['Char Len']['75%']) + ' & '
+    out += display_num(dsc['Char Len']['max']) + ' \\\\ '
+
+    print(out)
+
+    if filt == 'en':
+        sns.set_theme()
+
+        sns.displot(data=df, x='Char Len')
+        plt.title(f'{title} - Char Len by Post')
+        plt.subplots_adjust(top=0.95)
+
+        # plt.show()
+        plt.savefig(f'out/{args.ds}_posts_text.png')
+
+        sns.displot(data=df, x='Char Len', log_scale=True)
+        plt.title(f'{title} - Char Len by Post')
+        plt.subplots_adjust(top=0.95)
+
+        # plt.show()
+        plt.savefig(f'out/{args.ds}_posts_text_log.png')
 
 
 if __name__ == '__main__':
@@ -88,10 +131,11 @@ if __name__ == '__main__':
     except FileNotFoundError:
         print_every = 100_000
 
-        text = {'chars': defaultdict(int)}
+        text = {'chars': defaultdict(int), 'charlen_dist': defaultdict(lambda: defaultdict(int))}
         for tok in tokenizers:
             text[tok.NAME] = {
-                'cased': defaultdict(dict)
+                'cased': defaultdict(dict),
+                'toklen_dist': defaultdict(lambda: defaultdict(int))
             }
 
         cnt = 0
@@ -101,9 +145,13 @@ if __name__ == '__main__':
                     res = get_detector().FindLanguage(text=post.text)
                     post.lang = res.language if res.is_reliable else 'und'
 
-                text['chars'][post.lang] += len(post.text)
+                lx = len(post.text)
+                text['chars'][post.lang] += lx
+                text['charlen_dist'][post.lang][lx] += 1
                 for tok in tokenizers:
-                    for t in tok.split(post.text):
+                    ts = tok.split(post.text)
+                    text[tok.NAME]['toklen_dist'][post.lang][lx] += 1
+                    for t in ts:
                         text[tok.NAME]['cased'][post.lang][t] = text[tok.NAME]['cased'][post.lang].get(t, 0) + 1
 
                 cnt += 1
@@ -111,17 +159,33 @@ if __name__ == '__main__':
                     print(f'Processed {display_num(cnt)} posts.')
 
         # aggregate chars
+        print('Aggregating character counts')
         text['chars'] = dict(text['chars'])
         text['chars']['all'] = sum(text['chars'].values())
         text['chars']['en & und'] = text['chars'].get('en', 0) + text['chars'].get('und', 0)
 
+        # aggregate char distributions
+        print('Unpacking char length distributions')
+        text['charlen_dist'] = dict(text['charlen_dist'])
+        total = defaultdict(int)
+        en_und = defaultdict(int)
+        for lang, dist in text['charlen_dist'].items():
+            for size, cnt in dist.items():
+                total[size] += cnt
+                if lang == 'en' or lang == 'und':
+                    en_und[size] += cnt
+            text['charlen_dist'][lang] = dict(dist)
+        text['charlen_dist']['all'] = dict(total)
+        text['charlen_dist']['en & und'] = dict(en_und)
+
+        print('Aggregating token-level stats and distributions')
         for tok in tokenizers:
             text[tok.NAME]['uncased'] = {}
 
             # calculate all tokens
             print(f'{tok.NAME} -- calculate all token cased distribution...')
             text[tok.NAME]['cased']['all'] = {}
-            for lang_cnts in text[tok.NAME]['cased'].values():
+            for lang, lang_cnts in text[tok.NAME]['cased'].items():
                 for term, cnt in lang_cnts.items():
                     text[tok.NAME]['cased']['all'][term] = text[tok.NAME]['cased']['all'].get(term, 0) + cnt
 
@@ -130,19 +194,31 @@ if __name__ == '__main__':
             for term, cnt in text[tok.NAME]['cased'].get('und', {}).items():
                 text[tok.NAME]['cased']['en & und'][term] = text[tok.NAME]['cased']['en & und'].get(term, 0) + cnt
 
+            # uncased tokens
             print(f'{tok.NAME} -- calculate uncased...')
             for lang in text[tok.NAME]['cased']:
-                print(f'\tAggregating {lang}')
-
                 # calculate per lang uncased
                 text[tok.NAME]['cased'][lang] = dict(text[tok.NAME]['cased'][lang])
                 text[tok.NAME]['uncased'][lang] = defaultdict(int)
                 for term, count in text[tok.NAME]['cased'][lang].items():
-                    t_ = term.lower()
-                    text[tok.NAME]['uncased'][lang][t_] += count
+                    text[tok.NAME]['uncased'][lang][term.lower()] += count
                 text[tok.NAME]['uncased'][lang] = dict(text[tok.NAME]['uncased'][lang])
 
             text[tok.NAME]['cased'] = dict(text[tok.NAME]['cased'])
+
+            # token distribution per post
+            print(f'{tok.NAME} -- aggregate token per post dist')
+            total = {}
+            en_und = {}
+            text[tok.NAME]['toklen_dist'] = dict(text[tok.NAME]['toklen_dist'])
+            for lang, dist in text[tok.NAME]['toklen_dist'].items():
+                for size, cnt in dist.items():
+                    total[size] = total.get(size, 0) + cnt
+                    if lang == 'en' or lang == 'und':
+                        en_und[size] = en_und.get(size, 0) + cnt
+                text[tok.NAME]['toklen_dist'][lang] = dict(dist)
+            text[tok.NAME]['toklen_dist']['all'] = dict(total)
+            text[tok.NAME]['toklen_dist']['en & und'] = dict(en_und)
 
         json.dump(text, open(f'out/{args.ds}_posts_text.json', 'w+'))
         print('\n' * 5)
@@ -151,10 +227,12 @@ if __name__ == '__main__':
     for filt in ['all', 'en & und', 'en']:
         print(filt)
         print(f'Chars: {display_num(text["chars"][filt])}')
+        print()
         for tok in tokenizers:
             print(f'{tok.NAME} types (cased): {display_num(len(text[tok.NAME]["cased"][filt]))}')
             print(f'{tok.NAME} tokens (cased): {display_num(sum(text[tok.NAME]["cased"][filt].values()))}')
-
+            print()
             print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"][filt]))}')
             print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"][filt].values()))}')
+        char_dist(filt)
         print('-' * 60)
