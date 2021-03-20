@@ -62,14 +62,17 @@ def char_dist(subset):
     if filt == 'en':
         sns.set_theme()
 
-        sns.displot(data=df, x='Char Len')
+        height = 8
+        aspect = 1.5
+
+        sns.displot(data=df, x='Char Len', height=height, aspect=aspect)
         plt.title(f'{title} - Char Len by Post')
         plt.subplots_adjust(top=0.95)
 
         # plt.show()
         plt.savefig(f'out/{args.ds}_posts_text.png')
 
-        sns.displot(data=df, x='Char Len', log_scale=True)
+        sns.displot(data=df, x='Char Len', log_scale=True, height=height, aspect=aspect)
         plt.title(f'{title} - Char Len by Post')
         plt.subplots_adjust(top=0.95)
 
