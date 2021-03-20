@@ -87,15 +87,15 @@ if __name__ == '__main__':
     try:
         text = json.load(open(f'out/{args.ds}_posts_text.json', 'r+'))
     except FileNotFoundError:
-        print_every = 250_000
+        print_every = 100_000
 
         text = {'chars': defaultdict(int)}
         for tok in tokenizers:
             text[tok.NAME] = {
-                'cased': defaultdict(Counter),
-                'uncased': defaultdict(Counter)
+                'cased': defaultdict(Counter)
             }
 
+        cnt = 0
         for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
             for post in convo.posts.values():
                 if post.lang is None:
@@ -103,50 +103,56 @@ if __name__ == '__main__':
                     post.lang = res.language if res.is_reliable else 'und'
 
                 text['chars'][post.lang] += len(post.text)
-                text['chars']['all'] += len(post.text)
-                if post.lang == 'en' or post.lang == 'und':
-                    text['chars']['en & und'] += len(post.text)
-
                 for tok in tokenizers:
                     ts = Counter(tok.split(post.text))
-                    ts_ = Counter(tok.split(post.text.lower()))
-
                     text[tok.NAME]['cased'][post.lang] += ts
-                    text[tok.NAME]['uncased'][post.lang] += ts_
 
-                    text[tok.NAME]['cased']['all'] += ts
-                    text[tok.NAME]['uncased']['all'] += ts_
+                cnt += 1
+                if cnt % print_every == 0:
+                    print(f'Processed {cnt} posts.')
 
-                    if post.lang == 'en' or post.lang == 'und':
-                        text[tok.NAME]['cased']['en & und'] += ts
-                        text[tok.NAME]['uncased']['en & und'] += ts_
-
+        # aggregate chars
         text['chars'] = dict(text['chars'])
+        text['chars']['all'] = sum(text['chars'].values())
+        text['chars']['en & und'] = text['chars'].get('en', 0) + text['chars'].get('und', 0)
+
         for tok in tokenizers:
+            text[tok.NAME]['uncased'] = {}
+
+            # calculate all tokens
+            print(f'{tok.NAME} -- calculate all token cased distribution...')
+            text[tok.NAME]['cased']['all'] = Counter()
+            for lang_cnts in text[tok.NAME]['cased'].values():
+                text[tok.NAME]['cased']['all'] += lang_cnts
+
+            # en & und calculation
+            text[tok.NAME]['cased']['en & und'] = text[tok.NAME]['cased'].get('en', Counter()) + text[tok.NAME]['cased'].get('und', Counter())
+
+            print(f'{tok.NAME} -- calculate uncased...')
             for lang in text[tok.NAME]['cased']:
+                print(f'\tAggregating {lang}')
+
+                # calculate per lang uncased
                 text[tok.NAME]['cased'][lang] = dict(text[tok.NAME]['cased'][lang])
+                text[tok.NAME]['uncased'][lang] = defaultdict(int)
+                for term, count in text[tok.NAME]['cased'][lang].items():
+                    t_ = term.lower()
+                    text[tok.NAME]['uncased'][lang][t_] += count
                 text[tok.NAME]['uncased'][lang] = dict(text[tok.NAME]['uncased'][lang])
+
             text[tok.NAME]['cased'] = dict(text[tok.NAME]['cased'])
-            text[tok.NAME]['uncased'] = dict(text[tok.NAME]['uncased'])
 
         json.dump(text, open(f'out/{args.ds}_posts_text.json', 'w+'))
+        print('\n' * 5)
 
-    print('all')
-    print(f'Chars: {display_num(text["chars"]["all"])}')
-    for tok in tokenizers:
-        print(f'{tok.NAME} types (cased): {display_num(len(text[tok.NAME]["cased"]["all"]))}')
-        print(f'{tok.NAME} tokens (cased): {display_num(sum(text[tok.NAME]["cased"]["all"].values()))}')
-
-        print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"]["all"]))}')
-        print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"]["all"].values()))}')
     print('-' * 60)
+    for filt in ['all', 'en & und', 'en']:
+        print(filt)
+        print(f'Chars: {display_num(text["chars"][filt])}')
+        for tok in tokenizers:
+            print(f'{tok.NAME} types (cased): {display_num(len(text[tok.NAME]["cased"][filt]))}')
+            print(f'{tok.NAME} tokens (cased): {display_num(sum(text[tok.NAME]["cased"][filt].values()))}')
 
-    print('en & und')
-    print(f'Chars: {display_num(text["chars"]["en & und"])}')
-    for tok in tokenizers:
-        print(f'{tok.NAME} types (cased): {display_num(len(text[tok.NAME]["cased"]["en & und"]))}')
-        print(f'{tok.NAME} tokens (cased): {display_num(sum(text[tok.NAME]["cased"]["en & und"].values()))}')
-
-        print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"]["en & und"]))}')
-        print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"]["en & und"].values()))}')
-    print('-' * 60)
+            print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"][filt]))}')
+            print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"][filt].values()))}')
+        print('-' * 60)
