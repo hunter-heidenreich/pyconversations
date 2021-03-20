@@ -4,7 +4,6 @@ import re
 
 from argparse import ArgumentParser
 from collections import defaultdict
-from collections import Counter
 
 from pyconversations.message import *
 from pyconversations.message.base import get_detector
@@ -87,12 +86,12 @@ if __name__ == '__main__':
     try:
         text = json.load(open(f'out/{args.ds}_posts_text.json', 'r+'))
     except FileNotFoundError:
-        print_every = 100_000
+        print_every = 10_000
 
         text = {'chars': defaultdict(int)}
         for tok in tokenizers:
             text[tok.NAME] = {
-                'cased': defaultdict(Counter)
+                'cased': defaultdict(dict)
             }
 
         cnt = 0
@@ -104,8 +103,8 @@ if __name__ == '__main__':
 
                 text['chars'][post.lang] += len(post.text)
                 for tok in tokenizers:
-                    ts = Counter(tok.split(post.text))
-                    text[tok.NAME]['cased'][post.lang] += ts
+                    for t in tok.split(post.text):
+                        text[tok.NAME]['cased'][post.lang][t] = text[tok.NAME]['cased'][post.lang].get(t, 0) + 1
 
                 cnt += 1
                 if cnt % print_every == 0:
@@ -121,12 +120,15 @@ if __name__ == '__main__':
 
             # calculate all tokens
             print(f'{tok.NAME} -- calculate all token cased distribution...')
-            text[tok.NAME]['cased']['all'] = Counter()
+            text[tok.NAME]['cased']['all'] = {}
             for lang_cnts in text[tok.NAME]['cased'].values():
-                text[tok.NAME]['cased']['all'] += lang_cnts
+                for term, cnt in lang_cnts.items():
+                    text[tok.NAME]['cased']['all'][term] = text[tok.NAME]['cased']['all'].get(term, 0) + cnt
 
             # en & und calculation
-            text[tok.NAME]['cased']['en & und'] = text[tok.NAME]['cased'].get('en', Counter()) + text[tok.NAME]['cased'].get('und', Counter())
+            text[tok.NAME]['cased']['en & und'] = text[tok.NAME]['cased'].get('en', {})
+            for term, cnt in text[tok.NAME]['cased'].get('und', {}).items():
+                text[tok.NAME]['cased']['en & und'][term] = text[tok.NAME]['cased']['en & und'].get(term, 0) + cnt
 
             print(f'{tok.NAME} -- calculate uncased...')
             for lang in text[tok.NAME]['cased']:
