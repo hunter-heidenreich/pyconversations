@@ -86,19 +86,22 @@ def load(langs=None):
 def draw_timestamp(ts, year='all'):
     sns.set_theme()
 
-    size = 8
+    height = 8
     aspect = 1.5
     min_dt = ts['Creation Date'].min()
     max_dt = ts['Creation Date'].max()
 
-    g = sns.displot(data=ts, x='Creation Date', height=size, aspect=aspect, kind='kde')
+    g = sns.displot(data=ts, x='Creation Date', height=height, aspect=aspect, kind='kde')
 
-    g.set_xticklabels(rotation=45)
+    g.set_xticklabels(rotation=25)
     g.set(xlim=(min_dt, max_dt))
-    # y_mx = max([p.get_height() for p in g.ax.patches])
-    # g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
 
-    plt.title(f'{title} - Creation Date Distribution')
+    # plt.title(f'{title} - Creation Date Distribution (KDE)')
+
+    g.ax.set_title(f'{title} - Creation Date Distribution (KDE) ({year})', fontsize=18)
+    g.ax.set_xlabel('Creation Date', fontsize=18)
+    g.ax.set_ylabel('Density', fontsize=18)
+
     plt.subplots_adjust(bottom=0.1, top=0.95)
 
     plt.savefig(f'out/post_creation/img/{tgt}_{args.ds}_posts_time_{year}.png')
