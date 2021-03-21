@@ -8,8 +8,10 @@ import seaborn as sns
 from argparse import ArgumentParser
 from collections import defaultdict
 from datetime import datetime
+from glob import glob
 
 from pyconversations.message import *
+from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 
 
@@ -27,6 +29,79 @@ def display_num(num):
             return str(num)
 
         return str(int(num)) if num.is_integer() else f'{num:.2f}'
+
+
+def load(langs=None):
+    try:
+        days = {}
+        if langs:
+            for lang in langs:
+                days[lang] = json.load(open(f'out/post_creation/{lang}_{args.ds}_posts_time.json', 'r+'))
+        else:
+            pths = glob(f'out/post_creation/*_{args.ds}_posts_time.json')
+
+            if not pths:
+                raise FileNotFoundError
+
+            for pth in pths:
+                lang = pth.split('/')[-1].split('_')[0]
+                days[lang] = json.load(open(pth, 'r+'))
+
+        return days
+    except FileNotFoundError:
+        print('Building...')
+        print_every = 250_000
+        cnt = 0
+
+        days = defaultdict(list)
+        for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
+            for post in convo.posts.values():
+                if cnt % print_every == 0:
+                    print(f'{display_num(cnt)} posts loaded...')
+
+                cnt += 1
+
+                if not post.created_at:
+                    continue
+
+                if post.created_at < min_thresh_dt:
+                    continue
+
+                if post.lang is None:
+                    res = get_detector().FindLanguage(text=post.text)
+                    post.lang = res.language if res.is_reliable else 'und'
+
+                days[post.lang].append(post.created_at.timestamp())
+                days['all'].append(post.created_at.timestamp())
+
+        for lang, tx in days.items():
+            json.dump(tx, open(f'out/post_creation/{lang}_{args.ds}_posts_time.json', 'w+'))
+
+        if langs:
+            days = {lang: tx for lang, tx in days.items() if lang in langs}
+
+        return days
+
+
+def draw_timestamp(ts, year='all'):
+    sns.set_theme()
+
+    size = 8
+    aspect = 1.5
+    min_dt = ts['Creation Date'].min()
+    max_dt = ts['Creation Date'].max()
+
+    g = sns.displot(data=ts, x='Creation Date', height=size, aspect=aspect, kind='kde')
+
+    g.set_xticklabels(rotation=45)
+    g.set(xlim=(min_dt, max_dt))
+    # y_mx = max([p.get_height() for p in g.ax.patches])
+    # g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
+
+    plt.title(f'{title} - Creation Date Distribution')
+    plt.subplots_adjust(bottom=0.1, top=0.95)
+
+    plt.savefig(f'out/post_creation/img/{tgt}_{args.ds}_posts_time_{year}.png')
 
 
 if __name__ == '__main__':
@@ -79,76 +154,31 @@ if __name__ == '__main__':
     else:
         raise ValueError(args)
 
-    try:
-        days = json.load(open(f'out/{args.ds}_posts_days.json', 'r+'))
-    except FileNotFoundError:
-        print_every = 250_000
+    days = load()
+    sel = days['en']
 
-        days = defaultdict(int)
-        for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
-            for post in convo.posts.values():
-                if not post.created_at:
-                    continue
-
-                if post.created_at < min_thresh_dt:
-                    continue
-
-                days[post.created_at.timestamp()] += 1
-
-        days = dict(days)
-        json.dump(days, open(f'out/{args.ds}_posts_days.json', 'w+'))
+    tgt = 'en_und'
+    if tgt == 'en_und':
+        sel = days['en'] + days['und']
 
     df = []
-    for ts, cnt in days.items():
+    for ts in sel:
         dx = datetime.fromtimestamp(float(ts))
-        df.extend([{'Creation Date': dx}] * cnt)
-
+        df.append({'Creation Date': dx})
     df = pd.DataFrame(df)
-    sns.set_theme()
 
-    size = 8
-    aspect = 1.5
-    min_dt = df['Creation Date'].min()
-    max_dt = df['Creation Date'].max()
-
-    g = sns.displot(data=df, x='Creation Date', height=size, aspect=aspect)
-
-    g.set_xticklabels(rotation=45)
-    g.set(xlim=(min_dt, max_dt))
-    y_mx = max([p.get_height() for p in g.ax.patches])
-    g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
-
-    plt.title(f'{title} - Creation Date Distribution')
-    plt.subplots_adjust(bottom=0.1, top=0.95)
-
-    plt.savefig(f'out/{args.ds}_posts_days.png')
+    draw_timestamp(df)
 
     if args.year:
         df = []
-        for ts, cnt in days.items():
+        for ts in sel:
             dx = datetime.fromtimestamp(float(ts))
 
             if dx.year != args.year:
                 continue
 
-            df.extend([{'Creation Date': dx}] * cnt)
+            df.append({'Creation Date': dx})
 
         df = pd.DataFrame(df)
-        sns.set_theme()
 
-        size = 8
-        aspect = 1.5
-        min_dt = df['Creation Date'].min()
-        max_dt = df['Creation Date'].max()
-
-        g = sns.displot(data=df, x='Creation Date', height=size, aspect=aspect)
-
-        g.set_xticklabels(rotation=45)
-        g.set(xlim=(min_dt, max_dt))
-        y_mx = max([p.get_height() for p in g.ax.patches])
-        g.set(ylim=(0, int(y_mx + 0.1 * y_mx)))
-
-        plt.title(f'{title} - Creation Date Distribution ({args.year})')
-        plt.subplots_adjust(bottom=0.1, top=0.95)
-
-        plt.savefig(f'out/{args.ds}_posts_days{args.year}.png')
+        draw_timestamp(df, year=args.year)
