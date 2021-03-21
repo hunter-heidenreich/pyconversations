@@ -3,6 +3,7 @@ import os
 import re
 
 import matplotlib.pyplot as plt
+import numpy as np
 import pandas as pd
 import seaborn as sns
 
@@ -62,22 +63,90 @@ def char_dist(subset):
     if filt == 'en':
         sns.set_theme()
 
-        height = 8
-        aspect = 1.5
+        height = 6
+        aspect = 1
 
-        sns.displot(data=df, x='Char Len', height=height, aspect=aspect)
-        plt.title(f'{title} - Char Len by Post')
-        plt.subplots_adjust(top=0.95)
+        mx, mx_ = df['Char Len'].min(), df['Char Len'].max()
+
+        g = sns.displot(data=df, x='Char Len', height=height, aspect=aspect)
+        g.set(xlim=(mx, mx_))
+        g.ax.set_title(f'{title} - Char Len by Post', fontsize=18)
+        g.ax.set_xlabel('# of Chars', fontsize=18)
+        g.ax.set_ylabel('# of Posts', fontsize=18)
+        g.ax.tick_params(labelsize=12)
+        plt.subplots_adjust(top=0.93)
 
         # plt.show()
         plt.savefig(f'out/{args.ds}_posts_text.png')
 
-        sns.displot(data=df, x='Char Len', log_scale=True, height=height, aspect=aspect)
-        plt.title(f'{title} - Char Len by Post')
-        plt.subplots_adjust(top=0.95)
+        df['log_2(Char Len)'] = np.log2(df['Char Len'])
+        mx, mx_ = df['log_2(Char Len)'].min(), df['log_2(Char Len)'].max()
+
+        g = sns.displot(data=df, x='log_2(Char Len)', height=height, aspect=aspect)
+        g.set(xlim=(mx, mx_))
+        g.ax.set_title(f'{title} - log_2(Char Len) by Post', fontsize=18)
+        g.ax.set_xlabel('log_2(# of Chars)', fontsize=18)
+        g.ax.set_ylabel('# of Posts', fontsize=18)
+        g.ax.tick_params(labelsize=12)
+        plt.subplots_adjust(top=0.93)
 
         # plt.show()
         plt.savefig(f'out/{args.ds}_posts_text_log.png')
+
+
+def token_dist(subset):
+    for tok in tokenizers:
+        df = []
+        for size, cnt in tqdm(text[tok.NAME]['toklen_dist'][subset].items()):
+            size = int(size)
+            df.extend([{
+                'Token Len': size
+            }] * cnt)
+        df = pd.DataFrame(df)
+        dsc = df.describe()
+        out = display_num(dsc['Token Len']['mean']) + ' & '
+        out += display_num(dsc['Token Len']['std']) + ' & '
+
+        out += display_num(dsc['Token Len']['min']) + ' & '
+        out += display_num(dsc['Token Len']['25%']) + ' & '
+        out += display_num(dsc['Token Len']['50%']) + ' & '
+        out += display_num(dsc['Token Len']['75%']) + ' & '
+        out += display_num(dsc['Token Len']['max']) + ' \\\\ '
+
+        print(out)
+
+        if filt == 'en':
+            sns.set_theme()
+
+            height = 6
+            aspect = 1
+
+            mx, mx_ = df['Token Len'].min(), df['Token Len'].max()
+
+            g = sns.displot(data=df, x='Token Len', height=height, aspect=aspect)
+            g.set(xlim=(mx, mx_))
+            g.ax.set_title(f'{title} - Token Len by Post', fontsize=18)
+            g.ax.set_xlabel('# of Token', fontsize=18)
+            g.ax.set_ylabel('# of Posts', fontsize=18)
+            g.ax.tick_params(labelsize=12)
+            plt.subplots_adjust(top=0.93)
+
+            # plt.show()
+            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_token.png')
+
+            df['log_2(Token Len)'] = np.log2(df['Token Len'])
+            mx, mx_ = df['log_2(Token Len)'].min(), df['log_2(Token Len)'].max()
+
+            g = sns.displot(data=df, x='log_2(Token Len)', height=height, aspect=aspect)
+            g.set(xlim=(mx, mx_))
+            g.ax.set_title(f'{title} - log_2(Token Len) by Post', fontsize=18)
+            g.ax.set_xlabel('log_2(# of Tokens)', fontsize=18)
+            g.ax.set_ylabel('# of Posts', fontsize=18)
+            g.ax.tick_params(labelsize=12)
+            plt.subplots_adjust(top=0.93)
+
+            # plt.show()
+            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_token_log.png')
 
 
 if __name__ == '__main__':
@@ -153,7 +222,7 @@ if __name__ == '__main__':
                 text['charlen_dist'][post.lang][lx] += 1
                 for tok in tokenizers:
                     ts = tok.split(post.text)
-                    text[tok.NAME]['toklen_dist'][post.lang][lx] += 1
+                    text[tok.NAME]['toklen_dist'][post.lang][len(ts)] += 1
                     for t in ts:
                         text[tok.NAME]['cased'][post.lang][t] = text[tok.NAME]['cased'][post.lang].get(t, 0) + 1
 
@@ -237,5 +306,8 @@ if __name__ == '__main__':
             print()
             print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"][filt]))}')
             print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"][filt].values()))}')
+
         char_dist(filt)
+        token_dist(filt)
+
         print('-' * 60)
