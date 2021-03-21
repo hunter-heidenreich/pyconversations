@@ -77,7 +77,7 @@ def char_dist(subset):
         plt.subplots_adjust(top=0.93)
 
         # plt.show()
-        plt.savefig(f'out/post_text/{args.ds}_posts_text.png')
+        plt.savefig(f'out/post_text/img/{args.ds}_posts_char.png')
 
         df['log_2(Char Len)'] = np.log2(df['Char Len'])
         mx, mx_ = df['log_2(Char Len)'].min(), df['log_2(Char Len)'].max()
@@ -91,7 +91,7 @@ def char_dist(subset):
         plt.subplots_adjust(top=0.93)
 
         # plt.show()
-        plt.savefig(f'out/post_text/{args.ds}_posts_text_log.png')
+        plt.savefig(f'out/post_text/img/{args.ds}_posts_char_log.png')
 
 
 def token_dist(subset):
@@ -132,7 +132,7 @@ def token_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_token.png')
+            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_token.png')
 
             df['log_2(Token Len)'] = np.log2(df['Token Len'])
             mx, mx_ = df['log_2(Token Len)'].min(), df['log_2(Token Len)'].max()
@@ -146,7 +146,7 @@ def token_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_token_log.png')
+            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_token_log.png')
 
 
 def type_dist(subset):
@@ -187,7 +187,7 @@ def type_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_type.png')
+            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type.png')
 
             df['log_2(Type Count)'] = np.log2(df['Type Count'])
             mx, mx_ = df['log_2(Type Count)'].min(), df['log_2(Type Count)'].max()
@@ -201,7 +201,38 @@ def type_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_type_log.png')
+            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type_log.png')
+
+
+def type_rank_freq_plot(filt, fold='cased'):
+    if filt != 'en':
+        return
+
+    for tok in tokenizers:
+        total = sum(text[tok.NAME][fold][filt].values())
+
+        df = []
+        for ix, (t, cnt) in enumerate(sorted(text[tok.NAME][fold][filt].items(), key=lambda kv: kv[1], reverse=True)):
+            df.append({
+                'type': t,
+                'rank': ix + 1,
+                'log_rank': np.log(ix + 1),
+                'freq': cnt / total,
+                'log_freq': np.log(cnt) - np.log(total)
+            })
+
+        df = pd.DataFrame(df)
+
+        height = 8
+        aspect = 1.25
+
+        sns.set_theme()
+        g = sns.relplot(data=df, x='log_rank', y='log_freq', height=height, aspect=aspect)  # ax=ax)
+        g.ax.set_title(f'{title} - Log Frequency Type Plot', fontsize=18)
+        plt.subplots_adjust(top=0.95, bottom=0.08, left=0.08)
+
+        # plt.show()
+        plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type_logfreq.png')
 
 
 if __name__ == '__main__':
@@ -381,5 +412,6 @@ if __name__ == '__main__':
         # char_dist(filt)
         # token_dist(filt)
         # type_dist(filt)
+        # type_rank_freq_plot(filt)
 
         print('-' * 60)
