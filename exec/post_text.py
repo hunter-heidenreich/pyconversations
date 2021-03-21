@@ -63,7 +63,7 @@ def char_dist(subset):
     if filt == 'en':
         sns.set_theme()
 
-        height = 6
+        height = 8
         aspect = 1
 
         mx, mx_ = df['Char Len'].min(), df['Char Len'].max()
@@ -77,7 +77,7 @@ def char_dist(subset):
         plt.subplots_adjust(top=0.93)
 
         # plt.show()
-        plt.savefig(f'out/{args.ds}_posts_text.png')
+        plt.savefig(f'out/post_text/{args.ds}_posts_text.png')
 
         df['log_2(Char Len)'] = np.log2(df['Char Len'])
         mx, mx_ = df['log_2(Char Len)'].min(), df['log_2(Char Len)'].max()
@@ -91,7 +91,7 @@ def char_dist(subset):
         plt.subplots_adjust(top=0.93)
 
         # plt.show()
-        plt.savefig(f'out/{args.ds}_posts_text_log.png')
+        plt.savefig(f'out/post_text/{args.ds}_posts_text_log.png')
 
 
 def token_dist(subset):
@@ -118,7 +118,7 @@ def token_dist(subset):
         if filt == 'en':
             sns.set_theme()
 
-            height = 6
+            height = 8
             aspect = 1
 
             mx, mx_ = df['Token Len'].min(), df['Token Len'].max()
@@ -132,7 +132,7 @@ def token_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_token.png')
+            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_token.png')
 
             df['log_2(Token Len)'] = np.log2(df['Token Len'])
             mx, mx_ = df['log_2(Token Len)'].min(), df['log_2(Token Len)'].max()
@@ -146,7 +146,7 @@ def token_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_token_log.png')
+            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_token_log.png')
 
 
 def type_dist(subset):
@@ -173,7 +173,7 @@ def type_dist(subset):
         if filt == 'en':
             sns.set_theme()
 
-            height = 6
+            height = 8
             aspect = 1
 
             mx, mx_ = df['Type Count'].min(), df['Type Count'].max()
@@ -187,7 +187,7 @@ def type_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_type.png')
+            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_type.png')
 
             df['log_2(Type Count)'] = np.log2(df['Type Count'])
             mx, mx_ = df['log_2(Type Count)'].min(), df['log_2(Type Count)'].max()
@@ -201,7 +201,7 @@ def type_dist(subset):
             plt.subplots_adjust(top=0.93)
 
             # plt.show()
-            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_type_log.png')
+            plt.savefig(f'out/post_text/{args.ds}_posts_{tok.NAME}_type_log.png')
 
 
 if __name__ == '__main__':
@@ -254,7 +254,7 @@ if __name__ == '__main__':
         raise ValueError(args)
 
     try:
-        text = json.load(open(f'out/{args.ds}_posts_text.json', 'r+'))
+        text = json.load(open(f'out/post_text/{args.ds}_posts_text.json', 'r+'))
     except FileNotFoundError:
         print_every = 100_000
 
@@ -363,7 +363,7 @@ if __name__ == '__main__':
             text[tok.NAME]['typecnt_dist']['all'] = dict(total)
             text[tok.NAME]['typecnt_dist']['en & und'] = dict(en_und)
 
-        json.dump(text, open(f'out/{args.ds}_posts_text.json', 'w+'))
+        json.dump(text, open(f'out/post_text/{args.ds}_posts_text.json', 'w+'))
         print('\n' * 5)
 
     print('-' * 60)
