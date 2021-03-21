@@ -149,6 +149,61 @@ def token_dist(subset):
             plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_token_log.png')
 
 
+def type_dist(subset):
+    for tok in tokenizers:
+        df = []
+        for size, cnt in tqdm(text[tok.NAME]['typecnt_dist'][subset].items()):
+            size = int(size)
+            df.extend([{
+                'Type Count': size
+            }] * cnt)
+        df = pd.DataFrame(df)
+        dsc = df.describe()
+        out = display_num(dsc['Type Count']['mean']) + ' & '
+        out += display_num(dsc['Type Count']['std']) + ' & '
+
+        out += display_num(dsc['Type Count']['min']) + ' & '
+        out += display_num(dsc['Type Count']['25%']) + ' & '
+        out += display_num(dsc['Type Count']['50%']) + ' & '
+        out += display_num(dsc['Type Count']['75%']) + ' & '
+        out += display_num(dsc['Type Count']['max']) + ' \\\\ '
+
+        print(out)
+
+        if filt == 'en':
+            sns.set_theme()
+
+            height = 6
+            aspect = 1
+
+            mx, mx_ = df['Type Count'].min(), df['Type Count'].max()
+
+            g = sns.displot(data=df, x='Type Count', height=height, aspect=aspect)
+            g.set(xlim=(mx, mx_))
+            g.ax.set_title(f'{title} - Type Count by Post', fontsize=18)
+            g.ax.set_xlabel('# of Types', fontsize=18)
+            g.ax.set_ylabel('# of Posts', fontsize=18)
+            g.ax.tick_params(labelsize=12)
+            plt.subplots_adjust(top=0.93)
+
+            # plt.show()
+            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_type.png')
+
+            df['log_2(Type Count)'] = np.log2(df['Type Count'])
+            mx, mx_ = df['log_2(Type Count)'].min(), df['log_2(Type Count)'].max()
+
+            g = sns.displot(data=df, x='log_2(Type Count)', height=height, aspect=aspect)
+            g.set(xlim=(mx, mx_))
+            g.ax.set_title(f'{title} - log_2(Type Count) by Post', fontsize=18)
+            g.ax.set_xlabel('log_2(# of Types)', fontsize=18)
+            g.ax.set_ylabel('# of Posts', fontsize=18)
+            g.ax.tick_params(labelsize=12)
+            plt.subplots_adjust(top=0.93)
+
+            # plt.show()
+            plt.savefig(f'out/{args.ds}_posts_{tok.NAME}_type_log.png')
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
@@ -207,7 +262,8 @@ if __name__ == '__main__':
         for tok in tokenizers:
             text[tok.NAME] = {
                 'cased': defaultdict(dict),
-                'toklen_dist': defaultdict(lambda: defaultdict(int))
+                'toklen_dist': defaultdict(lambda: defaultdict(int)),
+                'typecnt_dist': defaultdict(lambda: defaultdict(int)),
             }
 
         cnt = 0
@@ -223,6 +279,7 @@ if __name__ == '__main__':
                 for tok in tokenizers:
                     ts = tok.split(post.text)
                     text[tok.NAME]['toklen_dist'][post.lang][len(ts)] += 1
+                    text[tok.NAME]['typecnt_dist'][post.lang][len(set(ts))] += 1
                     for t in ts:
                         text[tok.NAME]['cased'][post.lang][t] = text[tok.NAME]['cased'][post.lang].get(t, 0) + 1
 
@@ -292,6 +349,20 @@ if __name__ == '__main__':
             text[tok.NAME]['toklen_dist']['all'] = dict(total)
             text[tok.NAME]['toklen_dist']['en & und'] = dict(en_und)
 
+            # token distribution per post
+            print(f'{tok.NAME} -- aggregate type per post dist')
+            total = {}
+            en_und = {}
+            text[tok.NAME]['typecnt_dist'] = dict(text[tok.NAME]['typecnt_dist'])
+            for lang, dist in text[tok.NAME]['typecnt_dist'].items():
+                for size, cnt in dist.items():
+                    total[size] = total.get(size, 0) + cnt
+                    if lang == 'en' or lang == 'und':
+                        en_und[size] = en_und.get(size, 0) + cnt
+                text[tok.NAME]['typecnt_dist'][lang] = dict(dist)
+            text[tok.NAME]['typecnt_dist']['all'] = dict(total)
+            text[tok.NAME]['typecnt_dist']['en & und'] = dict(en_und)
+
         json.dump(text, open(f'out/{args.ds}_posts_text.json', 'w+'))
         print('\n' * 5)
 
@@ -307,7 +378,8 @@ if __name__ == '__main__':
             print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"][filt]))}')
             print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"][filt].values()))}')
 
-        char_dist(filt)
-        token_dist(filt)
+        # char_dist(filt)
+        # token_dist(filt)
+        # type_dist(filt)
 
         print('-' * 60)
