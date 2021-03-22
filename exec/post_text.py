@@ -61,7 +61,8 @@ def char_dist(data):
     out += display_num(dsc['Chars']['25%']) + ' & '
     out += display_num(dsc['Chars']['50%']) + ' & '
     out += display_num(dsc['Chars']['75%']) + ' & '
-    out += display_num(dsc['Chars']['max']) + ' \\\\ '
+    out += display_num(dsc['Chars']['max']) + ' & '
+    out += display_num(data['chars']) + ' \\\\ '
     print(out)
 
     sns.set_theme()
@@ -104,7 +105,8 @@ def token_dist(data):
         out += display_num(dsc['Tokens']['25%']) + ' & '
         out += display_num(dsc['Tokens']['50%']) + ' & '
         out += display_num(dsc['Tokens']['75%']) + ' & '
-        out += display_num(dsc['Tokens']['max']) + ' \\\\ '
+        out += display_num(dsc['Tokens']['max']) + ' & '
+        out += display_num(sum(data[tok.NAME]['cased'].values())) + ' \\\\ '
 
         print(out)
 
@@ -149,7 +151,8 @@ def type_dist(data):
         out += display_num(dsc['Types']['25%']) + ' & '
         out += display_num(dsc['Types']['50%']) + ' & '
         out += display_num(dsc['Types']['75%']) + ' & '
-        out += display_num(dsc['Types']['max']) + ' \\\\ '
+        out += display_num(dsc['Types']['max']) + ' & '
+        out += display_num(len(data[tok.NAME]['cased'])) + ' \\\\ '
 
         print(out)
 
