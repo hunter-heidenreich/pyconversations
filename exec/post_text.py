@@ -9,6 +9,7 @@ import seaborn as sns
 
 from argparse import ArgumentParser
 from collections import defaultdict
+from copy import deepcopy
 from tqdm import tqdm
 
 from pyconversations.message import *
@@ -40,179 +41,144 @@ class SpaceTokenizer:
         return re.split(r'\s+', s)
 
 
-def char_dist(subset):
+tokenizers = [SpaceTokenizer]
+
+
+def char_dist(data):
     df = []
-    for size, cnt in tqdm(text['charlen_dist'][subset].items()):
+    for size, cnt in tqdm(data['charlen_dist'].items()):
         size = int(size)
         df.extend([{
-            'Char Len': size
+            'Chars': size
         }] * cnt)
     df = pd.DataFrame(df)
     dsc = df.describe()
-    out = display_num(dsc['Char Len']['mean']) + ' & '
-    out += display_num(dsc['Char Len']['std']) + ' & '
+    out = 'Char Stats (Latex) & '
+    out += display_num(dsc['Chars']['mean']) + ' & '
+    out += display_num(dsc['Chars']['std']) + ' & '
 
-    out += display_num(dsc['Char Len']['min']) + ' & '
-    out += display_num(dsc['Char Len']['25%']) + ' & '
-    out += display_num(dsc['Char Len']['50%']) + ' & '
-    out += display_num(dsc['Char Len']['75%']) + ' & '
-    out += display_num(dsc['Char Len']['max']) + ' \\\\ '
-
+    out += display_num(dsc['Chars']['min']) + ' & '
+    out += display_num(dsc['Chars']['25%']) + ' & '
+    out += display_num(dsc['Chars']['50%']) + ' & '
+    out += display_num(dsc['Chars']['75%']) + ' & '
+    out += display_num(dsc['Chars']['max']) + ' \\\\ '
     print(out)
 
-    if filt == 'en':
+    sns.set_theme()
+
+    sns.histplot(data=df, x='Chars', discrete=True)
+    plt.title(f'{title} - Chars per Post', fontsize=18)
+    plt.xlabel('Chars', fontsize=16)
+    plt.ylabel('Count', fontsize=16)
+    plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_char.png', dpi=300)
+
+    plt.clf()
+
+    df['log(Chars)'] = np.log(df['Chars'])
+    sns.histplot(data=df, x='log(Chars)')
+    plt.title(f'{title} - log(Chars) per Post', fontsize=18)
+    plt.xlabel('log(Chars), nats', fontsize=16)
+    plt.ylabel('Count', fontsize=16)
+    plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_char_log.png', dpi=300)
+
+    plt.clf()
+
+
+def token_dist(data):
+    for tok in tokenizers:
+        df = []
+        for size, cnt in tqdm(data[tok.NAME]['toklen_dist'].items()):
+            size = int(size)
+            df.extend([{
+                'Tokens': size
+            }] * cnt)
+        df = pd.DataFrame(df)
+
+        dsc = df.describe()
+
+        out = 'Token Stats (Latex) & '
+        out += display_num(dsc['Tokens']['mean']) + ' & '
+        out += display_num(dsc['Tokens']['std']) + ' & '
+
+        out += display_num(dsc['Tokens']['min']) + ' & '
+        out += display_num(dsc['Tokens']['25%']) + ' & '
+        out += display_num(dsc['Tokens']['50%']) + ' & '
+        out += display_num(dsc['Tokens']['75%']) + ' & '
+        out += display_num(dsc['Tokens']['max']) + ' \\\\ '
+
+        print(out)
+
         sns.set_theme()
 
-        height = 8
-        aspect = 1
+        sns.histplot(data=df, x='Tokens', discrete=True)
+        plt.title(f'{title} - Tokens per Post', fontsize=18)
+        plt.xlabel('Tokens', fontsize=16)
+        plt.ylabel('Count', fontsize=16)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_token.png', dpi=300)
 
-        mx, mx_ = df['Char Len'].min(), df['Char Len'].max()
+        plt.clf()
 
-        g = sns.displot(data=df, x='Char Len', height=height, aspect=aspect)
-        g.set(xlim=(mx, mx_))
-        g.ax.set_title(f'{title} - Char Len by Post', fontsize=18)
-        g.ax.set_xlabel('# of Chars', fontsize=18)
-        g.ax.set_ylabel('# of Posts', fontsize=18)
-        g.ax.tick_params(labelsize=12)
-        plt.subplots_adjust(top=0.93)
+        df['log(Tokens)'] = np.log(df['Tokens'])
+        sns.histplot(data=df, x='log(Tokens)')
+        plt.title(f'{title} - log(Tokens) per Post', fontsize=18)
+        plt.xlabel('log(Tokens), nats', fontsize=16)
+        plt.ylabel('Count', fontsize=16)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_token_log.png', dpi=300)
 
-        # plt.show()
-        plt.savefig(f'out/post_text/img/{args.ds}_posts_char.png')
-
-        df['log_2(Char Len)'] = np.log2(df['Char Len'])
-        mx, mx_ = df['log_2(Char Len)'].min(), df['log_2(Char Len)'].max()
-
-        g = sns.displot(data=df, x='log_2(Char Len)', height=height, aspect=aspect)
-        g.set(xlim=(mx, mx_))
-        g.ax.set_title(f'{title} - log_2(Char Len) by Post', fontsize=18)
-        g.ax.set_xlabel('log_2(# of Chars)', fontsize=18)
-        g.ax.set_ylabel('# of Posts', fontsize=18)
-        g.ax.tick_params(labelsize=12)
-        plt.subplots_adjust(top=0.93)
-
-        # plt.show()
-        plt.savefig(f'out/post_text/img/{args.ds}_posts_char_log.png')
+        plt.clf()
 
 
-def token_dist(subset):
+def type_dist(data):
     for tok in tokenizers:
         df = []
-        for size, cnt in tqdm(text[tok.NAME]['toklen_dist'][subset].items()):
+        for size, cnt in tqdm(data[tok.NAME]['typecnt_dist'].items()):
             size = int(size)
             df.extend([{
-                'Token Len': size
+                'Types': size
             }] * cnt)
-        df = pd.DataFrame(df)
-        dsc = df.describe()
-        out = display_num(dsc['Token Len']['mean']) + ' & '
-        out += display_num(dsc['Token Len']['std']) + ' & '
 
-        out += display_num(dsc['Token Len']['min']) + ' & '
-        out += display_num(dsc['Token Len']['25%']) + ' & '
-        out += display_num(dsc['Token Len']['50%']) + ' & '
-        out += display_num(dsc['Token Len']['75%']) + ' & '
-        out += display_num(dsc['Token Len']['max']) + ' \\\\ '
+        df = pd.DataFrame(df)
+
+        dsc = df.describe()
+
+        out = 'Type Stats (Latex) & '
+        out += display_num(dsc['Types']['mean']) + ' & '
+        out += display_num(dsc['Types']['std']) + ' & '
+
+        out += display_num(dsc['Types']['min']) + ' & '
+        out += display_num(dsc['Types']['25%']) + ' & '
+        out += display_num(dsc['Types']['50%']) + ' & '
+        out += display_num(dsc['Types']['75%']) + ' & '
+        out += display_num(dsc['Types']['max']) + ' \\\\ '
 
         print(out)
 
-        if filt == 'en':
-            sns.set_theme()
+        sns.set_theme()
 
-            height = 8
-            aspect = 1
+        sns.histplot(data=df, x='Types', discrete=True)
+        plt.title(f'{title} - Types per Post', fontsize=18)
+        plt.xlabel('Types', fontsize=16)
+        plt.ylabel('Count', fontsize=16)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_type.png', dpi=300)
 
-            mx, mx_ = df['Token Len'].min(), df['Token Len'].max()
+        plt.clf()
 
-            g = sns.displot(data=df, x='Token Len', height=height, aspect=aspect)
-            g.set(xlim=(mx, mx_))
-            g.ax.set_title(f'{title} - Token Len by Post', fontsize=18)
-            g.ax.set_xlabel('# of Token', fontsize=18)
-            g.ax.set_ylabel('# of Posts', fontsize=18)
-            g.ax.tick_params(labelsize=12)
-            plt.subplots_adjust(top=0.93)
+        df['log(Types)'] = np.log(df['Types'])
+        sns.histplot(data=df, x='log(Types)')
+        plt.title(f'{title} - log(Types) per Post', fontsize=18)
+        plt.xlabel('log(Types), nats', fontsize=16)
+        plt.ylabel('Count', fontsize=16)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_type_log.png', dpi=300)
 
-            # plt.show()
-            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_token.png')
-
-            df['log_2(Token Len)'] = np.log2(df['Token Len'])
-            mx, mx_ = df['log_2(Token Len)'].min(), df['log_2(Token Len)'].max()
-
-            g = sns.displot(data=df, x='log_2(Token Len)', height=height, aspect=aspect)
-            g.set(xlim=(mx, mx_))
-            g.ax.set_title(f'{title} - log_2(Token Len) by Post', fontsize=18)
-            g.ax.set_xlabel('log_2(# of Tokens)', fontsize=18)
-            g.ax.set_ylabel('# of Posts', fontsize=18)
-            g.ax.tick_params(labelsize=12)
-            plt.subplots_adjust(top=0.93)
-
-            # plt.show()
-            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_token_log.png')
+        plt.clf()
 
 
-def type_dist(subset):
+def type_rank_freq_plot(data, fold='cased'):
     for tok in tokenizers:
-        df = []
-        for size, cnt in tqdm(text[tok.NAME]['typecnt_dist'][subset].items()):
-            size = int(size)
-            df.extend([{
-                'Type Count': size
-            }] * cnt)
-        df = pd.DataFrame(df)
-        dsc = df.describe()
-        out = display_num(dsc['Type Count']['mean']) + ' & '
-        out += display_num(dsc['Type Count']['std']) + ' & '
-
-        out += display_num(dsc['Type Count']['min']) + ' & '
-        out += display_num(dsc['Type Count']['25%']) + ' & '
-        out += display_num(dsc['Type Count']['50%']) + ' & '
-        out += display_num(dsc['Type Count']['75%']) + ' & '
-        out += display_num(dsc['Type Count']['max']) + ' \\\\ '
-
-        print(out)
-
-        if filt == 'en':
-            sns.set_theme()
-
-            height = 8
-            aspect = 1
-
-            mx, mx_ = df['Type Count'].min(), df['Type Count'].max()
-
-            g = sns.displot(data=df, x='Type Count', height=height, aspect=aspect)
-            g.set(xlim=(mx, mx_))
-            g.ax.set_title(f'{title} - Type Count by Post', fontsize=18)
-            g.ax.set_xlabel('# of Types', fontsize=18)
-            g.ax.set_ylabel('# of Posts', fontsize=18)
-            g.ax.tick_params(labelsize=12)
-            plt.subplots_adjust(top=0.93)
-
-            # plt.show()
-            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type.png')
-
-            df['log_2(Type Count)'] = np.log2(df['Type Count'])
-            mx, mx_ = df['log_2(Type Count)'].min(), df['log_2(Type Count)'].max()
-
-            g = sns.displot(data=df, x='log_2(Type Count)', height=height, aspect=aspect)
-            g.set(xlim=(mx, mx_))
-            g.ax.set_title(f'{title} - log_2(Type Count) by Post', fontsize=18)
-            g.ax.set_xlabel('log_2(# of Types)', fontsize=18)
-            g.ax.set_ylabel('# of Posts', fontsize=18)
-            g.ax.tick_params(labelsize=12)
-            plt.subplots_adjust(top=0.93)
-
-            # plt.show()
-            plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type_log.png')
-
-
-def type_rank_freq_plot(filt, fold='cased'):
-    if filt != 'en':
-        return
-
-    for tok in tokenizers:
-        total = sum(text[tok.NAME][fold][filt].values())
+        total = sum(data[tok.NAME][fold].values())
 
         df = []
-        for ix, (t, cnt) in enumerate(sorted(text[tok.NAME][fold][filt].items(), key=lambda kv: kv[1], reverse=True)):
+        for ix, (t, cnt) in enumerate(sorted(data[tok.NAME][fold].items(), key=lambda kv: kv[1], reverse=True)):
             df.append({
                 'type': t,
                 'rank': ix + 1,
@@ -223,16 +189,91 @@ def type_rank_freq_plot(filt, fold='cased'):
 
         df = pd.DataFrame(df)
 
-        height = 8
-        aspect = 1.25
-
         sns.set_theme()
-        g = sns.relplot(data=df, x='log_rank', y='log_freq', height=height, aspect=aspect)  # ax=ax)
-        g.ax.set_title(f'{title} - Log Frequency Type Plot', fontsize=18)
-        plt.subplots_adjust(top=0.95, bottom=0.08, left=0.08)
+        sns.scatterplot(data=df, x='log_rank', y='log_freq')
+        plt.title(f'{title} - Type Rank Frequency', fontsize=18)
+        plt.xlabel('log(rank)', fontsize=16)
+        plt.ylabel('log(freq)', fontsize=16)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_{tok.NAME}_type_logfreq.png', dpi=300)
 
-        # plt.show()
-        plt.savefig(f'out/post_text/img/{args.ds}_posts_{tok.NAME}_type_logfreq.png')
+        plt.clf()
+
+
+def load(subset='all'):
+    try:
+        return json.load(open(f'out/post_text/{subset}_{args.ds}_posts_text.json', 'r+'))
+    except FileNotFoundError:
+        print_every = 100_000
+
+        shell = {'chars': 0, 'charlen_dist': defaultdict(int)}
+        for tok in tokenizers:
+            shell[tok.NAME] = {
+                'cased': {},
+                'toklen_dist': defaultdict(int),
+                'typecnt_dist': defaultdict(int),
+            }
+
+        data = defaultdict(lambda: deepcopy(shell))
+        cnt = 0
+        for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
+            for post in convo.posts.values():
+                if post.lang is None:
+                    res = get_detector().FindLanguage(text=post.text)
+                    post.lang = res.language if res.is_reliable else 'und'
+
+                lx = len(post.text)
+                data[post.lang]['chars'] += lx
+                data[post.lang]['charlen_dist'][lx] += 1
+                data['all']['chars'] += lx
+                data['all']['charlen_dist'][lx] += 1
+                if post.lang == 'en' or post.lang == 'und':
+                    data['en_und']['chars'] += lx
+                    data['en_und']['charlen_dist'][lx] += 1
+
+                for tok in tokenizers:
+                    ts = tok.split(post.text)
+                    tx = len(ts)
+                    tx_ = len(set(ts))
+                    data[post.lang][tok.NAME]['toklen_dist'][tx] += 1
+                    data[post.lang][tok.NAME]['typecnt_dist'][tx_] += 1
+                    data['all'][tok.NAME]['toklen_dist'][tx] += 1
+                    data['all'][tok.NAME]['typecnt_dist'][tx_] += 1
+                    if post.lang == 'en' or post.lang == 'und':
+                        data['en_und'][tok.NAME]['toklen_dist'][tx] += 1
+                        data['en_und'][tok.NAME]['typecnt_dist'][tx_] += 1
+                    for t in ts:
+                        data[post.lang][tok.NAME]['cased'][t] = data[post.lang][tok.NAME]['cased'].get(t, 0) + 1
+                        data['all'][tok.NAME]['cased'][t] = data['all'][tok.NAME]['cased'].get(t, 0) + 1
+                        if post.lang == 'en' or post.lang == 'und':
+                            data['en_und'][tok.NAME]['cased'][t] = data['en_und'][tok.NAME]['cased'].get(t, 0) + 1
+
+                cnt += 1
+                if cnt % print_every == 0:
+                    print(f'Processed {display_num(cnt)} posts.')
+
+        print('Aggregating token-level stats and distributions')
+        for tok in tokenizers:
+            # uncased tokens
+            print(f'{tok.NAME} -- calculate uncased...')
+            for lang in data:
+                data[lang][tok.NAME]['uncased'] = defaultdict(int)
+
+                # calculate per lang uncased
+                data[lang][tok.NAME]['cased'] = dict(data[lang][tok.NAME]['cased'])
+
+                for term, count in data[lang][tok.NAME]['cased'].items():
+                    data[lang][tok.NAME]['uncased'][term.lower()] += count
+
+                data[lang][tok.NAME]['uncased'] = dict(data[lang][tok.NAME]['uncased'])
+                data[lang][tok.NAME]['toklen_dist'] = dict(data[lang][tok.NAME]['toklen_dist'])
+                data[lang][tok.NAME]['typecnt_dist'] = dict(data[lang][tok.NAME]['typecnt_dist'])
+                data[lang]['charlen_dist'] = dict(data[lang]['charlen_dist'])
+
+        print('Writing')
+        for lang in tqdm(data):
+            json.dump(data[lang], open(f'out/post_text/{lang}_{args.ds}_posts_text.json', 'w+'))
+
+        return data[subset]
 
 
 if __name__ == '__main__':
@@ -249,7 +290,6 @@ if __name__ == '__main__':
 
     args = parser.parse_args()
 
-    tokenizers = [SpaceTokenizer]
     data_root = args.data
     os.makedirs('out/', exist_ok=True)
 
@@ -284,134 +324,23 @@ if __name__ == '__main__':
     else:
         raise ValueError(args)
 
-    try:
-        text = json.load(open(f'out/post_text/{args.ds}_posts_text.json', 'r+'))
-    except FileNotFoundError:
-        print_every = 100_000
-
-        text = {'chars': defaultdict(int), 'charlen_dist': defaultdict(lambda: defaultdict(int))}
-        for tok in tokenizers:
-            text[tok.NAME] = {
-                'cased': defaultdict(dict),
-                'toklen_dist': defaultdict(lambda: defaultdict(int)),
-                'typecnt_dist': defaultdict(lambda: defaultdict(int)),
-            }
-
-        cnt = 0
-        for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
-            for post in convo.posts.values():
-                if post.lang is None:
-                    res = get_detector().FindLanguage(text=post.text)
-                    post.lang = res.language if res.is_reliable else 'und'
-
-                lx = len(post.text)
-                text['chars'][post.lang] += lx
-                text['charlen_dist'][post.lang][lx] += 1
-                for tok in tokenizers:
-                    ts = tok.split(post.text)
-                    text[tok.NAME]['toklen_dist'][post.lang][len(ts)] += 1
-                    text[tok.NAME]['typecnt_dist'][post.lang][len(set(ts))] += 1
-                    for t in ts:
-                        text[tok.NAME]['cased'][post.lang][t] = text[tok.NAME]['cased'][post.lang].get(t, 0) + 1
-
-                cnt += 1
-                if cnt % print_every == 0:
-                    print(f'Processed {display_num(cnt)} posts.')
-
-        # aggregate chars
-        print('Aggregating character counts')
-        text['chars'] = dict(text['chars'])
-        text['chars']['all'] = sum(text['chars'].values())
-        text['chars']['en & und'] = text['chars'].get('en', 0) + text['chars'].get('und', 0)
-
-        # aggregate char distributions
-        print('Unpacking char length distributions')
-        text['charlen_dist'] = dict(text['charlen_dist'])
-        total = defaultdict(int)
-        en_und = defaultdict(int)
-        for lang, dist in text['charlen_dist'].items():
-            for size, cnt in dist.items():
-                total[size] += cnt
-                if lang == 'en' or lang == 'und':
-                    en_und[size] += cnt
-            text['charlen_dist'][lang] = dict(dist)
-        text['charlen_dist']['all'] = dict(total)
-        text['charlen_dist']['en & und'] = dict(en_und)
-
-        print('Aggregating token-level stats and distributions')
-        for tok in tokenizers:
-            text[tok.NAME]['uncased'] = {}
-
-            # calculate all tokens
-            print(f'{tok.NAME} -- calculate all token cased distribution...')
-            text[tok.NAME]['cased']['all'] = {}
-            for lang, lang_cnts in text[tok.NAME]['cased'].items():
-                for term, cnt in lang_cnts.items():
-                    text[tok.NAME]['cased']['all'][term] = text[tok.NAME]['cased']['all'].get(term, 0) + cnt
-
-            # en & und calculation
-            text[tok.NAME]['cased']['en & und'] = text[tok.NAME]['cased'].get('en', {})
-            for term, cnt in text[tok.NAME]['cased'].get('und', {}).items():
-                text[tok.NAME]['cased']['en & und'][term] = text[tok.NAME]['cased']['en & und'].get(term, 0) + cnt
-
-            # uncased tokens
-            print(f'{tok.NAME} -- calculate uncased...')
-            for lang in text[tok.NAME]['cased']:
-                # calculate per lang uncased
-                text[tok.NAME]['cased'][lang] = dict(text[tok.NAME]['cased'][lang])
-                text[tok.NAME]['uncased'][lang] = defaultdict(int)
-                for term, count in text[tok.NAME]['cased'][lang].items():
-                    text[tok.NAME]['uncased'][lang][term.lower()] += count
-                text[tok.NAME]['uncased'][lang] = dict(text[tok.NAME]['uncased'][lang])
-
-            text[tok.NAME]['cased'] = dict(text[tok.NAME]['cased'])
-
-            # token distribution per post
-            print(f'{tok.NAME} -- aggregate token per post dist')
-            total = {}
-            en_und = {}
-            text[tok.NAME]['toklen_dist'] = dict(text[tok.NAME]['toklen_dist'])
-            for lang, dist in text[tok.NAME]['toklen_dist'].items():
-                for size, cnt in dist.items():
-                    total[size] = total.get(size, 0) + cnt
-                    if lang == 'en' or lang == 'und':
-                        en_und[size] = en_und.get(size, 0) + cnt
-                text[tok.NAME]['toklen_dist'][lang] = dict(dist)
-            text[tok.NAME]['toklen_dist']['all'] = dict(total)
-            text[tok.NAME]['toklen_dist']['en & und'] = dict(en_und)
-
-            # token distribution per post
-            print(f'{tok.NAME} -- aggregate type per post dist')
-            total = {}
-            en_und = {}
-            text[tok.NAME]['typecnt_dist'] = dict(text[tok.NAME]['typecnt_dist'])
-            for lang, dist in text[tok.NAME]['typecnt_dist'].items():
-                for size, cnt in dist.items():
-                    total[size] = total.get(size, 0) + cnt
-                    if lang == 'en' or lang == 'und':
-                        en_und[size] = en_und.get(size, 0) + cnt
-                text[tok.NAME]['typecnt_dist'][lang] = dict(dist)
-            text[tok.NAME]['typecnt_dist']['all'] = dict(total)
-            text[tok.NAME]['typecnt_dist']['en & und'] = dict(en_und)
-
-        json.dump(text, open(f'out/post_text/{args.ds}_posts_text.json', 'w+'))
-        print('\n' * 5)
+    tgt = 'en_und'
+    text = load(subset=tgt)
+    print('\n' * 5)
 
     print('-' * 60)
-    for filt in ['all', 'en & und', 'en']:
-        print(filt)
-        print(f'Chars: {display_num(text["chars"][filt])}')
+    print(f'Chars: {display_num(text["chars"])}')
+    print()
+    for tx in tokenizers:
+        print(f'{tx.NAME} types (cased): {display_num(len(text[tx.NAME]["cased"]))}')
+        print(f'{tx.NAME} tokens (cased): {display_num(sum(text[tx.NAME]["cased"].values()))}')
         print()
-        for tok in tokenizers:
-            print(f'{tok.NAME} types (cased): {display_num(len(text[tok.NAME]["cased"][filt]))}')
-            print(f'{tok.NAME} tokens (cased): {display_num(sum(text[tok.NAME]["cased"][filt].values()))}')
-            print()
-            print(f'{tok.NAME} types (uncased): {display_num(len(text[tok.NAME]["uncased"][filt]))}')
-            print(f'{tok.NAME} tokens (uncased): {display_num(sum(text[tok.NAME]["uncased"][filt].values()))}')
+        print(f'{tx.NAME} types (uncased): {display_num(len(text[tx.NAME]["uncased"]))}')
+        print(f'{tx.NAME} tokens (uncased): {display_num(sum(text[tx.NAME]["uncased"].values()))}')
 
-        # char_dist(filt)
-        # token_dist(filt)
-        # type_dist(filt)
-        # type_rank_freq_plot(filt)
+    # char_dist(text)
+    # token_dist(text)
+    # type_dist(text)
+    # type_rank_freq_plot(text, fold='uncased')
 
-        print('-' * 60)
+    print('-' * 60)
