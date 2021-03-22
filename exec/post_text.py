@@ -285,7 +285,9 @@ if __name__ == '__main__':
                         choices=['cmv', 'rd', 'ntt', 'ctq',
                                  '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
                                  '4chan-g', '4chan-pol',
-                                 'outlets', 'bf'],
+                                 'outlets', 'bf',
+                                 'chan'
+                                 ],
                         help='Dataset key in selection')
 
     args = parser.parse_args()
@@ -301,6 +303,10 @@ if __name__ == '__main__':
         dataset = 'Outlets/'
         cons = FBPost
         title = 'Outlets'
+    elif args.ds == 'chan':
+        dataset = '4chan/*/'
+        cons = ChanPost
+        title = '4Chan'
     elif '4chan' in args.ds:
         dataset = args.ds.replace('-', '/') + '/'
         cons = ChanPost
@@ -338,9 +344,9 @@ if __name__ == '__main__':
         print(f'{tx.NAME} types (uncased): {display_num(len(text[tx.NAME]["uncased"]))}')
         print(f'{tx.NAME} tokens (uncased): {display_num(sum(text[tx.NAME]["uncased"].values()))}')
 
-    # char_dist(text)
-    # token_dist(text)
-    # type_dist(text)
-    # type_rank_freq_plot(text, fold='uncased')
+    char_dist(text)
+    token_dist(text)
+    type_dist(text)
+    type_rank_freq_plot(text, fold='uncased')
 
     print('-' * 60)
