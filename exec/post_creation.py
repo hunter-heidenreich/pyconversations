@@ -130,11 +130,11 @@ if __name__ == '__main__':
     min_thresh_dt = datetime(year=2005, month=1, day=1, hour=1, minute=1, second=1)
 
     if args.sel == 'bf':
-        dataset = 'BuzzFace/'
+        dataset = 'FB/BuzzFace/'
         cons = FBPost
         title = 'BuzzFace'
     elif args.sel == 'outlets':
-        dataset = 'Outlets/'
+        dataset = 'FB/Outlets/'
         cons = FBPost
         title = 'Outlets'
     elif args.sel == 'chan':
@@ -142,11 +142,11 @@ if __name__ == '__main__':
         cons = ChanPost
         title = '4Chan'
     elif '4chan' in args.sel:
-        dataset = args.sel.replace('-', '/') + '/'
+        dataset = args.ds.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
     elif args.sel == 'ctq':
-        dataset = 'CTQuotes/'
+        dataset = 'Twitter/CTQ/'
         cons = Tweet
         title = 'CTQuotes'
     elif args.sel == 'ntt':

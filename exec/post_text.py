@@ -293,11 +293,11 @@ if __name__ == '__main__':
     os.makedirs('out/', exist_ok=True)
 
     if args.sel == 'bf':
-        dataset = 'BuzzFace/'
+        dataset = 'FB/BuzzFace/'
         cons = FBPost
         title = 'BuzzFace'
     elif args.sel == 'outlets':
-        dataset = 'Outlets/'
+        dataset = 'FB/Outlets/'
         cons = FBPost
         title = 'Outlets'
     elif args.sel == 'chan':
@@ -305,11 +305,11 @@ if __name__ == '__main__':
         cons = ChanPost
         title = '4Chan'
     elif '4chan' in args.sel:
-        dataset = args.sel.replace('-', '/') + '/'
+        dataset = args.ds.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
     elif args.sel == 'ctq':
-        dataset = 'CTQuotes/'
+        dataset = 'Twitter/CTQ/'
         cons = Tweet
         title = 'CTQuotes'
     elif args.sel == 'ntt':
