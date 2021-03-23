@@ -174,7 +174,9 @@ if __name__ == '__main__':
     df = []
     for ts in sel:
         dx = datetime.fromtimestamp(float(ts))
+        if args.year and dx.year != args.year:
+            continue
         df.append({'Creation Date': dx})
     df = pd.DataFrame(df)
 
-    draw_timestamp(df, year=args.year)
+    draw_timestamp(df, year=args.year if args.year else 'all')
