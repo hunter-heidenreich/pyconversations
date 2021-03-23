@@ -66,7 +66,7 @@ if __name__ == '__main__':
         cons = Tweet
         title = 'CTQuotes'
     elif args.sel == 'ntt':
-        dataset = 'threads/'
+        dataset = 'Twitter/NTT/'
         cons = Tweet
         title = 'NewsTweet'
     elif args.sel == 'cmv':

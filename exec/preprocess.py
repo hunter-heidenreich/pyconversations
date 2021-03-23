@@ -16,8 +16,8 @@ def preprocess_buzzface():
         print(f'{pagename}: {len(convo_chunk)} conversations')
         lines = [json.dumps(convo.to_json()) for convo in convo_chunk]
 
-        os.makedirs(out + 'BuzzFace', exist_ok=True)
-        with open(out + f'BuzzFace/{pagename}.json', 'w+') as fp:
+        os.makedirs(out + 'FB/BuzzFace', exist_ok=True)
+        with open(out + f'FB/BuzzFace/{pagename}.json', 'w+') as fp:
             fp.write('\n'.join(lines))
 
 
@@ -26,8 +26,8 @@ def preprocess_outlets():
         print(f'{pagename}: {len(convo_chunk)} conversations')
         lines = [json.dumps(convo.to_json()) for convo in convo_chunk]
 
-        os.makedirs(out + 'Outlets', exist_ok=True)
-        with open(out + f'Outlets/{pagename}.json', 'w+') as fp:
+        os.makedirs(out + 'FB/Outlets', exist_ok=True)
+        with open(out + f'FB/Outlets/{pagename}.json', 'w+') as fp:
             fp.write('\n'.join(lines))
 
 
@@ -48,7 +48,7 @@ def pre_process_quote_tweets(sharding=100):
     print(f'{total} conversations')
     print(f'Sharding into {sharding} chunks with ~{total / sharding} conversations per chunk.')
 
-    os.makedirs(out + f'CTQuotes/', exist_ok=True)
+    os.makedirs(out + f'Twitter/CTQ/', exist_ok=True)
     cap = (total // sharding) + 1
     cache = []
     shard = 0
@@ -57,18 +57,18 @@ def pre_process_quote_tweets(sharding=100):
         cache.append(json.dumps(convo.to_json()))
 
         if len(cache) >= cap:
-            with open(out + f'CTQuotes/{shard:02d}.json', 'w+') as fp:
+            with open(out + f'Twitter/CTQ/{shard:02d}.json', 'w+') as fp:
                 fp.write('\n'.join(cache))
             cache = []
             shard += 1
 
     if cache:
-        with open(out + f'CTQuotes/{shard:02d}.json', 'w+') as fp:
+        with open(out + f'Twitter/CTQ/{shard:02d}.json', 'w+') as fp:
             fp.write('\n'.join(cache))
 
 
 def preprocess_newstweetthreads(per_file=1_000):
-    os.makedirs(out + f'threads/', exist_ok=True)
+    os.makedirs(out + f'Twitter/NTT/', exist_ok=True)
 
     write_cache = []
     cnt = 0
@@ -79,13 +79,13 @@ def preprocess_newstweetthreads(per_file=1_000):
         write_cache.extend([json.dumps(convo.to_json()) for convo in convo_chunk])
 
         if len(write_cache) >= per_file:
-            with open(out + f'threads/{cnt:06d}.json', 'w+') as fp:
+            with open(out + f'Twitter/NTT/{cnt:04d}.json', 'w+') as fp:
                 fp.write('\n'.join(write_cache))
             write_cache = []
             cnt += 1
 
     if write_cache:
-        with open(out + f'threads/{cnt:06d}.json', 'w+') as fp:
+        with open(out + f'Twitter/NTT/{cnt:06d}.json', 'w+') as fp:
             fp.write('\n'.join(write_cache))
 
 
