@@ -132,7 +132,7 @@ if __name__ == '__main__':
                             'ntt', 'ctq',
                             '4chan-news', '4chan-sci', '4chan-his', '4chan-x', '4chan-g', '4chan-pol',
                             'outlets', 'bf'
-                                 ],
+                        ],
                         help='Dataset key in selection')
 
     args = parser.parse_args()

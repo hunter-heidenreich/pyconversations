@@ -30,12 +30,15 @@ class Conversation:
     def add_post(self, post):
         if post.uid in self._posts and self._posts[post.uid]:
             self._posts[post.uid] |= post
+
+            # update knowledge of edges
+            self._edges[post.uid] |= post.reply_to
         else:
             # to dictionary
             self._posts[post.uid] = post
 
-        # update knowledge of edges
-        self._edges[post.uid] = post.reply_to
+            # update knowledge of edges
+            self._edges[post.uid] = post.reply_to
 
         # clear cached stats
         self._stats = {}
@@ -51,14 +54,12 @@ class Conversation:
         self._stats = {}
 
     def __add__(self, other):
-        ps = dict(self._posts)
-        es = dict(self._edges)
-
-        # merge from other
-        ps.update(other.posts)
-        es.update(other.edges)
-
-        return Conversation(posts=ps, edges=es)
+        convo = Conversation()
+        for post in other.posts.values():
+            convo.add_post(post)
+        for post in self.posts.values():
+            convo.add_post(post)
+        return convo
 
     def _build_graph(self, directed=False):
         if not directed:
@@ -105,24 +106,20 @@ class Conversation:
         """
         segments = []
         for node_set in nx.connected_components(self._build_graph()):
-            segments.append(
-                Conversation(posts={uid: self._posts[uid] for uid in node_set},
-                             edges={uid: self._edges[uid] for uid in node_set})
-            )
+            convo = Conversation()
+            for uid in node_set:
+                convo.add_post(self.posts[uid])
+            segments.append(convo)
 
         return segments
 
     def to_json(self):
-        return {
-            'posts': {uid: post.to_json() for uid, post in self._posts.items()},
-            'edges': {uid: list(reps) for uid, reps in self._edges.items()}
-        }
+        return [post.to_json() for post in self.posts.values()]
 
     @staticmethod
     def from_json(raw, cons):
-        ps = [cons.from_json(pjson) for pjson in raw['posts'].values()]
         convo = Conversation()
-        for p in ps:
+        for p in [cons.from_json(pjson) for pjson in raw]:
             convo.add_post(p)
         return convo
 

@@ -116,8 +116,7 @@ def test_to_from_json(mock_convo):
     assert 0 in mock_convo.edges
 
     raw_json = mock_convo.to_json()
-    new_convo = Conversation()
-    new_convo.from_json(raw_json, Tweet)
+    new_convo = Conversation.from_json(raw_json, Tweet)
 
     assert 0 in new_convo.posts
     assert 0 in new_convo.edges
@@ -150,9 +149,6 @@ def test_stats(mock_convo):
 
     assert mock_convo.density == 0
     assert mock_convo.degree_hist == [1]
-    assert mock_convo.max_clique == 1
-    assert mock_convo.avg_cluster == 0
-    assert mock_convo.tree_width == 0
     assert mock_convo.assortativity is None
 
 
@@ -167,45 +163,15 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.sources == {0}
     assert mock_convo_path.density == 1.0
     assert mock_convo_path.degree_hist == [0, 2]
-    assert mock_convo_path.in_degree_hist == {0: 1, 1: 1}
-    assert mock_convo_path.out_degree_hist == {0: 1, 1: 1}
-    assert mock_convo_path.max_clique == 2
-    assert mock_convo_path.avg_cluster == 0
-    assert mock_convo_path.tree_width == 1
+    assert mock_convo_path.in_degree_hist == [0, 1]
+    assert mock_convo_path.out_degree_hist == [1, 0]
     assert np.isnan(mock_convo_path.assortativity)
 
-    assert mock_convo_path.centrality_eigen is None
-    assert mock_convo_path.centrality_katz == {0: 0.7071067811865476, 1: 0.7071067811865476}
-    assert mock_convo_path.centrality_closeness == {0: 1.0, 1: 1.0}
-    assert mock_convo_path.centrality_load == {0: 0.0, 1: 0.0}
-    assert mock_convo_path.centrality_degree == {0: 1.0, 1: 1.0}
-    assert mock_convo_path.centrality_info == {0: 1.0, 1: 1.0}
-    assert mock_convo_path.centrality_betweeness == {0: 0.0, 1: 0.0}
-    for v in mock_convo_path.centrality_current_flow_betweeness.values():
-        assert np.isnan(v)
-    assert mock_convo_path.centrality_harmonic == {0: 1.0, 1: 1.0}
-    assert mock_convo_path.centrality_second_order == {0: 0.0, 1: 0.0}
-    assert mock_convo_path.estrada_index == 3.086161269630487
-
-    assert mock_convo_path.longest_path == 2
     assert mock_convo_path.diameter == 1
     assert mock_convo_path.radius == 1
     assert mock_convo_path.eccentricity == {0: 1, 1: 1}
 
-    assert mock_convo_path.non_randomness == 1.0
-    assert np.isnan(mock_convo_path.non_randomness_rel)
-
-    assert mock_convo_path.wiener_index == 1.0
-    assert mock_convo_path.closeness_vitality == {0: 1, 1: 1}
-    assert mock_convo_path.s_metric == 1.0
-    assert mock_convo_path.small_sigma is None
-    assert mock_convo_path.small_omega is None
-
-    assert (mock_convo_path.simrank == np.array([[1.0, 0.0], [0.0, 1.0]])).all()
-
     assert mock_convo_path.rich_club_coefficient is None
-
-    assert mock_convo_path.reciprocity == 0
 
     assert mock_convo_path.duration is None
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
