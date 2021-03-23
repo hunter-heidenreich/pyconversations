@@ -113,11 +113,13 @@ if __name__ == '__main__':
     parser.add_argument('--ds', dest='ds', type=str, default='bf',
                         const='bf',
                         nargs='?',
-                        choices=['cmv', 'rd', 'ntt', 'ctq',
-                                 '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
-                                 '4chan-g', '4chan-pol',
-                                 'outlets', 'bf',
-                                 'chan'],
+                        choices=[
+                            'cmv', 'rd',
+                            'ntt', 'ctq',
+                            '4chan-news', '4chan-sci', '4chan-his', '4chan-x', '4chan-g', '4chan-pol',
+                            'outlets', 'bf',
+                            'chan'
+                        ],
                         help='Dataset key in selection')
     parser.add_argument('--year', dest='year', type=int, default=None)
 
@@ -175,18 +177,4 @@ if __name__ == '__main__':
         df.append({'Creation Date': dx})
     df = pd.DataFrame(df)
 
-    draw_timestamp(df)
-
-    if args.year:
-        df = []
-        for ts in sel:
-            dx = datetime.fromtimestamp(float(ts))
-
-            if dx.year != args.year:
-                continue
-
-            df.append({'Creation Date': dx})
-
-        df = pd.DataFrame(df)
-
-        draw_timestamp(df, year=args.year)
+    draw_timestamp(df, year=args.year)
