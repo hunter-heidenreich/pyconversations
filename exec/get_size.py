@@ -29,7 +29,7 @@ def display_num(num):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
-    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+    parser.add_argument('--sel', dest='sel', type=str, default='bf',
                         const='bf',
                         nargs='?',
                         choices=[
@@ -46,40 +46,40 @@ if __name__ == '__main__':
     data_root = args.data
     os.makedirs('out/', exist_ok=True)
 
-    if args.ds == 'bf':
+    if args.sel == 'bf':
         dataset = 'BuzzFace/'
         cons = FBPost
-    elif args.ds == 'outlets':
+    elif args.sel == 'outlets':
         dataset = 'Outlets/'
         cons = FBPost
-    elif '4chan' in args.ds:
-        dataset = args.ds.replace('-', '/') + '/'
+    elif '4chan' in args.sel:
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
-    elif args.ds == 'chan':
+    elif args.sel == 'chan':
         dataset = '4chan/*/'
         cons = ChanPost
         title = '4Chan'
-    elif args.ds == 'ctq':
+    elif args.sel == 'ctq':
         dataset = 'CTQuotes/'
         cons = Tweet
-    elif args.ds == 'ntt':
+    elif args.sel == 'ntt':
         dataset = 'Twitter/NTT/'
         cons = Tweet
-    elif args.ds == 'cmv':
+    elif args.sel == 'cmv':
         dataset = 'Reddit/CMV/'
         cons = RedditPost
-    elif args.ds == 'rd':
+    elif args.sel == 'rd':
         dataset = 'Reddit/RD_*/'
         cons = RedditPost
     else:
         raise ValueError(args)
 
     try:
-        all_posts = json.load(open(f'out/{args.ds}_size.json', 'r+'))
+        all_posts = json.load(open(f'out/{args.sel}_size.json', 'r+'))
         all_posts['Start datetime'] = datetime.fromtimestamp(all_posts['Start datetime'])
         all_posts['End datetime'] = datetime.fromtimestamp(all_posts['End datetime'])
 
-        en_posts = json.load(open(f'out/en_und_{args.ds}_size.json', 'r+'))
+        en_posts = json.load(open(f'out/en_und_{args.sel}_size.json', 'r+'))
         en_posts['Start datetime'] = datetime.fromtimestamp(en_posts['Start datetime'])
         en_posts['End datetime'] = datetime.fromtimestamp(en_posts['End datetime'])
     except FileNotFoundError:
@@ -128,17 +128,17 @@ if __name__ == '__main__':
 
         all_posts['Start datetime'] = all_posts['Start datetime'].timestamp()
         all_posts['End datetime'] = all_posts['End datetime'].timestamp()
-        json.dump(all_posts, open(f'out/{args.ds}_size.json', 'w+'))
+        json.dump(all_posts, open(f'out/{args.sel}_size.json', 'w+'))
         all_posts['Start datetime'] = datetime.fromtimestamp(all_posts['Start datetime'])
         all_posts['End datetime'] = datetime.fromtimestamp(all_posts['End datetime'])
 
         en_posts['Start datetime'] = en_posts['Start datetime'].timestamp()
         en_posts['End datetime'] = en_posts['End datetime'].timestamp()
-        json.dump(en_posts, open(f'out/en_und_{args.ds}_size.json', 'w+'))
+        json.dump(en_posts, open(f'out/en_und_{args.sel}_size.json', 'w+'))
         en_posts['Start datetime'] = datetime.fromtimestamp(en_posts['Start datetime'])
         en_posts['End datetime'] = datetime.fromtimestamp(en_posts['End datetime'])
 
-    t = f'{args.ds} & '
+    t = f'{args.sel} & '
     t += f'{display_num(all_posts["Posts"])} & {display_num(en_posts["Posts"])} & '
     t += f'{display_num(all_posts["Conversations"])} & {display_num(en_posts["Conversations"])} & '
 

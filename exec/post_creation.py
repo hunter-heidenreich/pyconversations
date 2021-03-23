@@ -36,9 +36,9 @@ def load(langs=None):
         days = {}
         if langs:
             for lang in langs:
-                days[lang] = json.load(open(f'out/post_creation/{lang}_{args.ds}_posts_time.json', 'r+'))
+                days[lang] = json.load(open(f'out/post_creation/{lang}_{args.sel}_posts_time.json', 'r+'))
         else:
-            pths = glob(f'out/post_creation/*_{args.ds}_posts_time.json')
+            pths = glob(f'out/post_creation/*_{args.sel}_posts_time.json')
 
             if not pths:
                 raise FileNotFoundError
@@ -75,7 +75,7 @@ def load(langs=None):
                 days['all'].append(post.created_at.timestamp())
 
         for lang, tx in days.items():
-            json.dump(tx, open(f'out/post_creation/{lang}_{args.ds}_posts_time.json', 'w+'))
+            json.dump(tx, open(f'out/post_creation/{lang}_{args.sel}_posts_time.json', 'w+'))
 
         if langs:
             days = {lang: tx for lang, tx in days.items() if lang in langs}
@@ -104,13 +104,13 @@ def draw_timestamp(ts, year='all'):
 
     plt.subplots_adjust(bottom=0.1, top=0.95)
 
-    plt.savefig(f'out/post_creation/img/{tgt}_{args.ds}_posts_time_{year}.png')
+    plt.savefig(f'out/post_creation/img/{tgt}_{args.sel}_posts_time_{year}.png')
 
 
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
-    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+    parser.add_argument('--sel', dest='sel', type=str, default='bf',
                         const='bf',
                         nargs='?',
                         choices=[
@@ -129,35 +129,35 @@ if __name__ == '__main__':
     os.makedirs('out/', exist_ok=True)
     min_thresh_dt = datetime(year=2005, month=1, day=1, hour=1, minute=1, second=1)
 
-    if args.ds == 'bf':
+    if args.sel == 'bf':
         dataset = 'BuzzFace/'
         cons = FBPost
         title = 'BuzzFace'
-    elif args.ds == 'outlets':
+    elif args.sel == 'outlets':
         dataset = 'Outlets/'
         cons = FBPost
         title = 'Outlets'
-    elif args.ds == 'chan':
+    elif args.sel == 'chan':
         dataset = '4chan/*/'
         cons = ChanPost
         title = '4Chan'
-    elif '4chan' in args.ds:
-        dataset = args.ds.replace('-', '/') + '/'
+    elif '4chan' in args.sel:
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
-    elif args.ds == 'ctq':
+    elif args.sel == 'ctq':
         dataset = 'CTQuotes/'
         cons = Tweet
         title = 'CTQuotes'
-    elif args.ds == 'ntt':
+    elif args.sel == 'ntt':
         dataset = 'Twitter/NTT/'
         cons = Tweet
         title = 'NewsTweet'
-    elif args.ds == 'cmv':
+    elif args.sel == 'cmv':
         dataset = 'Reddit/CMV/'
         cons = RedditPost
         title = 'BNC'
-    elif args.ds == 'rd':
+    elif args.sel == 'rd':
         dataset = 'Reddit/RD_*/'
         cons = RedditPost
         title = 'RedditDialog'

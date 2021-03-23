@@ -123,7 +123,7 @@ if __name__ == '__main__':
     parser = ArgumentParser('Demo executable of how one might read raw data into conversational format.')
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
     parser.add_argument('--out', dest='out', type=str, default='conversations/')
-    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+    parser.add_argument('--sel', dest='sel', type=str, default='bf',
                         const='bf',
                         nargs='?',
                         choices=[
@@ -140,19 +140,19 @@ if __name__ == '__main__':
     data_root = args.data
     out = data_root + args.out
 
-    if args.ds == 'bf':
+    if args.sel == 'bf':
         preprocess_buzzface()
-    elif args.ds == 'outlets':
+    elif args.sel == 'outlets':
         preprocess_outlets()
-    elif '4chan' in args.ds:
-        board = args.ds.split('-')[-1]
+    elif '4chan' in args.sel:
+        board = args.sel.split('-')[-1]
         preprocess_chunked_4chan(board)
-    elif args.ds == 'ctq':
+    elif args.sel == 'ctq':
         pre_process_quote_tweets()
-    elif args.ds == 'ntt':
+    elif args.sel == 'ntt':
         preprocess_newstweetthreads()
-    elif args.ds == 'cmv':
+    elif args.sel == 'cmv':
         preprocess_reddit_cmv()
-    elif args.ds[:2] == 'rd':
-        board = args.ds.split('-')[-1]
+    elif args.sel[:2] == 'rd':
+        board = args.sel.split('-')[-1]
         preprocess_reddit_dialog(board)

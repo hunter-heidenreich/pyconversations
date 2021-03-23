@@ -28,7 +28,7 @@ def display_num(num):
 if __name__ == '__main__':
     parser = ArgumentParser('Demo executable of how one might read raw data into conversational format.')
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
-    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+    parser.add_argument('--sel', dest='sel', type=str, default='bf',
                         const='bf',
                         nargs='?',
                         choices=[
@@ -45,35 +45,35 @@ if __name__ == '__main__':
     data_root = args.data
     os.makedirs('out/', exist_ok=True)
 
-    if args.ds == 'bf':
+    if args.sel == 'bf':
         dataset = 'BuzzFace/'
         cons = FBPost
         title = 'BuzzFace'
-    elif args.ds == 'outlets':
+    elif args.sel == 'outlets':
         dataset = 'Outlets/'
         cons = FBPost
         title = 'Outlets'
-    elif args.ds == 'chan':
+    elif args.sel == 'chan':
         dataset = '4chan/*/'
         cons = ChanPost
         title = '4Chan'
-    elif '4chan' in args.ds:
-        dataset = args.ds.replace('-', '/') + '/'
+    elif '4chan' in args.sel:
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
-    elif args.ds == 'ctq':
+    elif args.sel == 'ctq':
         dataset = 'CTQuotes/'
         cons = Tweet
         title = 'CTQuotes'
-    elif args.ds == 'ntt':
+    elif args.sel == 'ntt':
         dataset = 'Twitter/NTT/'
         cons = Tweet
         title = 'NewsTweet'
-    elif args.ds == 'cmv':
+    elif args.sel == 'cmv':
         dataset = 'Reddit/CMV/'
         cons = RedditPost
         title = 'BNC'
-    elif args.ds == 'rd':
+    elif args.sel == 'rd':
         dataset = 'Reddit/RD_*/'
         cons = RedditPost
         title = 'RedditDialog'
@@ -81,9 +81,10 @@ if __name__ == '__main__':
         raise ValueError(args)
 
     try:
-        langs = json.load(open(f'out/{args.ds}_posts_langs.json', 'r+'))
+        langs = json.load(open(f'out/{args.sel}_posts_langs.json', 'r+'))
     except FileNotFoundError:
         print_every = 250_000
+        cnt = 0
 
         langs = defaultdict(int)
         for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
@@ -94,27 +95,20 @@ if __name__ == '__main__':
 
                 langs[post.lang] += 1
 
+                cnt += 1
+                if cnt % print_every == 0:
+                    print(f'Processed {display_num(cnt)} posts.')
+
         langs = dict(langs)
-        json.dump(langs, open(f'out/{args.ds}_posts_langs.json', 'w+'))
+        json.dump(langs, open(f'out/{args.sel}_posts_langs.json', 'w+'))
 
     total = sum(langs.values())
     min_thresh = 0.005
-
-    # df = []
 
     lang_lookup = json.load(open('other/langs.json'))
     o = ''
     for lang, cnt in sorted(langs.items(), key=lambda kv: kv[1], reverse=True):
         if cnt > min_thresh * total:
-            # df.append({
-            #     'Language':  lang,
-            #     'Count': cnt
-            # })
             o += f'{lang}:{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][lang]} ({100 * cnt / total:.2f}\\%), '
-    print(o)
 
-    # df = pd.DataFrame(df)
-    # sns.set_theme()
-    # sns.barplot(data=df, x='Language', y='Count')
-    # plt.title(f'{title} - Detected Language')
-    # plt.savefig(f'out/{args.ds}_posts_langs.png')
+    print(o)

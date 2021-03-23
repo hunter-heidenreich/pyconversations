@@ -64,7 +64,7 @@ def char_dist(data):
     plt.title(f'{title} - Chars per Post', fontsize=18)
     plt.xlabel('Chars', fontsize=16)
     plt.ylabel('Count', fontsize=16)
-    plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_char.png', dpi=300)
+    plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_char.png', dpi=300)
 
     plt.clf()
 
@@ -73,7 +73,7 @@ def char_dist(data):
     plt.title(f'{title} - log(Chars) per Post', fontsize=18)
     plt.xlabel('log(Chars), nats', fontsize=16)
     plt.ylabel('Count', fontsize=16)
-    plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_char_log.png', dpi=300)
+    plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_char_log.png', dpi=300)
 
     plt.clf()
 
@@ -109,7 +109,7 @@ def token_dist(data):
         plt.title(f'{title} - Tokens per Post', fontsize=18)
         plt.xlabel('Tokens', fontsize=16)
         plt.ylabel('Count', fontsize=16)
-        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_token.png', dpi=300)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_token.png', dpi=300)
 
         plt.clf()
 
@@ -118,7 +118,7 @@ def token_dist(data):
         plt.title(f'{title} - log(Tokens) per Post', fontsize=18)
         plt.xlabel('log(Tokens), nats', fontsize=16)
         plt.ylabel('Count', fontsize=16)
-        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_token_log.png', dpi=300)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_token_log.png', dpi=300)
 
         plt.clf()
 
@@ -155,7 +155,7 @@ def type_dist(data):
         plt.title(f'{title} - Types per Post', fontsize=18)
         plt.xlabel('Types', fontsize=16)
         plt.ylabel('Count', fontsize=16)
-        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_type.png', dpi=300)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_type.png', dpi=300)
 
         plt.clf()
 
@@ -164,7 +164,7 @@ def type_dist(data):
         plt.title(f'{title} - log(Types) per Post', fontsize=18)
         plt.xlabel('log(Types), nats', fontsize=16)
         plt.ylabel('Count', fontsize=16)
-        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_type_log.png', dpi=300)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_type_log.png', dpi=300)
 
         plt.clf()
 
@@ -190,14 +190,14 @@ def type_rank_freq_plot(data, fold='cased'):
         plt.title(f'{title} - Type Rank Frequency', fontsize=18)
         plt.xlabel('log(rank)', fontsize=16)
         plt.ylabel('log(freq)', fontsize=16)
-        plt.savefig(f'out/post_text/img/{tgt}_{args.ds}_posts_{tok.NAME}_type_logfreq.png', dpi=300)
+        plt.savefig(f'out/post_text/img/{tgt}_{args.sel}_posts_{tok.NAME}_type_logfreq.png', dpi=300)
 
         plt.clf()
 
 
 def load(subset='all'):
     try:
-        return json.load(open(f'out/post_text/{subset}_{args.ds}_posts_text.json', 'r+'))
+        return json.load(open(f'out/post_text/{subset}_{args.sel}_posts_text.json', 'r+'))
     except FileNotFoundError:
         print_every = 100_000
 
@@ -267,7 +267,7 @@ def load(subset='all'):
 
         print('Writing')
         for lang in tqdm(data):
-            json.dump(data[lang], open(f'out/post_text/{lang}_{args.ds}_posts_text.json', 'w+'))
+            json.dump(data[lang], open(f'out/post_text/{lang}_{args.sel}_posts_text.json', 'w+'))
 
         return data[subset]
 
@@ -275,15 +275,16 @@ def load(subset='all'):
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
-    parser.add_argument('--ds', dest='ds', type=str, default='bf',
+    parser.add_argument('--sel', dest='sel', type=str, default='bf',
                         const='bf',
                         nargs='?',
-                        choices=['cmv', 'rd', 'ntt', 'ctq',
-                                 '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
-                                 '4chan-g', '4chan-pol',
-                                 'outlets', 'bf',
-                                 'chan'
-                                 ],
+                        choices=[
+                            'cmv', 'rd',
+                            'ntt', 'ctq',
+                            '4chan-news', '4chan-sci', '4chan-his', '4chan-x', '4chan-g', '4chan-pol',
+                            'outlets', 'bf',
+                            'chan'
+                        ],
                         help='Dataset key in selection')
 
     args = parser.parse_args()
@@ -291,35 +292,35 @@ if __name__ == '__main__':
     data_root = args.data
     os.makedirs('out/', exist_ok=True)
 
-    if args.ds == 'bf':
+    if args.sel == 'bf':
         dataset = 'BuzzFace/'
         cons = FBPost
         title = 'BuzzFace'
-    elif args.ds == 'outlets':
+    elif args.sel == 'outlets':
         dataset = 'Outlets/'
         cons = FBPost
         title = 'Outlets'
-    elif args.ds == 'chan':
+    elif args.sel == 'chan':
         dataset = '4chan/*/'
         cons = ChanPost
         title = '4Chan'
-    elif '4chan' in args.ds:
-        dataset = args.ds.replace('-', '/') + '/'
+    elif '4chan' in args.sel:
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
-    elif args.ds == 'ctq':
+    elif args.sel == 'ctq':
         dataset = 'CTQuotes/'
         cons = Tweet
         title = 'CTQuotes'
-    elif args.ds == 'ntt':
+    elif args.sel == 'ntt':
         dataset = 'Twitter/NTT/'
         cons = Tweet
         title = 'NewsTweet'
-    elif args.ds == 'cmv':
+    elif args.sel == 'cmv':
         dataset = 'Reddit/CMV/'
         cons = RedditPost
         title = 'BNC'
-    elif args.ds == 'rd':
+    elif args.sel == 'rd':
         dataset = 'Reddit/RD_*/'
         cons = RedditPost
         title = 'RedditDialog'
