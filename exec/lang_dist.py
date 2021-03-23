@@ -106,22 +106,21 @@ if __name__ == '__main__':
     total = sum(langs.values())
     min_thresh = 0.005
 
-    df = []
+    # df = []
 
     lang_lookup = json.load(open('other/langs.json'))
+    o = ''
     for lang, cnt in sorted(langs.items(), key=lambda kv: kv[1], reverse=True):
         if cnt > min_thresh * total:
-            df.append({
-                'Language':  lang,
-                'Count': cnt
-            })
+            # df.append({
+            #     'Language':  lang,
+            #     'Count': cnt
+            # })
+            o += f'{lang}:{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][lang]} ({100 * cnt / total:.2f}\\%), '
+    print(o)
 
-            o = f'\t\t\t{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][lang]} ({lang}) & '
-            o += f'{display_num(cnt)} ({100 * cnt / total:.1f}\\%) \\\\'
-            print(o)
-
-    df = pd.DataFrame(df)
-    sns.set_theme()
-    sns.barplot(data=df, x='Language', y='Count')
-    plt.title(f'{title} - Detected Language')
-    plt.savefig(f'out/{args.ds}_posts_langs.png')
+    # df = pd.DataFrame(df)
+    # sns.set_theme()
+    # sns.barplot(data=df, x='Language', y='Count')
+    # plt.title(f'{title} - Detected Language')
+    # plt.savefig(f'out/{args.ds}_posts_langs.png')
