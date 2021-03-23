@@ -44,10 +44,13 @@ if __name__ == '__main__':
     parser.add_argument('--ds', dest='ds', type=str, default='bf',
                         const='bf',
                         nargs='?',
-                        choices=['cmv', 'rd', 'ntt', 'ctq',
-                                 '4chan-news', '4chan-sci', '4chan-his', '4chan-x',
-                                 '4chan-g', '4chan-pol',
-                                 'outlets', 'bf'],
+                        choices=[
+                            'cmv', 'rd',
+                            'ntt', 'ctq',
+                            '4chan-news', '4chan-sci', '4chan-his', '4chan-x', '4chan-g', '4chan-pol',
+                            'outlets', 'bf',
+                            'chan'
+                        ],
                         help='Dataset key in selection')
 
     args = parser.parse_args()
@@ -63,6 +66,10 @@ if __name__ == '__main__':
         dataset = 'Outlets/'
         cons = FBPost
         title = 'Outlets'
+    elif args.ds == 'chan':
+        dataset = '4chan/*/'
+        cons = ChanPost
+        title = '4Chan'
     elif '4chan' in args.ds:
         dataset = args.ds.replace('-', '/') + '/'
         cons = ChanPost
