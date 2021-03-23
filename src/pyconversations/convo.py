@@ -120,9 +120,11 @@ class Conversation:
 
     @staticmethod
     def from_json(raw, cons):
-        ps = {uid: cons.from_json(pjson) for uid, pjson in raw['posts'].items()}
-        es = {uid: set(reps) for uid, reps in raw['edges'].items()}
-        return Conversation(posts=ps, edges=es)
+        ps = [cons.from_json(pjson) for pjson in raw['posts'].values()]
+        convo = Conversation()
+        for p in ps:
+            convo.add_post(p)
+        return convo
 
     @property
     def messages(self):
