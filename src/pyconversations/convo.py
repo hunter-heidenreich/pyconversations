@@ -218,6 +218,8 @@ class Conversation:
         if len(srcs) > 1:
             print(f'Value Error: Too many sources.')
             print(f'{len(srcs)}: {srcs}')
+            import pdb
+            pdb.set_trace()
             raise ValueError
 
         root = list(srcs)[0]
