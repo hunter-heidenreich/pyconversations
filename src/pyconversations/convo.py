@@ -259,6 +259,8 @@ class Conversation:
             self._stats['rich_club_coefficient'] = None
         except nx.exception.NetworkXAlgorithmError:
             self._stats['rich_club_coefficient'] = None
+        except ZeroDivisionError:
+            self._stats['rich_club_coefficient'] = None
 
         return self._stats['rich_club_coefficient']
 
