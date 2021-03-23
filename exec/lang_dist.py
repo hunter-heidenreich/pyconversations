@@ -1,10 +1,5 @@
 import json
 import os
-import re
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
 
 from argparse import ArgumentParser
 from collections import defaultdict
@@ -28,14 +23,6 @@ def display_num(num):
             return str(num)
 
         return str(int(num)) if num.is_integer() else f'{num:.2f}'
-
-
-class SpaceTokenizer:
-    NAME = 'space-separated'
-
-    @staticmethod
-    def split(s):
-        return re.split(r'\s+', s)
 
 
 if __name__ == '__main__':

@@ -76,7 +76,8 @@ setup(
         'networkx>=2.5',
         # 'scipy>=1.6',
         'numpy>=1.12',
-        'tqdm>=4.59'
+        'tqdm>=4.59',
+        'nltk>=3.0'
     ],
     extras_require={
         # eg:

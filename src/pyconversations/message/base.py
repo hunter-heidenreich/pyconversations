@@ -5,8 +5,13 @@ from datetime import datetime
 
 import gcld3
 
+from ..tokenizers import NLTKTokenizer
+
 # Langauge detection module; do not initialize unless asked for!
 DETECTOR = None
+
+# Selected tokenizer
+TOKEN = NLTKTokenizer
 
 
 def get_detector():
@@ -220,7 +225,19 @@ class UniMessage(ABC):
             for term, replacement in redact_map.items():
                 if term in self.text:
                     self.text = re.sub(term, replacement, self.text)
-        
+
         # Change the author's name if they're in our redaction map
         if self.author in redact_map:
             self.author = redact_map[self.author]
+
+    @property
+    def chars(self):
+        return len(self.text)
+
+    @property
+    def tokens(self):
+        return TOKEN.split(self.text)
+
+    @property
+    def types(self):
+        return set(self.tokens)

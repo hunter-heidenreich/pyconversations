@@ -152,7 +152,7 @@ class Conversation:
         try:
             return self._stats['chars']
         except KeyError:
-            self._stats['chars'] = sum(map(lambda x: len(x.text), self._posts.values()))
+            self._stats['chars'] = sum(map(lambda x: x.chars, self._posts.values()))
             return self._stats['chars']
 
     @property
@@ -160,7 +160,7 @@ class Conversation:
         try:
             return self._stats['tokens']
         except KeyError:
-            self._stats['tokens'] = sum(map(lambda x: len(re.split(r'\s+', x.text)), self._posts.values()))
+            self._stats['tokens'] = sum(map(lambda x: len(x.tokens), self._posts.values()))
             return self._stats['tokens']
 
     @property
@@ -169,20 +169,8 @@ class Conversation:
             return self._stats['token_types']
         except KeyError:
             self._stats['token_types'] = set(
-                reduce(lambda x, y: x | y, map(lambda x: set(re.split(r'\s+', x.text)), self._posts.values())))
+                reduce(lambda x, y: x | y, map(lambda x: x.types, self._posts.values())))
             return self._stats['token_types']
-
-    @property
-    def token_types_(self):
-        try:
-            return self._stats['token_types_']
-        except KeyError:
-            if 'token_types' in self._stats:
-                self._stats['token_types_'] = {t.lower() for t in self._stats['token_types']}
-            else:
-                self._stats['token_types_'] = set(
-                    reduce(lambda x, y: x | y, map(lambda x: set(re.split(r'\s+', x.text.lower())), self._posts.values())))
-            return self._stats['token_types_']
 
     @property
     def sources(self):
