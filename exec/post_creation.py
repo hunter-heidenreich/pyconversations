@@ -126,7 +126,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data_root = args.data
-    os.makedirs('out/', exist_ok=True)
+    os.makedirs('out/post_creation/img/', exist_ok=True)
     min_thresh_dt = datetime(year=2005, month=1, day=1, hour=1, minute=1, second=1)
 
     if args.sel == 'bf':

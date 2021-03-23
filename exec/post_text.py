@@ -290,7 +290,7 @@ if __name__ == '__main__':
     args = parser.parse_args()
 
     data_root = args.data
-    os.makedirs('out/', exist_ok=True)
+    os.makedirs('out/post_text/img/', exist_ok=True)
 
     if args.sel == 'bf':
         dataset = 'FB/BuzzFace/'
