@@ -203,15 +203,7 @@ class Conversation:
     @property
     def depths(self):
         srcs = self.sources
-        if len(srcs) > 1:
-            print(f'Value Error: Too many sources.')
-            print(f'{len(srcs)}: {srcs}')
-            import pdb
-            pdb.set_trace()
-            raise ValueError
-
-        root = list(srcs)[0]
-        return [nx.shortest_path_length(self._build_graph(), root, uid) for uid in self.posts]
+        return [min([nx.shortest_path_length(self._build_graph(), root, uid) for root in srcs]) for uid in self.posts]
 
     @property
     def tree_depth(self):
