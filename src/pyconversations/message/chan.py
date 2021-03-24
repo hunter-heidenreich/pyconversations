@@ -47,7 +47,8 @@ class ChanPost(UniMessage):
         returning both the references and teh comment itself
         """
         comment = html.unescape(comment)
-        comment = re.sub(r"<w?br/?>", "\n", comment)
+        comment = re.sub(r"<br/?>", "\n", comment)
+        comment = re.sub(r"<wbr/?>", "", comment)
         comment = re.sub(r"<a href=\".+\" class=\"(\w+)\">", " ", comment)
         comment = re.sub(r"</a>", " ", comment)
         comment = re.sub(r"<span class=\"(\w+)\">", " ", comment)
@@ -62,7 +63,7 @@ class ChanPost(UniMessage):
         comment = re.sub(r"&(amp|lt|gt|ge|le)(;|)", " ", comment)
 
         comment = re.sub(r"\\s\\s+", " ", comment)
-        comment = re.sub("\n", " ", comment)
+        # comment = re.sub("\n", " ", comment)
         comment = str(comment).strip()
 
         return comment, rfs
