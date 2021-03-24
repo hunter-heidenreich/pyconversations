@@ -58,7 +58,7 @@ if __name__ == '__main__':
         cons = ChanPost
         title = '4Chan'
     elif '4chan' in args.sel:
-        dataset = args.ds.replace('-', '/') + '/'
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
     elif args.sel == 'ctq':
