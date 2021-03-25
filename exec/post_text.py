@@ -186,7 +186,7 @@ def type_rank_freq_plot(data, fold='cased'):
         df = pd.DataFrame(df)
 
         sns.set_theme()
-        sns.scatterplot(data=df, x='log_rank', y='log_freq')
+        sns.lineplot(data=df, x='log_rank', y='log_freq')
         plt.title(f'{title} - Type Rank Frequency', fontsize=18)
         plt.xlabel('log(rank)', fontsize=16)
         plt.ylabel('log(freq)', fontsize=16)

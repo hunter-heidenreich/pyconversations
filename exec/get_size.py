@@ -102,7 +102,8 @@ if __name__ == '__main__':
 
         en_posts = deepcopy(all_posts)
         for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
-            all_posts['Conversations'] += 1
+            is_convo = 1 if len(convo.messages) else 0
+            all_posts['Conversations'] += is_convo
             en_detect = False
 
             for post in convo.posts.values():
@@ -112,7 +113,7 @@ if __name__ == '__main__':
 
                 en_bit = post.lang in {'en', 'und'}
                 if en_bit and not en_detect:
-                    en_posts['Conversations'] += 1
+                    en_posts['Conversations'] += is_convo
                     en_detect = True
 
                 all_posts['Posts'] += 1

@@ -58,7 +58,7 @@ if __name__ == '__main__':
         cons = ChanPost
         title = '4Chan'
     elif '4chan' in args.sel:
-        dataset = args.ds.replace('-', '/') + '/'
+        dataset = args.sel.replace('-', '/') + '/'
         cons = ChanPost
         title = dataset.replace('4chan', '')
     elif args.sel == 'ctq':
@@ -85,46 +85,56 @@ if __name__ == '__main__':
 
     df = []
     for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
-        metric = {
-            # general
-            'messages': convo.messages,
-            'connections': convo.connections,
-            'users': convo.users,
-            'duration': convo.duration,
-
-            # text
-            'chars': convo.chars,
-            'tokens': convo.tokens,
-            'types': len(convo.token_types),
-
-            # graph
-            'density': convo.density,
-
-            'avg_degree': np.mean(convo.degree_hist),
-            'std_degree': np.std(convo.degree_hist),
-            'avg_in_degree': np.mean(convo.in_degree_hist),
-            'std_in_degree': np.std(convo.in_degree_hist),
-            'avg_out_degree': np.mean(convo.out_degree_hist),
-            'std_out_degree': np.std(convo.out_degree_hist),
-
-            'avg_depth': np.mean(convo.depths),
-            'std_depth': np.std(convo.depths),
-            'depth': convo.tree_depth,
-            'avg_width': np.mean(convo.widths),
-            'std_width': np.std(convo.widths),
-            'width': convo.tree_width,
-
-            'diameter': convo.diameter,
-            'radius': convo.radius,
-
-            'assortativity': convo.assortativity,
-            'rich_club_coef': convo.rich_club_coefficient
-        }
-        df.append(metric)
-
-        cnt += 1
         if cnt % print_every == 0:
             print(f'Processed {cnt} conversations.')
 
+        cnt += 1
+
+        if convo.messages < 2:
+            continue
+
+        # general metric
+        # metric = {
+        #     'messages': convo.messages,
+        #     # 'connections': convo.connections,
+        #     'users': convo.users,
+        #     'duration': convo.duration,
+        # }
+
+        # text metric
+        metric = {
+            'chars': convo.chars,
+            'tokens': convo.tokens,
+            'types': len(convo.token_types),
+        }
+
+        # graph metric
+        # metric = {
+        #     'density': convo.density,
+        #
+        #     'avg_degree': np.mean(convo.degree_hist),
+        #     'std_degree': np.std(convo.degree_hist),
+        #     'avg_in_degree': np.mean(convo.in_degree_hist),
+        #     'std_in_degree': np.std(convo.in_degree_hist),
+        #     'avg_out_degree': np.mean(convo.out_degree_hist),
+        #     'std_out_degree': np.std(convo.out_degree_hist),
+        #
+        #     'avg_depth': np.mean(convo.depths),
+        #     'std_depth': np.std(convo.depths),
+        #     'depth': convo.tree_depth,
+        #     'avg_width': np.mean(convo.widths),
+        #     'std_width': np.std(convo.widths),
+        #     'width': convo.tree_width,
+        #
+        #     'diameter': convo.diameter,
+        #     'radius': convo.radius,
+        #
+        #     'assortativity': convo.assortativity,
+        #     'rich_club_coef': convo.rich_club_coefficient
+        # }
+        df.append(metric)
+
     df = pd.DataFrame(df)
-    df.to_csv(f'out/convo/{args.sel}.csv')
+    # df.to_csv(f'out/convo/{args.sel}.csv')
+    df.to_csv(f'out/convo/{args.sel}_text.csv')
+    # df.to_csv(f'out/convo/{args.sel}_graph.csv')
