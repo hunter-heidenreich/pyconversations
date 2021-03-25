@@ -137,7 +137,7 @@ def test_read_raw_post(mock_raw_post):
 
     post = ChanPost.parse_raw(mock_raw_post)
     assert post.uid == 12360
-    assert post.text == "raw comment"
+    assert post.text == "raw comment >>12345"
     assert post.author == 'Anonymous'
     assert post.created_at == datetime(2286, 11, 20, 12, 46, 39)
     assert post.reply_to == {12345}
@@ -148,7 +148,7 @@ def test_read_raw_post(mock_raw_post):
     mock_raw_post['com'] += ' >>12360'
     post = ChanPost.parse_raw(mock_raw_post)
     assert post.reply_to == {12345}
-    assert post.text == "raw comment"
+    assert post.text == "raw comment >>12345 >>12360"
 
     del mock_raw_post['com']
     assert ChanPost.parse_raw(mock_raw_post) is None

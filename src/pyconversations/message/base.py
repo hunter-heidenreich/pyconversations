@@ -5,13 +5,14 @@ from datetime import datetime
 
 import gcld3
 
-from ..tokenizers import NLTKTokenizer
+# from ..tokenizers import NLTKTokenizer
+from ..tokenizers import PartitionTokenizer
 
 # Langauge detection module; do not initialize unless asked for!
 DETECTOR = None
 
 # Selected tokenizer
-TOKEN = NLTKTokenizer
+TOKEN = PartitionTokenizer
 
 
 def get_detector():
@@ -94,7 +95,7 @@ class UniMessage(ABC):
         return self
 
     def _detect_language(self):
-        if not self._lang and self._lang_detect and self._text:
+        if (not self._lang or self.lang == 'und') and self._lang_detect and self._text:
             res = get_detector().FindLanguage(text=self.text)
             self.lang = res.language if res.is_reliable else 'und'
 

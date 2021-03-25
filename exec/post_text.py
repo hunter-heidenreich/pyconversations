@@ -15,7 +15,7 @@ from tqdm import tqdm
 from pyconversations.message import *
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
-from pyconversations.tokenizers import NLTKTokenizer
+from pyconversations.tokenizers import PartitionTokenizer
 
 
 def display_num(num):
@@ -34,7 +34,7 @@ def display_num(num):
         return str(int(num)) if num.is_integer() else f'{num:.2f}'
 
 
-tokenizers = [NLTKTokenizer]
+tokenizers = [PartitionTokenizer]
 
 
 def char_dist(data):
