@@ -102,7 +102,7 @@ if __name__ == '__main__':
 
         en_posts = deepcopy(all_posts)
         for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
-            is_convo = 1 if len(convo.messages) else 0
+            is_convo = 1 if convo.messages > 1 else 0
             all_posts['Conversations'] += is_convo
             en_detect = False
 
