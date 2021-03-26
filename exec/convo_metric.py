@@ -9,22 +9,6 @@ from pyconversations.message import *
 from pyconversations.reader import ConvoReader
 
 
-def display_num(num):
-    if num > 1_000_000_000_000:
-        return f"{num / 1_000_000_000_000:.2f} T"
-    elif num > 1_000_000_000:
-        return f"{num / 1_000_000_000:.2f} B"
-    elif num > 1_000_000:
-        return f"{num / 1_000_000:.2f} M"
-    elif num > 1_000:
-        return f"{num / 1_000:.2f} K"
-    else:
-        if type(num) == int:
-            return str(num)
-
-        return str(int(num)) if num.is_integer() else f'{num:.2f}'
-
-
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str)
@@ -81,7 +65,7 @@ if __name__ == '__main__':
         raise ValueError(args)
 
     cnt = 0
-    print_every = 2_000
+    print_every = 100  # 2_000
 
     df = []
     for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
@@ -102,39 +86,40 @@ if __name__ == '__main__':
         # }
 
         # text metric
-        metric = {
-            'chars': convo.chars,
-            'tokens': convo.tokens,
-            'types': len(convo.token_types),
-        }
+        # metric = {
+        #     'chars': convo.chars,
+        #     'tokens': convo.tokens,
+        #     'types': len(convo.token_types),
+        # }
 
         # graph metric
-        # metric = {
-        #     'density': convo.density,
-        #
-        #     'avg_degree': np.mean(convo.degree_hist),
-        #     'std_degree': np.std(convo.degree_hist),
-        #     'avg_in_degree': np.mean(convo.in_degree_hist),
-        #     'std_in_degree': np.std(convo.in_degree_hist),
-        #     'avg_out_degree': np.mean(convo.out_degree_hist),
-        #     'std_out_degree': np.std(convo.out_degree_hist),
-        #
-        #     'avg_depth': np.mean(convo.depths),
-        #     'std_depth': np.std(convo.depths),
-        #     'depth': convo.tree_depth,
-        #     'avg_width': np.mean(convo.widths),
-        #     'std_width': np.std(convo.widths),
-        #     'width': convo.tree_width,
-        #
-        #     'diameter': convo.diameter,
-        #     'radius': convo.radius,
-        #
-        #     'assortativity': convo.assortativity,
-        #     'rich_club_coef': convo.rich_club_coefficient
-        # }
+        metric = {
+            'density': convo.density,
+
+            'avg_avg_degree': np.mean(convo.degree_hist),
+            # 'std_degree': np.std(convo.degree_hist),
+            # 'avg_avg_in_degree': np.mean(convo.in_degree_hist),
+            # 'std_in_degree': np.std(convo.in_degree_hist),
+            # 'avg_avg_out_degree': np.mean(convo.out_degree_hist),
+            # 'std_out_degree': np.std(convo.out_degree_hist),
+
+            'avg_depth': np.mean(convo.depths),
+            # 'std_depth': np.std(convo.depths),
+            'depth': convo.tree_depth,
+            'avg_width': np.mean(convo.widths),
+            # 'std_width': np.std(convo.widths),
+            'width': convo.tree_width,
+
+
+            # 'diameter': convo.diameter,
+            # 'radius': convo.radius,
+
+            # 'assortativity': convo.assortativity,
+            # 'rich_club_coef': convo.rich_club_coefficient
+        }
         df.append(metric)
 
     df = pd.DataFrame(df)
     # df.to_csv(f'out/convo/{args.sel}.csv')
-    df.to_csv(f'out/convo/{args.sel}_text.csv')
-    # df.to_csv(f'out/convo/{args.sel}_graph.csv')
+    # df.to_csv(f'out/convo/{args.sel}_text.csv')
+    df.to_csv(f'out/convo/{args.sel}_graph.csv')

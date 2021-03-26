@@ -1,6 +1,6 @@
-import re
 from collections import Counter
 from functools import reduce
+from tqdm import tqdm
 
 import networkx as nx
 
@@ -200,23 +200,62 @@ class Conversation:
         digraph = self._build_graph(directed=True)
         return [digraph.out_degree[n] for n in digraph.nodes]
 
+    def get_depth(self, uid):
+        if 'depth' not in self._stats:
+            self._stats['depth'] = {}
+
+        if uid not in self._stats['depth']:
+            if self._posts[uid].reply_to:
+                depth = None
+
+                for rid in self._posts[uid].reply_to:
+                    if rid in self._posts:
+                        d = self.get_depth(rid) + 1
+                        if depth is None or d < depth:
+                            depth = d
+
+                if depth is None:
+                    depth = 0
+            else:
+                depth = 0
+
+            self._stats['depth'][uid] = depth
+
+        return self._stats['depth'][uid]
+
     @property
     def depths(self):
-        srcs = self.sources
-        return [min([nx.shortest_path_length(self._build_graph(), root, uid) for root in srcs]) for uid in self.posts]
+        if 'depths' in self._stats:
+            return self._stats['depths']
+
+        if len(self.posts) > 1_000:
+            self._stats['depths'] = [self.get_depth(uid) for uid in tqdm(self.posts)]
+        else:
+            self._stats['depths'] = [self.get_depth(uid) for uid in self.posts]
+
+        return self._stats['depths']
 
     @property
     def tree_depth(self):
-        return max(self.depths)
+        if 'tree_depth' not in self._stats:
+            self._stats['tree_depth'] = max(self.depths)
+
+        return self._stats['tree_depth']
 
     @property
     def widths(self):
-        cnts = dict(Counter(self.depths))
-        return [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
+        if 'widths' not in self._stats:
+            cnts = dict(Counter(self.depths))
+            self._stats['widths'] = [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
+
+        return self._stats['widths']
 
     @property
     def tree_width(self):
-        return max(self.widths)
+        if 'tree_width' not in self._stats:
+            self._stats['tree_width'] = max(self.widths)
+
+        return self._stats['tree_width']
 
     @property
     def assortativity(self):
