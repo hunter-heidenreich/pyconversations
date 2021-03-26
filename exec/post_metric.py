@@ -12,15 +12,16 @@ from pyconversations.message import *
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 from pyconversations.tokenizers import PartitionTokenizer
+from pyconversations.utils import num2str
 
 
-def get_post_iterator(print_every=250_000, check_convo=False):
+def get_post_iterator(print_every=100_000, check_convo=False):
     cnt = 0
     for convo in ConvoReader.iter_read(data_root + dataset, cons=cons):
         check = True
         for post in convo.posts.values():
             if cnt and cnt % print_every == 0:
-                print(f'Post {cnt}')
+                print(f'Post {num2str(cnt)}')
             cnt += 1
 
             # double-check lang field
