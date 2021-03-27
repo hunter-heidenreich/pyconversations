@@ -1,8 +1,6 @@
 import json
 import os
 
-import pandas as pd
-
 from argparse import ArgumentParser
 from collections import defaultdict
 from datetime import datetime
@@ -50,33 +48,29 @@ def load(target='all', metric='lang'):
 
 
 def load_lang():
-    cache_path = f'out/{args.sel}/langs.csv'
+    cache_path = f'out/{args.sel}/langs.json'
     try:
-        return pd.read_csv(cache_path)
+        return json.load(open(cache_path))
     except FileNotFoundError:
         lang_lookup = json.load(open('other/langs.json'))
 
-        df = []
+        cnter = defaultdict(int)
         for post in get_post_iterator():
-            df.append({
-                'uid': post.uid,
-                'lang': post.lang,
-                'name': lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][post.lang]
-            })
+            key = f'{post.lang}:{lang_lookup["main"]["en"]["localeDisplayNames"]["languages"][post.lang]}'
+            cnter[key] += 1
 
-        df = pd.DataFrame(df)
-        df.to_csv(cache_path)
+        json.dump(dict(cnter), open(cache_path, 'w+'))
 
-        return df
+        return cnter
 
 
 def load_time(target):
-    cache_path = f'out/{args.sel}/{target}/post/time.csv'
+    cache_path = f'out/{args.sel}/{target}/post/time.json'
     min_thresh_dt = datetime(year=2005, month=1, day=1, hour=1, minute=1, second=1)
     try:
-        return pd.read_csv(cache_path)
+        return json.load(open(cache_path))
     except FileNotFoundError:
-        dfs = defaultdict(list)
+        dfs = defaultdict(lambda: defaultdict(int))
         for post in get_post_iterator():
             if not post.created_at:
                 continue
@@ -84,108 +78,63 @@ def load_time(target):
             if post.created_at < min_thresh_dt:
                 continue
 
-            dfs[post.lang].append({
-                'uid': post.uid,
-                'creation': post.created_at.timestamp()
-            })
+            dfs[post.lang][post.created_at.timestamp()] += 1
+            dfs['all'][post.created_at.timestamp()] += 1
+            if post.lang == 'en' or post.lang == 'und':
+                dfs['en_und'][post.created_at.timestamp()] += 1
 
-        total = None
-        en_und = None
         for lang in tqdm(dfs):
-            dfs[lang] = pd.DataFrame(dfs[lang])
-
-            if total is None:
-                total = pd.DataFrame(dfs[lang])
-            else:
-                total.append(dfs[lang], ignore_index=True)
-
-            if lang == 'en' or lang == 'und':
-                if en_und is None:
-                    en_und = pd.DataFrame(dfs[lang])
-                else:
-                    en_und.append(dfs[lang], ignore_index=True)
-
             os.makedirs(f'out/{args.sel}/{lang}/post/', exist_ok=True)
-            dfs[lang].to_csv(f'out/{args.sel}/{lang}/post/time.csv')
+            json.dump(dict(dfs[lang]), open(f'out/{args.sel}/{lang}/post/time.json', 'w+'))
 
-        os.makedirs(f'out/{args.sel}/en_und/post/', exist_ok=True)
-        en_und.to_csv(f'out/{args.sel}/en_und/post/time.csv')
-
-        os.makedirs(f'out/{args.sel}/all/post/', exist_ok=True)
-        total.to_csv(f'out/{args.sel}/all/post/time.csv')
-
-        if target == 'all':
-            return total
-        elif target == 'en_und':
-            return en_und
-        else:
-            return dfs[target]
+        return dfs[target]
 
 
 def load_text(target):
-    cache_path = f'out/{args.sel}/{target}/post/text.csv'
     try:
-        return pd.read_csv(cache_path), json.load(open(f'out/{args.sel}/{target}/post/text_freqs.json'))
+        return {
+            'freqs': json.load(open(f'out/{args.sel}/{target}/post/freqs.json')),
+            'chars': json.load(open(f'out/{args.sel}/{target}/post/chars.json')),
+            'tokens': json.load(open(f'out/{args.sel}/{target}/post/tokens.json')),
+            'types': json.load(open(f'out/{args.sel}/{target}/post/types.json')),
+        }
     except FileNotFoundError:
-        dfs = defaultdict(list)
         freqs = defaultdict(lambda: defaultdict(int))
+        chars = defaultdict(lambda: defaultdict(int))
+        tokens = defaultdict(lambda: defaultdict(int))
+        types = defaultdict(lambda: defaultdict(int))
         for post in get_post_iterator():
             #  skip blank posts
             if not post.text.strip():
                 continue
+
+            langs = [post.lang, 'all']
+            if post.lang == 'en' or post.lang == 'und':
+                langs.append('en_und')
+
             ts = post.tokens
             ts_ = post.types
-            dfs[post.lang].append({
-                'uid': post.uid,
-                'chars': post.chars,
-                'tokens': len(ts),
-                'types': len(ts_)
-            })
+            for lang in langs:
+                chars[lang][post.chars] += 1
+                tokens[lang][len(ts)] += 1
+                types[lang][len(ts_)] += 1
 
-            for t in ts:
-                freqs[post.lang][t] += 1
-                freqs['all'][t] += 1
-                if post.lang == 'en' or post.lang == 'und':
-                    freqs['en_und'][t] += 1
+                for t in ts:
+                    freqs[lang][t] += 1
 
-        total = None
-        en_und = None
-        for lang in dfs:
+        for lang in tqdm(freqs):
             os.makedirs(f'out/{args.sel}/{lang}/post/', exist_ok=True)
+            json.dump(dict(freqs[lang]), open(f'out/{args.sel}/{lang}/post/freqs.json', 'w+'))
+            json.dump(dict(chars[lang]), open(f'out/{args.sel}/{lang}/post/chars.json', 'w+'))
+            json.dump(dict(tokens[lang]), open(f'out/{args.sel}/{lang}/post/tokens.json', 'w+'))
+            json.dump(dict(types[lang]), open(f'out/{args.sel}/{lang}/post/types.json', 'w+'))
 
-            dfs[lang] = pd.DataFrame(dfs[lang])
-            dfs[lang].to_csv(f'out/{args.sel}/{lang}/post/text.csv')
-
-            if total is None:
-                total = pd.DataFrame(dfs[lang])
-            else:
-                total.append(dfs[lang], ignore_index=True)
-
-            if lang == 'en' or lang == 'und':
-                if en_und is None:
-                    en_und = pd.DataFrame(dfs[lang])
-                else:
-                    en_und.append(dfs[lang], ignore_index=True)
-
-            freqs[lang] = dict(freqs[lang])
-            json.dump(freqs[lang], open(f'out/{args.sel}/{lang}/post/text_freqs.json', 'w+'))
-
-        os.makedirs(f'out/{args.sel}/en_und/post/', exist_ok=True)
-        en_und.to_csv(f'out/{args.sel}/en_und/post/text.csv')
-        freqs['en_und'] = dict(freqs['en_und'])
-        json.dump(freqs['en_und'], open(f'out/{args.sel}/en_und/post/text_freqs.json', 'w+'))
-
-        os.makedirs(f'out/{args.sel}/all/post/', exist_ok=True)
-        total.to_csv(f'out/{args.sel}/all/post/text.csv')
-        freqs['all'] = dict(freqs['all'])
-        json.dump(freqs['all'], open(f'out/{args.sel}/all/post/text_freqs.json', 'w+'))
-
-        if target == 'all':
-            return total, freqs[target]
-        elif target == 'en_und':
-            return en_und, freqs[target]
-        else:
-            return dfs[target], freqs[target]
+        return {
+            'freqs': freqs,
+            'chars': chars,
+            'tokens': tokens,
+            'types': types,
+        }
 
 
 def load_size(target):
@@ -226,7 +175,7 @@ def load_size(target):
                 if upd:
                     temporal_size[lang]['duration'] = temporal_size[lang]['end'] - temporal_size[lang]['start']
 
-        for lang in size:
+        for lang in tqdm(size):
             os.makedirs(f'out/{args.sel}/{lang}/', exist_ok=True)
             json.dump(dict(size[lang]), open(f'out/{args.sel}/{lang}/size.json', 'w+'))
             json.dump(dict(temporal_size[lang]), open(f'out/{args.sel}/{lang}/temporal.json', 'w+'))
