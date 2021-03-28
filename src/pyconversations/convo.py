@@ -1,4 +1,5 @@
 from collections import Counter
+from collections import defaultdict
 from functools import reduce
 from tqdm import tqdm
 
@@ -160,7 +161,9 @@ class Conversation:
         try:
             return self._stats['tokens']
         except KeyError:
-            self._stats['tokens'] = sum(map(lambda x: len(x.tokens), self._posts.values()))
+            # self._stats['tokens'] = sum(map(lambda x: len(x.tokens), self._posts.values()))
+            self._stats['tokens'] = set(
+                reduce(lambda x, y: x + y, map(lambda x: x.tokens, self._posts.values())))
             return self._stats['tokens']
 
     @property
@@ -168,8 +171,7 @@ class Conversation:
         try:
             return self._stats['token_types']
         except KeyError:
-            self._stats['token_types'] = set(
-                reduce(lambda x, y: x | y, map(lambda x: x.types, self._posts.values())))
+            self._stats['token_types'] = set(self.tokens)
             return self._stats['token_types']
 
     @property
@@ -191,14 +193,24 @@ class Conversation:
         return nx.degree_histogram(self._build_graph())
 
     @property
+    def replies(self):
+        if 'replies' not in self._stats:
+            rep_cnts = defaultdict(int)
+            for post in self._posts.values():
+                for rid in post.reply_to:
+                    rep_cnts[rid] += 1
+            self._stats['replies'] = rep_cnts
+
+        return self._stats['replies']
+
+    @property
     def in_degree_hist(self):
-        digraph = self._build_graph(directed=True)
-        return [digraph.in_degree[n] for n in digraph.nodes]
+        rep_cnts = self.replies
+        return [rep_cnts[pid] for pid in self.posts]
 
     @property
     def out_degree_hist(self):
-        digraph = self._build_graph(directed=True)
-        return [digraph.out_degree[n] for n in digraph.nodes]
+        return list(self.replies.values())
 
     def get_depth(self, uid):
         if 'depth' not in self._stats:
