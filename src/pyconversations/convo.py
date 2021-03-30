@@ -161,9 +161,8 @@ class Conversation:
         try:
             return self._stats['tokens']
         except KeyError:
-            # self._stats['tokens'] = sum(map(lambda x: len(x.tokens), self._posts.values()))
-            self._stats['tokens'] = set(
-                reduce(lambda x, y: x + y, map(lambda x: x.tokens, self._posts.values())))
+            self._stats['tokens'] = sum(map(lambda x: len(x.tokens), self._posts.values()))
+
             return self._stats['tokens']
 
     @property
@@ -171,7 +170,8 @@ class Conversation:
         try:
             return self._stats['token_types']
         except KeyError:
-            self._stats['token_types'] = set(self.tokens)
+            self._stats['token_types'] = len(set(
+                reduce(lambda x, y: x | y, map(lambda x: x.types, self._posts.values()))))
             return self._stats['token_types']
 
     @property

@@ -104,8 +104,8 @@ def load_text(target):
 
             for lang in langs:
                 x['chars'][lang][chars] += 1
-                x['tokens'][lang][len(tokens)] += 1
-                x['types'][lang][len(types)] += 1
+                x['tokens'][lang][tokens] += 1
+                x['types'][lang][types] += 1
 
                 # freqs[lang].append(fqs)
 
