@@ -73,3 +73,26 @@ class RedditReader(BaseReader):
             for s in segs:
                 s.redact()
             yield segs
+
+
+class BNCReader(BaseReader):
+
+    @staticmethod
+    def read(path_pattern, ld=True):
+        convo = Conversation()
+        for f in tqdm(glob(path_pattern)):
+            with open(f) as fp:
+                for line in fp.readlines():
+                    raw = json.loads(line)
+                    post = RedditPost.parse_raw(raw, lang_detect=ld)
+                    post.add_tag('AH=1' if raw["violated_rule"] == 2 else 'AH=0')
+                    convo.add_post(post)
+
+        segs = convo.segment()
+        for s in segs:
+            s.redact()
+        return segs
+
+    @staticmethod
+    def iter_read(path_pattern, ld=True, rd=False):
+        raise NotImplementedError

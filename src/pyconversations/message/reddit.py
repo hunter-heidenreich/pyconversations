@@ -48,7 +48,8 @@ class RedditPost(UniMessage):
         ignore_keys = {
             'archived', 'body_html', 'id', 'link_id', 'gilded',
             'ups', 'downs', 'edited', 'controversiality', 'user_reports', 'mod_reports',
-            'score', 'subreddit'
+            'score', 'subreddit',
+            'delta', 'violated_rule'
         }
 
         for key, value in data.items():
@@ -79,14 +80,17 @@ class RedditPost(UniMessage):
         cons = {
             'platform': 'Reddit',
             'lang_detect': lang_detect,
-            'uid': 't3_' + data['id'],
+            'uid': data['id'],  # 't3_' + data['id'],
             'author': data['author'],
             'created_at': RedditPost.parse_datestr(data['created_utc']),
             'tags': {f'board={data["subreddit"]}'}
         }
         if data['type'] == 'comment':
             cons['text'] = data['body']
-            cons['reply_to'] = {data['parent_id']}
+            pid = data['parent_id']
+            for i in range(1, 6):
+                pid = pid.replace(f't{i}_', '')
+            cons['reply_to'] = {pid}
         elif data['type'] == 'submission':
             cons['text'] = data['title'] + ' ' + data['selftext']
             cons['reply_to'] = set()
