@@ -218,13 +218,18 @@ class Conversation:
 
         if uid not in self._stats['depth']:
             if self._posts[uid].reply_to:
+                reply = self._posts[uid]
                 depth = None
 
                 for rid in self._posts[uid].reply_to:
                     if rid in self._posts:
-                        d = self.get_depth(rid) + 1
-                        if depth is None or d < depth:
-                            depth = d
+                        post = self._posts[rid]
+
+                        if (reply.created_at and post.created_at and reply.created_at > post.created_at) or post.created_at is None or reply.created_at is None:
+
+                            d = self.get_depth(rid) + 1
+                            if depth is None or d < depth:
+                                depth = d
 
                 if depth is None:
                     depth = 0
@@ -240,10 +245,7 @@ class Conversation:
         if 'depths' in self._stats:
             return self._stats['depths']
 
-        if len(self.posts) > 1_000:
-            self._stats['depths'] = [self.get_depth(uid) for uid in tqdm(self.posts)]
-        else:
-            self._stats['depths'] = [self.get_depth(uid) for uid in self.posts]
+        self._stats['depths'] = [self.get_depth(uid) for uid in self.posts]
 
         return self._stats['depths']
 
