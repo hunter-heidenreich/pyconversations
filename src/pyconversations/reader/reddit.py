@@ -53,8 +53,8 @@ class RedditReader(BaseReader):
                         convo.remove_post(uid)
 
                     out = out.segment()
-                    for o in out:
-                        o.redact()
+                    # for o in out:
+                    #     o.redact()
 
                     yield out
             else:
@@ -64,14 +64,14 @@ class RedditReader(BaseReader):
                         convo.add_post(RedditPost.parse_raw(json.loads(line), lang_detect=ld))
 
                 segs = convo.segment()
-                for s in segs:
-                    s.redact()
+                # for s in segs:
+                #     s.redact()
                 yield segs
 
         if rd and convo.messages:
             segs = convo.segment()
-            for s in segs:
-                s.redact()
+            # for s in segs:
+            #     s.redact()
             yield segs
 
 
@@ -89,8 +89,8 @@ class BNCReader(BaseReader):
                     convo.add_post(post)
 
         segs = convo.segment()
-        for s in segs:
-            s.redact()
+        # for s in segs:
+        #     s.redact()
         return segs
 
     @staticmethod

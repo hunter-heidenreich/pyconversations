@@ -53,7 +53,7 @@ def pre_process_quote_tweets(sharding=100):
     cache = []
     shard = 0
     for convo in convo_chunks:
-        convo.redact()
+        # convo.redact()
         cache.append(json.dumps(convo.to_json()))
 
         if len(cache) >= cap:
@@ -74,8 +74,8 @@ def preprocess_newstweetthreads(per_file=1_000):
     cnt = 0
     for ix, convo_chunk in ThreadsReader.iter_read(data_root + f'threads/'):
         print(f'{ix}: {len(convo_chunk)} conversations')
-        for chunk in convo_chunk:
-            chunk.redact()
+        # for chunk in convo_chunk:
+        #     chunk.redact()
         write_cache.extend([json.dumps(convo.to_json()) for convo in convo_chunk])
 
         if len(write_cache) >= per_file:
