@@ -97,12 +97,14 @@ def load_text(target):
             'chars': json.load(open(f'out/{args.sel}/{target}/post/chars.json')),
             'tokens': json.load(open(f'out/{args.sel}/{target}/post/tokens.json')),
             'types': json.load(open(f'out/{args.sel}/{target}/post/types.json')),
+            'novelty': json.load(open(f'out/{args.sel}/{target}/post/novelty.json')),
         }
     except FileNotFoundError:
         freqs = defaultdict(lambda: defaultdict(int))
         chars = defaultdict(lambda: defaultdict(int))
         tokens = defaultdict(lambda: defaultdict(int))
         types = defaultdict(lambda: defaultdict(int))
+        novelty = defaultdict(lambda: defaultdict(int))
         for post in get_post_iterator():
             #  skip blank posts
             if not post.text.strip():
@@ -118,6 +120,7 @@ def load_text(target):
                 chars[lang][post.chars] += 1
                 tokens[lang][len(ts)] += 1
                 types[lang][len(ts_)] += 1
+                novelty[lang][(len(ts), len(ts_))] += 1
 
                 for t in ts:
                     freqs[lang][t] += 1
@@ -128,12 +131,14 @@ def load_text(target):
             json.dump(dict(chars[lang]), open(f'out/{args.sel}/{lang}/post/chars.json', 'w+'))
             json.dump(dict(tokens[lang]), open(f'out/{args.sel}/{lang}/post/tokens.json', 'w+'))
             json.dump(dict(types[lang]), open(f'out/{args.sel}/{lang}/post/types.json', 'w+'))
+            json.dump(dict(novelty[lang]), open(f'out/{args.sel}/{lang}/post/novelty.json', 'w+'))
 
         return {
             'freqs': freqs,
             'chars': chars,
             'tokens': tokens,
             'types': types,
+            'novelty': novelty
         }
 
 
