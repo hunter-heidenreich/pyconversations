@@ -204,6 +204,13 @@ class Conversation:
         return self._stats['replies']
 
     @property
+    def reply_counts(self):
+        # for each post, we'll have a 3-tuple of form (total replies, replies in, replies out)
+        reps = self.replies
+        total = sum(reps.values())
+        return [(total, reps[pid], len(self.posts[pid].reply_to)) for pid in self.posts]
+
+    @property
     def in_degree_hist(self):
         rep_cnts = self.replies
         return [rep_cnts[pid] for pid in self.posts]

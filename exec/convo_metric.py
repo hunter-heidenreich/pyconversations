@@ -92,12 +92,13 @@ def load_text(target):
             chars = convo.chars
             tokens = convo.tokens
             types = convo.token_types
+            kx = f'{tokens}-{types}'
 
             for lang in langs:
                 x['chars'][lang][chars] += 1
                 x['tokens'][lang][tokens] += 1
                 x['types'][lang][types] += 1
-                x['novelty'][lang][(tokens, types)] += 1
+                x['novelty'][lang][kx] += 1
 
         for lang in x['chars']:
             out = {k: dict(x[k][lang]) for k in keys}
@@ -113,10 +114,7 @@ def load_graph(target):
         return json.load(open(cache_path))
     except FileNotFoundError:
         keys = [
-            'density', 'avg_degree',
-            'avg_in_degree', 'avg_out_degree',
-            'avg_depth', 'tree_depth',
-            'avg_width', 'tree_width'
+            'tree_depth', 'tree_width'
         ]
         x = {k: defaultdict(lambda: defaultdict(int)) for k in keys}
         for convo, langs in get_convo_iterator():
@@ -129,18 +127,22 @@ def load_graph(target):
                 langs.add('en_und')
                 extra += 1
 
+            rep_degree_strings = [f'{total}-{rin}-{rout}' for (total, rin, rout) in convo.reply_counts]
+
             for lang in langs:
-                x['density'][lang][convo.density] += 1
+                # x['density'][lang][convo.density] += 1
 
-                x['avg_degree'][lang][np.average(convo.degree_hist)] += 1
-                x['avg_in_degree'][lang][np.average(convo.in_degree_hist)] += 1
-                x['avg_out_degree'][lang][np.average(convo.out_degree_hist)] += 1
+                # x['avg_degree'][lang][np.average(convo.degree_hist)] += 1
+                # x['avg_in_degree'][lang][np.average(convo.in_degree_hist)] += 1
+                # x['avg_out_degree'][lang][np.average(convo.out_degree_hist)] += 1
 
-                x['avg_depth'][lang][np.average(convo.depths)] += 1
+                # x['avg_depth'][lang][np.average(convo.depths)] += 1
                 x['tree_depth'][lang][convo.tree_depth] += 1
 
-                x['avg_width'][lang][np.average(convo.widths)] += 1
+                # x['avg_width'][lang][np.average(convo.widths)] += 1
                 x['tree_width'][lang][convo.tree_width] += 1
+                for s in rep_degree_strings:
+                    x['degrees'][lang][s] += 1
 
         for lang in x[keys[0]]:
             out = {k: dict(x[k][lang]) for k in keys}
