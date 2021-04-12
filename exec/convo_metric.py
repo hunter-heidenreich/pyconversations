@@ -75,12 +75,10 @@ def load_size(target):
 def load_text(target):
     try:
         cache_path = f'out/{args.sel}/{target}/convo/text.json'
-        return json.load(open(cache_path))  # , json.load(open(f'out/{args.sel}/{target}/convo/freqs.json'))
+        return json.load(open(cache_path))
     except FileNotFoundError:
-        keys = ['chars', 'tokens', 'types']
+        keys = ['chars', 'tokens', 'types', 'novelty']
         x = {k: defaultdict(lambda: defaultdict(int)) for k in keys}
-        # freqs = defaultdict(list)
-        # vocab = {}
         for convo, langs in get_convo_iterator():
             if convo.messages < 2:
                 continue
@@ -95,28 +93,18 @@ def load_text(target):
             tokens = convo.tokens
             types = convo.token_types
 
-            # fqs = defaultdict(int)
-            # for t in tokens:
-            #     if t not in vocab:
-            #         vocab[t] = len(vocab)
-            #     fqs[t] += 1
-            # fqs = [(vocab[k], v) for k, v in fqs.items()]
-
             for lang in langs:
                 x['chars'][lang][chars] += 1
                 x['tokens'][lang][tokens] += 1
                 x['types'][lang][types] += 1
-
-                # freqs[lang].append(fqs)
+                x['novelty'][lang][(tokens, types)] += 1
 
         for lang in x['chars']:
             out = {k: dict(x[k][lang]) for k in keys}
             os.makedirs(f'out/{args.sel}/{lang}/convo/', exist_ok=True)
             json.dump(out, open(f'out/{args.sel}/{lang}/convo/text.json', 'w+'))
-            # json.dump(freqs[lang], open(f'out/{args.sel}/{lang}/convo/freqs.json', 'w+'))
-        # json.dump(vocab, open(f'out/{args.sel}/vocab.json', 'w+'))
 
-        return {k: dict(x[k][target]) for k in keys}  # , freqs[target]
+        return {k: dict(x[k][target]) for k in keys}
 
 
 def load_graph(target):
