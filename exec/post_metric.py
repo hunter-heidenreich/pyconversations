@@ -120,7 +120,8 @@ def load_text(target):
                 chars[lang][post.chars] += 1
                 tokens[lang][len(ts)] += 1
                 types[lang][len(ts_)] += 1
-                novelty[lang][(len(ts), len(ts_))] += 1
+                kx = f'{len(ts)}-{len(ts_)}'
+                novelty[lang][kx] += 1
 
                 for t in ts:
                     freqs[lang][t] += 1
