@@ -114,7 +114,8 @@ def load_graph(target):
         return json.load(open(cache_path))
     except FileNotFoundError:
         keys = [
-            'tree_depth', 'tree_width'
+            'tree_depth', 'tree_width',
+            'degrees'
         ]
         x = {k: defaultdict(lambda: defaultdict(int)) for k in keys}
         for convo, langs in get_convo_iterator():
