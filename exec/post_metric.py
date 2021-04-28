@@ -43,6 +43,8 @@ def load(target='all', metric='lang'):
         return load_text(target)
     elif metric == 'size':
         return load_size(target)
+    elif metric == 'mu':
+        return load_mu(target)
     else:
         raise ValueError(f'post_metric::load - Unrecognized metric `{metric}`')
 
@@ -189,6 +191,34 @@ def load_size(target):
         return size[target], temporal_size[target]
 
 
+def load_mu(target):
+    try:
+        return json.load(open(f'out/{args.sel}/{target}/post/mu.json'))
+    except FileNotFoundError:
+        mus = defaultdict(lambda: defaultdict(int))
+        for post in get_post_iterator():
+            #  skip blank posts
+            if not post.text.strip():
+                continue
+
+            langs = [post.lang, 'all']
+            if post.lang == 'en' or post.lang == 'und':
+                langs.append('en_und')
+
+            mu = post.decay_rate
+            if mu is None:
+                continue
+
+            for lang in langs:
+                mus[lang][mu] += 1
+
+        for lang in tqdm(mus):
+            os.makedirs(f'out/{args.sel}/{lang}/post/', exist_ok=True)
+            json.dump(dict(mus[lang]), open(f'out/{args.sel}/{lang}/post/mu.json', 'w+'))
+
+        return dict(mus)[target]
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str, help='General directory data is located in')
@@ -206,7 +236,7 @@ if __name__ == '__main__':
     parser.add_argument('--metric', dest='metric', type=str, default='time',
                         const='time',
                         nargs='?',
-                        choices=['time', 'lang', 'text', 'size'])
+                        choices=['time', 'lang', 'text', 'size', 'mu'])
 
     args = parser.parse_args()
 

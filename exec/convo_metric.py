@@ -6,6 +6,8 @@ import numpy as np
 from argparse import ArgumentParser
 from collections import defaultdict
 
+from tqdm import tqdm
+
 from pyconversations.message import *
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
@@ -37,6 +39,8 @@ def load(target='all', metric='size'):
         return load_text(target)
     elif metric == 'graph':
         return load_graph(target)
+    elif metric == 'mu':
+        return load_mu(target)
     else:
         raise ValueError(f'post_metric::load - Unrecognized metric `{metric}`')
 
@@ -153,6 +157,33 @@ def load_graph(target):
         return {k: dict(x[k][target]) for k in keys}
 
 
+def load_mu(target):
+    try:
+        return json.load(open(f'out/{args.sel}/{target}/convo/mu.json'))
+    except FileNotFoundError:
+        mus = defaultdict(lambda: defaultdict(int))
+        for convo, langs in get_convo_iterator():
+            if convo.messages < 2:
+                continue
+
+            langs.add('all')
+            if 'en' in langs or 'und' in langs:
+                langs.add('en_und')
+
+            mu = convo.decay_rate
+            if mu is None:
+                continue
+
+            for lang in langs:
+                mus[lang][mu] += 1
+
+        for lang in tqdm(mus):
+            os.makedirs(f'out/{args.sel}/{lang}/post/', exist_ok=True)
+            json.dump(dict(mus[lang]), open(f'out/{args.sel}/{lang}/convo/mu.json', 'w+'))
+
+        return dict(mus)[target]
+
+
 if __name__ == '__main__':
     parser = ArgumentParser()
     parser.add_argument('--data', dest='data', required=True, type=str)
@@ -170,7 +201,7 @@ if __name__ == '__main__':
     parser.add_argument('--metric', dest='metric', type=str, default='size',
                         const='size',
                         nargs='?',
-                        choices=['text', 'size', 'graph'])
+                        choices=['text', 'size', 'graph', 'mu'])
 
     args = parser.parse_args()
 

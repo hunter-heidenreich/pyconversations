@@ -5,6 +5,8 @@ from tqdm import tqdm
 
 import networkx as nx
 
+from .message.base import decay_exponent
+
 
 class Conversation:
 
@@ -402,3 +404,12 @@ class Conversation:
 
         for uid in self._posts:
             self._posts[uid].redact(rd)
+
+    @property
+    def decay_rate(self):
+        toks = [t for post in self._posts.values() for t in post.tokens]
+
+        if toks:
+            return decay_exponent(toks)
+
+        return None

@@ -1,11 +1,14 @@
 import re
 from abc import ABC
 from abc import abstractmethod
+from collections import Counter
 from datetime import datetime
+from scipy.stats import linregress as lm
 
 import gcld3
 
-# from ..tokenizers import NLTKTokenizer
+import numpy as np
+
 from ..tokenizers import PartitionTokenizer
 
 # Langauge detection module; do not initialize unless asked for!
@@ -21,6 +24,74 @@ def get_detector():
         DETECTOR = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
 
     return DETECTOR
+
+
+def decay_exponent(tokens):
+    counts = Counter(tokens)
+    alphas, ns = innovationrate(counts)
+
+    if alphas is None or ns is None:
+        return None
+
+    reps = int(round(0.5 + (50000. / len(counts))))
+    termmax = 100
+
+    ix = range(int(len(ns) * 2 / 3.), len(ns))
+
+    x = np.log10(ns)[ix]
+    y = np.log10(alphas)[ix]
+
+    mu, b, r, p, err = lm(x, y)
+
+    if np.isnan(mu):
+        return None
+
+    return -mu
+
+
+def innovationrate(counts, reps=2, termmax=100):
+
+    def _order(cnts):
+        tokens = list(cnts.keys())
+        ps = np.array(list(cnts.values()))
+        ps = ps / float(sum(ps))
+        N = len(tokens)
+        return np.random.choice(tokens, size=N, replace=False, p=ps)
+
+    N = len(counts)
+    FN = sum(counts.values())
+
+    ns = range(1, N + 1)
+    Mn = [0 for n in ns]
+
+    for rep in range(reps):
+        n = 0
+        Fn = 0
+        Msum = 0
+        for n, word in zip(ns, _order(counts)):
+
+            f = counts[word]
+            Fn += f
+
+            if n == N:
+                break
+
+                ## compute In and Jn
+            In = Fn - (n - 1 + int(Msum))
+            Jn = FN - (n - 1 + int(Msum))
+
+            ## compute the average
+            ms = np.array(range(1, min([In, termmax]) + 1))
+
+            logfacts = np.log10(In - ms) - np.log10(Jn - ms)
+            prods = 10 ** np.cumsum(logfacts)
+            terms = ms * prods * (Jn - In) / (Jn - ms)
+            termsum = sum(terms)
+            Mn[n] += termsum / reps
+
+            Msum += termsum
+
+    return 1 / (1 + np.array(Mn)), np.array(ns)
 
 
 class UniMessage(ABC):
@@ -242,3 +313,16 @@ class UniMessage(ABC):
     @property
     def types(self):
         return set(self.tokens)
+
+    @property
+    def decay_rate(self):
+        toks = self.tokens
+
+        if toks:
+            return decay_exponent(self.tokens)
+
+        return None
+
+
+
+
