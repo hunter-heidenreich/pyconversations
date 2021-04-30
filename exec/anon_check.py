@@ -38,10 +38,9 @@ if __name__ == '__main__':
 
         for f in glob(data_root + '4chan/*/'):
             board = f.split('/')[-2]
-            dataset = f
+            dataset = '4chan/' + board
 
-            print(board)
-
+            print(dataset)
             for post in get_post_iterator():
                 total_count[board] += 1
                 total_count['all'] += 1
