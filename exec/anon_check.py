@@ -38,7 +38,7 @@ if __name__ == '__main__':
 
         for f in glob(data_root + '4chan/*/'):
             board = f.split('/')[-2]
-            dataset = '4chan/' + board
+            dataset = '4chan/' + board + '/'
 
             print(dataset)
             for post in get_post_iterator():
