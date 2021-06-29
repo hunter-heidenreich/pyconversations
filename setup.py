@@ -72,10 +72,8 @@ setup(
     python_requires='>=3.6',
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
-        'protobuf>=3.0',
-        'gcld3>=3.0',
         'networkx>=2.5',
-        # 'scipy>=1.6',
+        'fasttext @ git+https://github.com/facebookresearch/fastText@master#egg=fasttext',
         'numpy>=1.12',
         'tqdm>=4.59',
         'nltk>=3.0'
