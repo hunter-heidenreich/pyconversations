@@ -6,8 +6,19 @@ import networkx as nx
 
 
 class Conversation:
+    """A conversational container for the PyConversations package."""
 
     def __init__(self, posts=None, edges=None):
+        """
+        Constructor for Conversation object.
+
+        Parameters
+        ---------
+        posts
+            An optional dictionary of messages/posts; keys should be unique IDs.
+        edges
+            An optional dictionary containing information of the posts replied to, also indexed by unique IDs.
+        """
         if not posts:
             posts = {}
 
