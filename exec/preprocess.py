@@ -6,9 +6,13 @@ for further downstream analysis.
 """
 import json
 import os
-
 from argparse import ArgumentParser
-from pyconversations.reader import RawFBReader, ChanReader, QuoteReader, ThreadsReader, RedditReader
+
+from pyconversations.reader import ChanReader
+from pyconversations.reader import QuoteReader
+from pyconversations.reader import RawFBReader
+from pyconversations.reader import RedditReader
+from pyconversations.reader import ThreadsReader
 
 
 def preprocess_buzzface():
@@ -48,7 +52,7 @@ def pre_process_quote_tweets(sharding=100):
     print(f'{total} conversations')
     print(f'Sharding into {sharding} chunks with ~{total / sharding} conversations per chunk.')
 
-    os.makedirs(out + f'Twitter/CTQ/', exist_ok=True)
+    os.makedirs(out + 'Twitter/CTQ/', exist_ok=True)
     cap = (total // sharding) + 1
     cache = []
     shard = 0
@@ -68,11 +72,11 @@ def pre_process_quote_tweets(sharding=100):
 
 
 def preprocess_newstweetthreads(per_file=1_000):
-    os.makedirs(out + f'Twitter/NTT/', exist_ok=True)
+    os.makedirs(out + 'Twitter/NTT/', exist_ok=True)
 
     write_cache = []
     cnt = 0
-    for ix, convo_chunk in ThreadsReader.iter_read(data_root + f'threads/'):
+    for ix, convo_chunk in ThreadsReader.iter_read(data_root + 'threads/'):
         print(f'{ix}: {len(convo_chunk)} conversations')
         # for chunk in convo_chunk:
         #     chunk.redact()
@@ -90,11 +94,11 @@ def preprocess_newstweetthreads(per_file=1_000):
 
 
 def preprocess_reddit_cmv(per_file=1_000):
-    os.makedirs(out + f'Reddit/CMV/', exist_ok=True)
+    os.makedirs(out + 'Reddit/CMV/', exist_ok=True)
 
     write_cache = []
     cnt = 0
-    for convo_chunk in RedditReader.iter_read(data_root + f'cmv-full-2017-09-22/'):
+    for convo_chunk in RedditReader.iter_read(data_root + 'cmv-full-2017-09-22/'):
         write_cache.extend([json.dumps(convo.to_json()) for convo in convo_chunk])
 
         if len(write_cache) >= per_file:

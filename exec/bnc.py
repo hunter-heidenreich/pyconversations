@@ -3,12 +3,11 @@ import os
 
 from pyconversations.reader import BNCReader
 
-
 if __name__ == '__main__':
     data_root = '/Users/hsh28/data/'
     out = data_root + 'conversations/'
 
-    os.makedirs(out + f'Reddit/BNC/', exist_ok=True)
+    os.makedirs(out + 'Reddit/BNC/', exist_ok=True)
     convos = BNCReader.read(data_root + 'BNC/*', ld=True)
 
     cache = []

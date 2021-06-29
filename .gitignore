@@ -1,6 +1,7 @@
 *.py[cod]
 __pycache__
 out/
+notebooks/
 
 # C extensions
 *.so

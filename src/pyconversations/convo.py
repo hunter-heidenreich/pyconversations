@@ -1,11 +1,8 @@
 from collections import Counter
 from collections import defaultdict
 from functools import reduce
-from tqdm import tqdm
 
 import networkx as nx
-
-from .message.base import decay_exponent
 
 
 class Conversation:
@@ -234,7 +231,8 @@ class Conversation:
                     if rid in self._posts:
                         post = self._posts[rid]
 
-                        if (reply.created_at and post.created_at and reply.created_at > post.created_at) or post.created_at is None or reply.created_at is None:
+                        if (reply.created_at and post.created_at and reply.created_at > post.created_at) or \
+                           post.created_at is None or reply.created_at is None:
 
                             d = self.get_depth(rid) + 1
                             if depth is None or d < depth:
@@ -279,44 +277,6 @@ class Conversation:
             self._stats['tree_width'] = max(self.widths)
 
         return self._stats['tree_width']
-
-    @property
-    def assortativity(self):
-        try:
-            return nx.degree_pearson_correlation_coefficient(self._build_graph())
-        except nx.exception.NetworkXError:
-            return None
-        except ValueError:
-            return None
-
-    @property
-    def diameter(self):
-        return nx.algorithms.diameter(self._build_graph(), e=self.eccentricity)
-
-    @property
-    def radius(self):
-        return nx.algorithms.radius(self._build_graph(), e=self.eccentricity)
-
-    @property
-    def eccentricity(self):
-        if 'eccentricity' not in self._stats:
-            self._stats['eccentricity'] = nx.algorithms.eccentricity(self._build_graph())
-        return self._stats['eccentricity']
-
-    @property
-    def rich_club_coefficient(self):
-        try:
-            self._stats['rich_club_coefficient'] = nx.algorithms.rich_club_coefficient(self._build_graph())
-        except nx.exception.NetworkXError:
-            self._stats['rich_club_coefficient'] = None
-        except IndexError:
-            self._stats['rich_club_coefficient'] = None
-        except nx.exception.NetworkXAlgorithmError:
-            self._stats['rich_club_coefficient'] = None
-        except ZeroDivisionError:
-            self._stats['rich_club_coefficient'] = None
-
-        return self._stats['rich_club_coefficient']
 
     def filter(self, by_langs=None, min_chars=1, before=None, after=None, by_tags=None):
         drop = set()
@@ -404,12 +364,3 @@ class Conversation:
 
         for uid in self._posts:
             self._posts[uid].redact(rd)
-
-    @property
-    def decay_rate(self):
-        toks = [t for post in self._posts.values() for t in post.tokens]
-
-        if toks:
-            return decay_exponent(toks)
-
-        return None

@@ -1,10 +1,9 @@
 import json
-
 from argparse import ArgumentParser
 from collections import Counter
 from glob import glob
 
-from pyconversations.message import *
+from pyconversations.message import ChanPost
 from pyconversations.reader import ConvoReader
 from pyconversations.utils import num2str
 

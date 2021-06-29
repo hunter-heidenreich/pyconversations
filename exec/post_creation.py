@@ -1,16 +1,18 @@
 import json
 import os
-
-import matplotlib.pyplot as plt
-import pandas as pd
-import seaborn as sns
-
 from argparse import ArgumentParser
 from collections import defaultdict
 from datetime import datetime
 from glob import glob
 
-from pyconversations.message import *
+import matplotlib.pyplot as plt
+import pandas as pd
+import seaborn as sns
+
+from pyconversations.message import ChanPost
+from pyconversations.message import FBPost
+from pyconversations.message import RedditPost
+from pyconversations.message import Tweet
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 

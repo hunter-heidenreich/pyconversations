@@ -1,14 +1,14 @@
 import json
 import os
-
-import numpy as np
-
 from argparse import ArgumentParser
 from collections import defaultdict
 
 from tqdm import tqdm
 
-from pyconversations.message import *
+from pyconversations.message import ChanPost
+from pyconversations.message import FBPost
+from pyconversations.message import RedditPost
+from pyconversations.message import Tweet
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 from pyconversations.utils import num2str

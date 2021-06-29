@@ -1,18 +1,19 @@
 import json
 import os
-import re
+from argparse import ArgumentParser
+from collections import defaultdict
+from copy import deepcopy
 
 import matplotlib.pyplot as plt
 import numpy as np
 import pandas as pd
 import seaborn as sns
-
-from argparse import ArgumentParser
-from collections import defaultdict
-from copy import deepcopy
 from tqdm import tqdm
 
-from pyconversations.message import *
+from pyconversations.message import ChanPost
+from pyconversations.message import FBPost
+from pyconversations.message import RedditPost
+from pyconversations.message import Tweet
 from pyconversations.message.base import get_detector
 from pyconversations.reader import ConvoReader
 from pyconversations.tokenizers import PartitionTokenizer

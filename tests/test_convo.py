@@ -1,4 +1,3 @@
-import numpy as np
 import pytest
 
 from pyconversations.convo import Conversation
@@ -138,15 +137,14 @@ def test_stats(mock_convo):
     assert mock_convo.tokens == 5
     assert mock_convo.tokens == 5
 
-    assert mock_convo.token_types == {' ', 'Root', 'tweet', 'text'}
-    assert mock_convo.token_types == {' ', 'Root', 'tweet', 'text'}
+    assert mock_convo.token_types == 4
+    assert mock_convo.token_types == 4
 
     assert mock_convo.sources == {0}
     assert mock_convo.sources == {0}
 
     assert mock_convo.density == 0
     assert mock_convo.degree_hist == [1]
-    assert mock_convo.assortativity is None
 
 
 def test_stats_path(mock_convo_path):
@@ -155,19 +153,12 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.users == 2
     assert mock_convo_path.chars == 24
     assert mock_convo_path.tokens == 8
-    assert mock_convo_path.token_types == {' ', 'Root', 'tweet', 'text', 'test'}
+    assert mock_convo_path.token_types == 5
     assert mock_convo_path.sources == {0}
     assert mock_convo_path.density == 1.0
     assert mock_convo_path.degree_hist == [0, 2]
-    assert mock_convo_path.in_degree_hist == [0, 1]
+    assert mock_convo_path.in_degree_hist == [1, 0]
     assert mock_convo_path.out_degree_hist == [1, 0]
-    assert np.isnan(mock_convo_path.assortativity)
-
-    assert mock_convo_path.diameter == 1
-    assert mock_convo_path.radius == 1
-    assert mock_convo_path.eccentricity == {0: 1, 1: 1}
-
-    assert mock_convo_path.rich_club_coefficient is None
 
     assert mock_convo_path.duration is None
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']

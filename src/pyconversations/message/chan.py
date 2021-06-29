@@ -32,12 +32,6 @@ class ChanPost(UniMessage):
         were replied to
         """
         refs = re.findall(r'>>(\d+)', comment)
-
-        # lines = comment.split("\n")
-        # lines = filter(lambda x: not bool(re.match(r">>(\d+)", x.strip())), lines)
-        # comment = "\n".join(lines)
-        # comment = re.sub(r">>(\d+)", "", comment)
-
         return comment, refs
 
     @staticmethod
@@ -49,21 +43,7 @@ class ChanPost(UniMessage):
         comment = html.unescape(comment)
         comment = re.sub(r"<br/?>", "\n", comment)
         comment = re.sub(r"<wbr/?>", "", comment)
-        # comment = re.sub(r"<a href=\".+\" class=\"(\w+)\">", " ", comment)
-        # comment = re.sub(r"</a>", " ", comment)
-        # comment = re.sub(r"<span class=\"(\w+)\">", " ", comment)
-        # comment = re.sub(r"</span>", " ", comment)
-        # comment = re.sub(r"<pre class=\"(\w+)\">", " ", comment)
-        # comment = re.sub(r"</pre>", " ", comment)
-
         comment, rfs = ChanPost.exclude_replies(comment)
-
-        # comment = re.sub(r"[^\x00-\x7F]", " ", comment)
-
-        # comment = re.sub(r"&(amp|lt|gt|ge|le)(;|)", " ", comment)
-
-        # comment = re.sub(r"\\s\\s+", " ", comment)
-        # comment = re.sub("\n", " ", comment)
         comment = str(comment).strip()
 
         return comment, rfs

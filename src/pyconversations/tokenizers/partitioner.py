@@ -2,7 +2,6 @@ import re
 
 from .base import BaseTokenizer
 
-
 with open('other/chars.txt', 'r') as f:
     CHARS = f.read().strip()
     CHARS = re.sub(' ', '', CHARS)

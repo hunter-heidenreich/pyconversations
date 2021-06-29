@@ -1,5 +1,4 @@
 import json
-
 from abc import ABC
 from abc import abstractmethod
 from glob import glob
