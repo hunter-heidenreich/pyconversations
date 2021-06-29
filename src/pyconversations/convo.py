@@ -32,13 +32,23 @@ class Conversation:
 
     @property
     def posts(self):
+        """Returns a dictionary of posts, keyed by their UIDs."""
         return self._posts
 
     @property
     def edges(self):
+        """Returns a dictionary of reply edges, keyed by post UIDs."""
         return self._edges
 
     def add_post(self, post):
+        """
+        Adds a post to the conversational container.
+
+        Parameters
+        ---------
+        post
+            The post object to be added.
+        """
         if post.uid in self._posts and self._posts[post.uid]:
             self._posts[post.uid] |= post
 
@@ -55,6 +65,14 @@ class Conversation:
         self._stats = {}
 
     def remove_post(self, uid):
+        """
+        Deletes a post from the conversational container using its UID.
+
+        Parameters
+        ---------
+        uid
+            Unique identifier for the post to delete.
+        """
         # remove from post dictionary
         del self._posts[uid]
 
@@ -65,6 +83,16 @@ class Conversation:
         self._stats = {}
 
     def __add__(self, other):
+        """
+        Defines the addition operation over Conversation objects.
+        Returns a new copy of a conversation.
+
+        Parameters
+        ---------
+        other
+            Another conversation to be added to this one.
+        """
+
         convo = Conversation()
         for post in other.posts.values():
             convo.add_post(post)
@@ -73,6 +101,15 @@ class Conversation:
         return convo
 
     def _build_graph(self, directed=False):
+        """
+        Constructs (and returns) a networkx Graph object
+        from the contained posts and edges.
+
+        Parameters
+        ---------
+        directed
+            Whether or not the graph should be a DiGraph. (Default: False)
+        """
         if not directed:
             if 'graph' in self._cache:
                 return self._cache['graph']
@@ -110,10 +147,9 @@ class Conversation:
 
     def segment(self):
         """
-        Analyze current post and edge configuration,
-        generating sub-conversations
-        if there are disparate components
-        :return:
+        Segments a conversation into disjoint (i.e., not connected by any replies) sub-conversations.
+        If a single conversation is contained in this object,
+        this function will return a list with a single element: a copy of this object.
         """
         segments = []
         for node_set in nx.connected_components(self._build_graph()):
@@ -125,10 +161,23 @@ class Conversation:
         return segments
 
     def to_json(self):
+        """
+        Returns a JSON representation of this object.
+        """
         return [post.to_json() for post in self.posts.values()]
 
     @staticmethod
     def from_json(raw, cons):
+        """
+        Converts a JSON representation of a Conversation into a full object.
+
+        Parameters
+        ---------
+        raw
+            The raw JSON
+        cons
+            The post/UniversalMessage constructor to use.
+        """
         convo = Conversation()
         for p in [cons.from_json(pjson) for pjson in raw]:
             convo.add_post(p)
@@ -136,6 +185,9 @@ class Conversation:
 
     @property
     def messages(self):
+        """
+        Returns the number of messages contained in this conversation as an integer.
+        """
         try:
             return self._stats['messages']
         except KeyError:
@@ -144,6 +196,9 @@ class Conversation:
 
     @property
     def connections(self):
+        """
+        Returns the number of reply connections contained in this conversation as an integer.
+        """
         try:
             return self._stats['connections']
         except KeyError:
@@ -152,6 +207,9 @@ class Conversation:
 
     @property
     def users(self):
+        """
+        Returns the number of unique users participating in a conversations as an integer.
+        """
         try:
             return self._stats['users']
         except KeyError:
@@ -160,6 +218,10 @@ class Conversation:
 
     @property
     def chars(self):
+        """
+        Returns the integer character length of the entire conversation.
+        This is a summation over the character counts for all posts within it.
+        """
         try:
             return self._stats['chars']
         except KeyError:
@@ -168,6 +230,10 @@ class Conversation:
 
     @property
     def tokens(self):
+        """
+        Returns the integer token length of the entire conversation.
+        This is a summation over the token counts for all posts within it.
+        """
         try:
             return self._stats['tokens']
         except KeyError:
@@ -177,6 +243,9 @@ class Conversation:
 
     @property
     def token_types(self):
+        """
+        Returns the number of unique tokens used in this conversation (as an integer).
+        """
         try:
             return self._stats['token_types']
         except KeyError:
@@ -186,7 +255,10 @@ class Conversation:
 
     @property
     def sources(self):
-        # any posts that don't have a predecessor within the conversation
+        """
+        Returns the number of originating (non-reply) posts
+        included in this conversation.
+        """
         try:
             return self._stats['sources']
         except KeyError:
@@ -196,14 +268,25 @@ class Conversation:
 
     @property
     def density(self):
+        """
+        Returns the density (a float) of the conversation,
+        when represented as a graph.
+        """
         return nx.density(self._build_graph())
 
     @property
     def degree_hist(self):
+        """
+        Returns the degree (# of replies received) histogram of this conversation.
+        """
         return nx.degree_histogram(self._build_graph())
 
     @property
     def replies(self):
+        """
+        Returns the number of replies received (as collected in this Conversation)
+        for each post within the Conversation.
+        """
         if 'replies' not in self._stats:
             rep_cnts = defaultdict(int)
             for post in self._posts.values():
@@ -215,6 +298,9 @@ class Conversation:
 
     @property
     def reply_counts(self):
+        """
+        Returns a list of 3-tuples of the form (total replies, replies in, replies out) for each post.
+        """
         # for each post, we'll have a 3-tuple of form (total replies, replies in, replies out)
         reps = self.replies
         total = sum(reps.values())
@@ -222,14 +308,28 @@ class Conversation:
 
     @property
     def in_degree_hist(self):
+        """
+        Returns a list of all in-degrees.
+        """
         rep_cnts = self.replies
         return [rep_cnts[pid] for pid in self.posts]
 
     @property
     def out_degree_hist(self):
+        """
+        Returns a list of all out-degrees.
+        """
         return list(self.replies.values())
 
     def get_depth(self, uid):
+        """
+        Returns the depth of a specific post within this Conversation.
+
+        Parameters
+        ---------
+        uid
+            The unique identifier of the post
+        """
         if 'depth' not in self._stats:
             self._stats['depth'] = {}
 
@@ -260,6 +360,10 @@ class Conversation:
 
     @property
     def depths(self):
+        """
+        Returns a list of depths of posts within this Conversation.
+        This is useful for understanding how the Conversation is structured/dispersed.
+        """
         if 'depths' in self._stats:
             return self._stats['depths']
 
@@ -269,6 +373,10 @@ class Conversation:
 
     @property
     def tree_depth(self):
+        """
+        Returns the depth of this Conversation.
+        Specifically, the longest path from source to leaf.
+        """
         if 'tree_depth' not in self._stats:
             self._stats['tree_depth'] = max(self.depths)
 
@@ -276,6 +384,9 @@ class Conversation:
 
     @property
     def widths(self):
+        """
+        Returns a list of the width (# of posts) at each depth level within the Conversation.
+        """
         if 'widths' not in self._stats:
             cnts = dict(Counter(self.depths))
             self._stats['widths'] = [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
@@ -284,12 +395,31 @@ class Conversation:
 
     @property
     def tree_width(self):
+        """
+        Returns the width of the full Conversation (the max width of any depth level).
+        """
         if 'tree_width' not in self._stats:
             self._stats['tree_width'] = max(self.widths)
 
         return self._stats['tree_width']
 
     def filter(self, by_langs=None, min_chars=1, before=None, after=None, by_tags=None):
+        """
+        Removes posts from this Conversation based on specified parameters.
+
+        Parameters
+        ---------
+        by_langs
+            The desired language codes to be retained. (Default: None)
+        min_chars
+            The minimum number of characters a post should have. (Default: 1)
+        before
+            The earliest datettime desired. (Default: None)
+        after
+            The latest datetime desired. (Default: None)
+        by_tags
+            The required tags. (Default: None)
+        """
         drop = set()
         for uid, post in self._posts.items():
             if len(post.text) < min_chars:
@@ -316,6 +446,9 @@ class Conversation:
 
     @property
     def time_order(self):
+        """
+        Returns a time series of the posts within this Conversation.
+        """
         try:
             return self._stats['time_order']
         except KeyError:
@@ -327,6 +460,10 @@ class Conversation:
 
     @property
     def text_stream(self):
+        """
+        Returns the text of the Conversation as a single stream.
+        If timestamps are available, text will appear in temporal order.
+        """
         if self.time_order:
             return [self._posts[uid].text for uid in self.time_order]
         else:
@@ -334,6 +471,9 @@ class Conversation:
 
     @property
     def start_time(self):
+        """
+        Returns the start datetime of the Conversation.
+        """
         try:
             return self._stats['start_time']
         except KeyError:
@@ -342,6 +482,9 @@ class Conversation:
 
     @property
     def end_time(self):
+        """
+        Returns the end datettime of the Conversation.
+        """
         try:
             return self._stats['end_time']
         except KeyError:
@@ -350,6 +493,9 @@ class Conversation:
 
     @property
     def duration(self):
+        """
+        Returns the duration (in seconds) of the Conversation.
+        """
         try:
             return self._stats['duration']
         except KeyError:
@@ -361,12 +507,18 @@ class Conversation:
 
     @property
     def time_series(self):
+        """
+        Returns the time series of the conversation as floating point timestamps.
+        """
         if self.time_order:
             return [self._posts[uid].created_at.timestamp() for uid in self.time_order]
 
         return None
 
     def redact(self):
+        """
+        Redacts user information from the conversation.
+        """
         rd = {}
         for uid in self._posts:
             for user in self._posts[uid].get_mentions():
