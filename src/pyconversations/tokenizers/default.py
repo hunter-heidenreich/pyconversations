@@ -1,16 +1,14 @@
-from abc import abstractmethod
+from .base import BaseTokenizer
 
 
-class BaseTokenizer:
+class DefaultTokenizer(BaseTokenizer):
+    name = 'Default'
 
     """
-    The abstract Tokenizer class.
+    A tokenizer that just uses Python's basic str.split function.
     """
-
-    NAME = 'BaseTokenizer'
 
     @staticmethod
-    @abstractmethod
     def tokenize(s):
         """
         Splits a string into tokens.
@@ -25,4 +23,4 @@ class BaseTokenizer:
         list(str)
             A list of tokens
         """
-        pass
+        return s.split()

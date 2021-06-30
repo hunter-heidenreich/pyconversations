@@ -7,6 +7,3 @@ pyconversations
 
 .. automodule:: pyconversations
     :members:
-
-.. automodule:: pyconversations.message
-    :members:

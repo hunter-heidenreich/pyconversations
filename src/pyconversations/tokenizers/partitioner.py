@@ -8,11 +8,33 @@ with open('other/chars.txt', 'r') as f:
 
 
 class PartitionTokenizer(BaseTokenizer):
+
+    """
+    A custom Tokenizer based off of Partitioner by Jake Ryland Williams.
+
+    Notes
+    -----
+    See for more information: https://github.com/jakerylandwilliams/partitioner
+    """
+
     NAME = 'Partitioner'
     SPACE = True
 
     @staticmethod
-    def split(s):
+    def tokenize(s):
+        """
+        Splits a string into tokens.
+
+        Parameters
+        ----------
+        s : str
+            The string to tokenize
+
+        Returns
+        -------
+        list(str)
+            A list of tokens
+        """
         tokens = []
         for token in re.split("([0-9" + CHARS + "'-]+)", s):
             if not PartitionTokenizer.SPACE:

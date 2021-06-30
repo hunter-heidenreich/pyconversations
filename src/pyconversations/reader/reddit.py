@@ -11,12 +11,46 @@ from .base import BaseReader
 
 class RedditReader(BaseReader):
 
+    """
+    General Reddit raw data reader.
+    """
+
     @staticmethod
     def read(path_pattern):
+        """
+        Function for reading an entire file/directory of conversations.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to file or directory containing Conversation data
+
+        Raises
+        ------
+        NotImplementedError
+        """
         raise NotImplementedError
 
     @staticmethod
     def iter_read(path_pattern, ld=True, rd=False):
+        """
+        This iterative reading function assumes that the path it will be pointed towards
+        contains raw Reddit comments and submissions, sorted/chunked by the month they were created.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to the directory containing the data
+        ld : bool
+            Whether or not activate language detection (Default: True)
+        rd : bool
+            Whether to use the secondary Reddit parser (`RedditPost.parse_rd`) or not (`RedditPost.parse_raw`) (Default: False)
+
+        Yields
+        ------
+        list(Conversation)
+            A chunk of Conversations, as parsed
+        """
         convo = Conversation()
         for f in tqdm(sorted(glob(f'{path_pattern}*.json'))):
             if rd:
@@ -53,9 +87,6 @@ class RedditReader(BaseReader):
                         convo.remove_post(uid)
 
                     out = out.segment()
-                    # for o in out:
-                    #     o.redact()
-
                     yield out
             else:
                 convo = Conversation()
@@ -64,21 +95,43 @@ class RedditReader(BaseReader):
                         convo.add_post(RedditPost.parse_raw(json.loads(line), lang_detect=ld))
 
                 segs = convo.segment()
-                # for s in segs:
-                #     s.redact()
                 yield segs
 
         if rd and convo.messages:
             segs = convo.segment()
-            # for s in segs:
-            #     s.redact()
             yield segs
 
 
 class BNCReader(BaseReader):
 
+    """
+    A custom Reddit Reader generated for the data format
+    from "Before Name-calling: Dynamics and Triggers of Ad Hominem Fallacies in Web Argumentation" (Habernal et al., 2018).
+
+    Notes
+    -----
+    See: https://www.aclweb.org/anthology/N18-1036/
+    """
+
     @staticmethod
     def read(path_pattern, ld=True):
+        """
+        Reads the entire archive of posts from this dataset.
+        Posts that violate rule 2 of the r/ChangeMyView sub-reddit are tagged with the `AH=1` tag;
+        otherwise, posts are tagged with `AH=0`.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to the directory containing the data
+        ld : bool
+            Whether or not activate language detection (Default: True)
+
+        Returns
+        -------
+        list(Conversation)
+            A list of all parsed and segmented disjoint Conversations within this dataset
+        """
         convo = Conversation()
         for f in tqdm(glob(path_pattern)):
             with open(f) as fp:
@@ -89,10 +142,25 @@ class BNCReader(BaseReader):
                     convo.add_post(post)
 
         segs = convo.segment()
-        # for s in segs:
-        #     s.redact()
         return segs
 
     @staticmethod
     def iter_read(path_pattern, ld=True, rd=False):
+        """
+        Function for creating a conversation reading iterator.
+        Will read and parse part of a file/directory, yielding segments as queried.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to file or directory containing Conversation data
+        ld : bool
+            Whether or not activate language detection (Default: True)
+        rd : bool
+            Whether to use the secondary Reddit parser (`RedditPost.parse_rd`) or not (`RedditPost.parse_raw`) (Default: False)
+
+        Raises
+        ------
+        NotImplementedError
+        """
         raise NotImplementedError

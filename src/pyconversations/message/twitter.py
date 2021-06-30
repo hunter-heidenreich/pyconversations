@@ -12,9 +12,24 @@ class Tweet(UniMessage):
 
     @staticmethod
     def parse_datestr(x):
+        """
+        Static method that specifies how to convert the native datetime string
+        into a a Python datetime object.
+
+        Parameters
+        ----------
+        x
+            The raw datetime string
+        """
         return datetime.strptime(x, '%a %b %d %H:%M:%S +0000 %Y')
 
     def get_mentions(self):
+        """
+        Uses Twitter specific regex to attempt to identify
+        user mentions within the comment text.
+
+        Returns a set of usernames.
+        """
         # twitter mention regex
         names = re.findall(r'@[a-zA-Z0-9_]{1,15}', self.text)
         names = [name[1:] for name in names]
@@ -26,12 +41,29 @@ class Tweet(UniMessage):
         """
         Given an exported JSON object for a Universal Message,
         this function loads the saved data into its fields
+
+        Parameters
+        ----------
+        data
+            Raw JSON data
         """
         data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
         return Tweet(**data)
 
     @staticmethod
     def parse_raw(data, lang_detect=False):
+        """
+        Static method that must be implemented by all non-abstract child classes.
+        Concrete implementations should specify how to parse the raw data into this object.
+        Returns a list of Twitter posts.
+
+        Parameters
+        ----------
+        data
+            The raw data to be pre-processed.
+        lang_detect
+            A boolean which specifies whether language detection should be activated. (Default: False)
+        """
         cons_vals = {
             'platform': 'Twitter',
             'reply_to': set(),

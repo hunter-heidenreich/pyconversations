@@ -12,9 +12,34 @@ class RedditPost(UniMessage):
 
     @staticmethod
     def parse_datestr(x):
+        """
+        Static method that specifies how to convert the native datetime string
+        into a a Python datetime object.
+
+        Parameters
+        ----------
+        x : str
+            The raw datetime string
+
+        Returns
+        -------
+        datetime.datetime
+            The parsed datetime
+        """
         return datetime.fromtimestamp(float(x))
 
     def get_mentions(self):
+        """
+        Uses Reddit specific regex to attempt to identify
+        user mentions within the comment text.
+
+        Returns a set of usernames.
+
+        Returns
+        -------
+        set(str)
+            The set of extracted usernames
+        """
         # Reddit mention regex
         names = re.findall(r'/?u/([A-Za-z0-9_-]+)', self.text)
         adj_names = []
@@ -33,12 +58,38 @@ class RedditPost(UniMessage):
         """
         Given an exported JSON object for a Universal Message,
         this function loads the saved data into its fields
+
+        Parameters
+        ----------
+        data : JSON/dict
+            Raw JSON data
+
+        Returns
+        -------
+        RedditPost
+            The loaded post
         """
         data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
         return RedditPost(**data)
 
     @staticmethod
     def parse_raw(data, lang_detect=False):
+        """
+        Static method that must be implemented by all non-abstract child classes.
+        Concrete implementations should specify how to parse the raw data into this object.
+
+        Parameters
+        ----------
+        data : JSON/dict
+            The raw data to be pre-processed.
+        lang_detect : bool
+            A boolean which specifies whether language detection should be activated. (Default: False)
+
+        Returns
+        -------
+        RedditPost
+            The parsed post
+        """
         post_cons = {
             'reply_to': set(),
             'platform': 'Reddit',
@@ -77,6 +128,21 @@ class RedditPost(UniMessage):
 
     @staticmethod
     def parse_rd(data, lang_detect=True):
+        """
+        Secondary method for parsing raw Reddit data
+
+        Parameters
+        ----------
+        data : JSON/dict
+            The raw data to be pre-processed.
+        lang_detect : bool
+            A boolean which specifies whether language detection should be activated. (Default: True)
+
+        Returns
+        -------
+        RedditPost
+            The parsed post
+        """
         cons = {
             'platform': 'Reddit',
             'lang_detect': lang_detect,

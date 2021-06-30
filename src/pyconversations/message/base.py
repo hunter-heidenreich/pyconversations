@@ -106,9 +106,9 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        raw
+        raw : JSON/dict
             The raw data to be pre-processed.
-        lang_detect
+        lang_detect : bool
             A boolean which specifies whether language detection should be activated. (Default: False)
         """
         raise NotImplementedError
@@ -122,19 +122,33 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        x
+        x : str
             The raw datetime string
         """
         raise NotImplementedError
 
     @property
     def uid(self):
-        """The unique identifier of this object."""
+        """
+        The unique identifier of this object.
+
+        Returns
+        -------
+        UID
+            Unique identifier for this message.
+        """
         return self._uid
 
     @property
     def text(self):
-        """The text associated with this message."""
+        """
+        The text associated with this message.
+
+        Returns
+        -------
+        str
+            Message text
+        """
         return self._text
 
     @text.setter
@@ -144,8 +158,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        t
+        t : str
             The new text
+
+        Returns
+        -------
+        None
         """
         self._text = t
         self._lang = None
@@ -153,7 +171,14 @@ class UniMessage(ABC):
 
     @property
     def author(self):
-        """Returns the author of this message."""
+        """
+        Returns the author of this message.
+
+        Returns
+        -------
+        str
+            Author name/username
+        """
         return self._author
 
     @author.setter
@@ -163,14 +188,25 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        a
+        a : str
             The new author
+
+        Returns
+        -------
+        None
         """
         self._author = a
 
     @property
     def created_at(self):
-        """Returns the datetime associated with this message."""
+        """
+        Returns the datetime associated with this message.
+
+        Returns
+        -------
+        datetime.datetime
+            Time of creation of post. Could be None if not available/processed.
+        """
         return self._created_at
 
     def set_created_at(self, x):
@@ -179,8 +215,17 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        x
+        x : str or float
             The new datetime
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            When setting this property with a value that is not a string nor a float.
         """
         if type(x) == str:
             self._created_at = self.parse_datestr(x)
@@ -191,7 +236,14 @@ class UniMessage(ABC):
 
     @property
     def reply_to(self):
-        """Returns the unique identifiers of the messages that are replied to by this message."""
+        """
+        Returns the unique identifiers of the messages that are replied to by this message.
+
+        Returns
+        -------
+        set(UID)
+            The set of UIDs of the posts this message replies to
+        """
         return self._reply_to
 
     def add_reply_to(self, tid):
@@ -200,8 +252,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        tid
+        tid : UID
             The UID to be added
+
+        Returns
+        -------
+        None
         """
         self._reply_to.add(tid)
 
@@ -211,14 +267,21 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        tid
+        tid : UID
             The UID to be removed
         """
         self._reply_to.remove(tid)
 
     @property
     def tags(self):
-        """Returns the tags assoicated with this message."""
+        """
+        Returns the tags associated with this message.
+
+        Returns
+        -------
+        set(str)
+            Set of string tags associated with this message
+        """
         return self._tags
 
     def add_tag(self, tag):
@@ -227,8 +290,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        tag
+        tag : str
             The tag to be added
+
+        Returns
+        -------
+        None
         """
         self._tags.add(tag)
 
@@ -238,8 +305,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        tag
+        tag : str
             The tag to remove
+
+        Returns
+        -------
+        None
         """
         self._tags.remove(tag)
 
@@ -247,6 +318,11 @@ class UniMessage(ABC):
     def platform(self):
         """
         The platform this message was created on
+
+        Returns
+        -------
+        str
+            Platform name
         """
         return self._platform
 
@@ -257,14 +333,25 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        p
+        p : str
             The platform name
+
+        Returns
+        -------
+        None
         """
         self._platform = p
 
     @property
     def lang(self):
-        """Returns the language this post was written in"""
+        """
+        Returns the language this post was written in
+
+        Returns
+        -------
+        str
+            Language code of the message text
+        """
         return self._lang
 
     @lang.setter
@@ -274,8 +361,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        lang
+        lang : str
             The language associated with this post
+
+        Returns
+        -------
+        None
         """
         self._lang = lang
 
@@ -287,14 +378,23 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        data
+        data : JSON/dict
             The raw message JSON
+
+        Raises
+        ------
+        NotImplementedError
         """
         raise NotImplementedError
 
     def to_json(self):
         """
         Function for exporting a Universal Post into a JSON object for storage and later use
+
+        Returns
+        -------
+        JSON/dict
+            The JSON formatted UniMessage for disk storage
         """
         return {
             'uid': self._uid,
@@ -311,6 +411,11 @@ class UniMessage(ABC):
         """
         By default, this will simply return the author
         of the post (if available) for appropriate anonymization
+
+        Returns
+        -------
+        set(str)
+            The mentions detected in this message
         """
         if self.author:
             return {self.author}
@@ -326,8 +431,12 @@ class UniMessage(ABC):
 
         Parameters
         ----------
-        redact_map
+        redact_map : dict(str, str)
             The map of terms and what they should be replaced with
+
+        Returns
+        -------
+        None
         """
         if self.text:
             for term, replacement in redact_map.items():
@@ -340,15 +449,36 @@ class UniMessage(ABC):
 
     @property
     def chars(self):
-        """The number of characters in this message."""
+        """
+        The number of characters in this message.
+
+        Returns
+        -------
+        int
+            Number of character in the text of this post
+        """
         return len(self.text)
 
     @property
     def tokens(self):
-        """Returns the text of this message, tokenized."""
-        return self._tok.split(self.text)
+        """
+        Returns the text of this message, tokenized.
+
+        Returns
+        -------
+        list(str)
+            List of tokens in this post
+        """
+        return self._tok.tokenize(self.text)
 
     @property
     def types(self):
-        """The unique set of tokens used in this message."""
+        """
+        The unique set of tokens used in this message.
+
+        Returns
+        -------
+        set(str)
+            Set of unique tokens in this post. The vocabulary of this post.
+        """
         return set(self.tokens)

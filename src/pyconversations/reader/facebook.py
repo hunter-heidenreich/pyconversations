@@ -10,12 +10,50 @@ from .base import BaseReader
 
 class RawFBReader(BaseReader):
 
+    """
+    Reader for raw FB data
+    """
+
     @staticmethod
     def read(path_pattern):
+        """
+        Function for reading an entire file/directory of conversations.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to file or directory containing Conversation data
+
+        Raises
+        ------
+        NotImplementedError
+        """
         raise NotImplementedError
 
     @staticmethod
     def iter_read(path_pattern, ld=True):
+        """
+        Given a `path_pattern` that points to a directory containing raw FB data
+        in the form of `path_pattern/PAGES/RAW_DATA.json`,
+        this function will iteratively read the files and produce Conversational data.
+
+        Parameters
+        ----------
+        path_pattern : str
+            The path to file or directory containing Conversation data
+        ld : bool
+            Whether or not language detection should be activated. (Default: True)
+
+        Yields
+        ------
+        2-tuple(str, Conversation)
+            The name of the page (as parsed) and an associated Conversation from that page
+
+        Raises
+        ------
+        ValueError
+            If a JSON file is encountered that isn't named as one of: `post`, `comments`, `replies`, `attach`, `react`, `scrape`
+        """
         # gather all page names
         pagenames = set()
         for f in glob(path_pattern + '*/'):
