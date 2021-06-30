@@ -3,7 +3,7 @@ from abc import ABC
 from abc import abstractmethod
 from datetime import datetime
 
-from ..ld import FTLangDetect
+from ..ld import LangidLangDetect
 from ..tokenizers import PartitionTokenizer
 
 # Langauge detection module; do not initialize unless asked for!
@@ -14,7 +14,8 @@ def get_detector():
     global DETECTOR
     if DETECTOR is None:
         # DETECTOR = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
-        DETECTOR = FTLangDetect()
+        # DETECTOR = FTLangDetect()
+        DETECTOR = LangidLangDetect()
 
     return DETECTOR
 
@@ -95,7 +96,7 @@ class UniMessage(ABC):
         """
         if (not self._lang or self.lang == 'und') and self._lang_detect and self._text:
             res = get_detector().get(text=self.text)
-            self.lang = res[0] if res[1] > 0.2 else 'und'
+            self.lang = res[0] if res[1] >= 0.5 else 'und'
 
     @staticmethod
     @abstractmethod

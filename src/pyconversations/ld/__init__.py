@@ -1,7 +1,7 @@
 from .base import BaseLangDetect
-from .ft import FTLangDetect
+from .lid import LangidLangDetect
 
 __all__ = [
     'BaseLangDetect',
-    'FTLangDetect',
+    'LangidLangDetect',
 ]

@@ -22,7 +22,7 @@ def read(*names, **kwargs):
 
 
 setup(
-    name='pyconversations',
+    name='pyconversations-hunter.heiden',
     version='0.0.0',
     license='MIT',
     description='A package for representing conversations as DAGs for visualization, analysis, and pre-processing.',
@@ -73,7 +73,8 @@ setup(
     install_requires=[
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
         'networkx>=2.5',
-        'fasttext @ git+https://github.com/facebookresearch/fastText@master#egg=fasttext',
+        # 'fasttext @ git+https://github.com/facebookresearch/fastText@master#egg=fasttext',
+        'langid>=1.1'
         'numpy>=1.12',
         'tqdm>=4.59',
         'nltk>=3.0'
