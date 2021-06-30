@@ -22,7 +22,7 @@ def read(*names, **kwargs):
 
 
 setup(
-    name='pyconversations-hunter.heiden',
+    name='pyconversations',
     version='0.0.1',
     license='MIT',
     description='A package for representing conversations as DAGs for visualization, analysis, and pre-processing.',
