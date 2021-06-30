@@ -74,7 +74,7 @@ setup(
         # eg: 'aspectlib==1.1.1', 'six>=1.7',
         'networkx>=2.5',
         # 'fasttext @ git+https://github.com/facebookresearch/fastText@master#egg=fasttext',
-        'langid>=1.1'
+        'langid>=1.1',
         'numpy>=1.12',
         'tqdm>=4.59',
         'nltk>=3.0'
