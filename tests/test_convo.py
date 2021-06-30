@@ -69,6 +69,16 @@ def test_build_conversation(mock_tweet):
         conversation.remove_post(uid)
 
 
+def test_convo_constructor(mock_tweet):
+    pdict = {mock_tweet.uid: mock_tweet}
+    edict = {mock_tweet.uid: mock_tweet.reply_to}
+
+    c = Conversation(posts=pdict, edges=edict)
+
+    assert c.messages == 1
+    assert c.connections == 0
+
+
 def test_add_convo_to_self(mock_tweet):
     conversation = Conversation()
 
@@ -287,3 +297,29 @@ def test_conversation_post_merge_lang():
 
     assert convo.messages == 1
     assert convo.posts[0].lang == 'en'
+
+
+def test_reply_counts(mock_convo):
+    assert mock_convo.reply_counts == [(0, 0, 0)]
+
+
+def test_get_depth(mock_convo):
+    assert mock_convo.get_depth(0) == 0
+    assert mock_convo.get_depth(0) == 0
+
+    assert mock_convo.depths == [0]
+    assert mock_convo.depths == [0]
+
+    assert mock_convo.tree_depth == 0
+    assert mock_convo.tree_depth == 0
+
+    assert mock_convo.widths == [1]
+    assert mock_convo.widths == [1]
+
+    assert mock_convo.tree_width == 1
+    assert mock_convo.tree_width == 1
+
+
+def test_path_shape(mock_convo_path):
+    assert mock_convo_path.get_depth(1) == 1
+    assert mock_convo_path.get_depth(1) == 1

@@ -127,55 +127,32 @@ class Conversation:
             convo.add_post(post)
         return convo
 
-    def _build_graph(self, directed=False):
+    def _build_graph(self):
         """
         Constructs (and returns) a networkx Graph object
         from the contained posts and edges.
 
-        Parameters
-        ---------
-        directed : bool
-            Whether or not the graph should be a DiGraph. (Default: False)
-
         Returns
         -------
-        networkx.Graph or networkx.DiGraph
+        networkx.Graph
             The networkx graph associated with this Conversation
         """
-        if not directed:
-            if 'graph' in self._cache:
-                return self._cache['graph']
+        if 'graph' in self._cache:
+            return self._cache['graph']
 
-            graph = nx.Graph()
+        graph = nx.Graph()
 
-            # add posts as nodes
-            for uid in self._posts:
-                graph.add_node(uid)
+        # add posts as nodes
+        for uid in self._posts:
+            graph.add_node(uid)
 
-            # add reply connections as sedges
-            for uid, reps in self._edges.items():
-                for rid in reps:
-                    if uid in self._posts and rid in self._posts:
-                        graph.add_edge(uid, rid)
-            self._cache['graph'] = graph
-            return graph
-        else:
-            if 'digraph' in self._cache:
-                return self._cache['digraph']
-
-            graph = nx.DiGraph()
-
-            # add posts as nodes
-            for uid in self._posts:
-                graph.add_node(uid)
-
-            # add reply connections as sedges
-            for uid, reps in self._edges.items():
-                for rid in reps:
-                    if uid in self._posts and rid in self._posts:
-                        graph.add_edge(rid, uid)
-            self._cache['digraph'] = graph
-            return graph
+        # add reply connections as sedges
+        for uid, reps in self._edges.items():
+            for rid in reps:
+                if uid in self._posts and rid in self._posts:
+                    graph.add_edge(uid, rid)
+        self._cache['graph'] = graph
+        return graph
 
     def segment(self):
         """
