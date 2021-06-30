@@ -4,5 +4,4 @@ Reference
 .. toctree::
     :glob:
 
-    pyconversations*
-    convo*
+    pyconversations/index

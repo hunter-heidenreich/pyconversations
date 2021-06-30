@@ -17,6 +17,7 @@ include README.rst
 recursive-include exec *.py
 recursive-include other *.json
 recursive-include other *.txt
+recursive-include docs *.rst
 
 include tox.ini .travis.yml .appveyor.yml .readthedocs.yml .pre-commit-config.yaml
 

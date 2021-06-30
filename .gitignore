@@ -3,6 +3,7 @@ __pycache__
 out/
 notebooks/
 *.DS_Store*
+*.tar.gz
 
 # C extensions
 *.so
