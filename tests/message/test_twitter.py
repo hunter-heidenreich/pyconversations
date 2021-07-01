@@ -310,3 +310,7 @@ def test_tweet_lang_detect(mock_raw_tweet):
     ts = Tweet.parse_raw(mock_raw_tweet, lang_detect=True)
     assert len(ts) == 1
     assert ts[0].lang == 'und'
+
+
+def test_tokenization(mock_tweet):
+    assert mock_tweet.tokens == ['This', ' ', 'is', ' ', 'a', ' ', 'tweet', '!', ' ', '@Twitter']

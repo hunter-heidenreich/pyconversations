@@ -2,6 +2,11 @@
 Changelog
 =========
 
+0.0.2 (2021-07-01)
+------------------
+
+* Fix pyconversations.tokenizers.PartitionTokenizer
+
 0.0.1 (2021-06-30)
 ------------------
 

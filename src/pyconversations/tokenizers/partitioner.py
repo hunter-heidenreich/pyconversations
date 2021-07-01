@@ -1,10 +1,7 @@
+import pkgutil
 import re
 
 from .base import BaseTokenizer
-
-with open('other/chars.txt', 'r') as f:
-    CHARS = f.read().strip()
-    CHARS = re.sub(' ', '', CHARS)
 
 
 class PartitionTokenizer(BaseTokenizer):
@@ -19,6 +16,7 @@ class PartitionTokenizer(BaseTokenizer):
 
     NAME = 'Partitioner'
     SPACE = True
+    CHARS = pkgutil.get_data(__package__, 'chars.txt').decode('utf-8').strip().replace(" ", "")
 
     @staticmethod
     def tokenize(s):
@@ -36,14 +34,14 @@ class PartitionTokenizer(BaseTokenizer):
             A list of tokens
         """
         tokens = []
-        for token in re.split("([0-9" + CHARS + "'-]+)", s):
+        for token in re.split("([0-9" + PartitionTokenizer.CHARS + "'-]+)", s):
             if not PartitionTokenizer.SPACE:
                 token = re.sub("[ ]+", "", token)
 
             if not token:
                 continue
 
-            if re.search("[0-9" + CHARS + "'-]", token):
+            if re.search("[0-9" + PartitionTokenizer.CHARS + "'-]", token):
                 tokens.append(token)
             else:
                 tokens.extend(token)
