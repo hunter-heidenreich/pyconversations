@@ -79,7 +79,8 @@ class Tweet(UniMessage):
             'retweeted', 'metadata', 'extended_entities', 'possibly_sensitive',
             'quoted_status_id_str', 'quoted_status_permalink', 'withheld_in_countries',
             'in_reply_to_status_created_at', 'possibly_sensitive_appealable', 'scopes',
-            'withheld_scope', 'withheld_copyright'
+            'withheld_scope', 'withheld_copyright',
+            'filter_level', 'trends',
         }
         for key, value in data.items():
             if key in ignore_keys:
@@ -109,7 +110,7 @@ class Tweet(UniMessage):
         # Do entities last
         if 'entities' in data:
             ignore_keys = {
-                'hashtags', 'symbols', 'user_mentions'
+                'hashtags', 'symbols', 'user_mentions', 'trends'
             }
             for key, value in data['entities'].items():
                 if key in ignore_keys:
@@ -122,7 +123,7 @@ class Tweet(UniMessage):
                     for v in value:
                         cons_vals['text'] = re.sub(v['url'], v['expanded_url'], cons_vals.get('text', ''))
                 else:
-                    raise KeyError(f'Tweet:parse_raw - Unrecognized key: {key} --> {value}')
+                    raise KeyError(f'Tweet:parse_raw (entities) - Unrecognized key: {key} --> {value}')
 
         if 'text' in cons_vals and cons_vals['text']:
             out.append(Tweet(**cons_vals))
