@@ -193,36 +193,37 @@ def test_stats_no_parent(mock_tweet):
 def test_conversation_filter_min_char(mock_convo_path):
     assert mock_convo_path.messages == 2
     mock_convo_path.posts[0].text = ''
-    mock_convo_path.filter()
-    assert mock_convo_path.messages == 1
+
+    filt = mock_convo_path.filter(min_chars=1)
+    assert filt.messages == 1
 
 
 def test_conversation_filter_by_langs(mock_convo_path):
     assert mock_convo_path.messages == 2
-    mock_convo_path.filter(by_langs={'en'})
-    assert mock_convo_path.messages == 0
+    filt = mock_convo_path.filter(by_langs={'en'})
+    assert filt.messages == 0
 
 
 def test_conversation_filter_by_tags(mock_convo_path):
     assert mock_convo_path.messages == 2
-    mock_convo_path.filter(by_tags={'#FakeNews'})
-    assert mock_convo_path.messages == 0
+    filt = mock_convo_path.filter(by_tags={'#FakeNews'})
+    assert filt.messages == 0
 
 
 def test_conversation_filter_by_before(mock_convo_path):
     from datetime import datetime
 
     assert mock_convo_path.messages == 2
-    mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
-    assert mock_convo_path.messages == 0
+    filt = mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
+    assert filt.messages == 0
 
 
 def test_conversation_filter_by_after(mock_convo_path):
     from datetime import datetime
 
     assert mock_convo_path.messages == 2
-    mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
-    assert mock_convo_path.messages == 0
+    filt = mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
+    assert filt.messages == 0
 
 
 @pytest.fixture

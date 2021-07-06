@@ -521,7 +521,7 @@ class Conversation:
 
         return self._stats['tree_width']
 
-    def filter(self, by_langs=None, min_chars=1, before=None, after=None, by_tags=None):
+    def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None):
         """
         Removes posts from this Conversation based on specified parameters.
 
@@ -530,7 +530,7 @@ class Conversation:
         by_langs : set(str)
             The desired language codes to be retained. (Default: None)
         min_chars : int
-            The minimum number of characters a post should have. (Default: 1)
+            The minimum number of characters a post should have. (Default: 0)
         before : datetime.datetime
             The earliest datetime desired. (Default: None)
         after : datetime.datetime
@@ -540,9 +540,11 @@ class Conversation:
 
         Returns
         -------
-        None
+        Conversation
+            A conversation with only the posts retained that meet the specified criteria
         """
         drop = set()
+        keep = set(self.posts.keys())
         for uid, post in self._posts.items():
             if len(post.text) < min_chars:
                 drop.add(uid)
@@ -563,8 +565,11 @@ class Conversation:
                 drop.add(uid)
                 continue
 
-        for uid in drop:
-            self.remove_post(uid)
+        keep -= drop
+        filt_ps = {pid: post for pid, post in self.posts.items() if pid in keep}
+        filt_es = {pid: es & keep for pid, es in self.edges.items() if pid in keep}
+
+        return Conversation(posts=filt_ps, edges=filt_es)
 
     @property
     def time_order(self):
