@@ -5,7 +5,6 @@ from .base import UniMessage
 
 
 class RedditPost(UniMessage):
-
     """
     Reddit post object with additional Reddit-specific features
     """
@@ -87,44 +86,178 @@ class RedditPost(UniMessage):
 
         Returns
         -------
-        RedditPost
+        list(RedditPost)
             The parsed post
         """
+        if 'kind' in data and 'data' in data:  # and data['kind'] == 'Listing':
+            if data['kind'] == 'Listing':
+                return [x for child in data['data']['children'] for x in
+                        RedditPost.parse_raw(child['data'], lang_detect=lang_detect)]
+            else:
+                return [x for x in RedditPost.parse_raw(data['data'], lang_detect=lang_detect)]
+
+        if type(data) == list:
+            return [RedditPost.parse_raw(x, lang_detect=lang_detect) for x in data if type(x) == dict]
+
         post_cons = {
-            'reply_to': set(),
-            'platform': 'Reddit',
+            'reply_to':    set(),
+            'platform':    'Reddit',
             'lang_detect': lang_detect
         }
 
         ignore_keys = {
-            'archived', 'body_html', 'id', 'link_id', 'gilded',
-            'ups', 'downs', 'edited', 'controversiality', 'user_reports', 'mod_reports',
-            'score', 'subreddit',
-            'delta', 'violated_rule'
+            'approved_at_utc',
+            'approved_by',
+            'archived',
+            # 'author',
+            'author_cakeday',
+            'author_flair_background_color',
+            'author_flair_css_class',
+            'author_flair_richtext',
+            'author_flair_template_id',
+            'author_flair_text',
+            'author_flair_text_color',
+            'author_flair_type',
+            # 'author_name',
+            'banned_at_utc',
+            'banned_by',
+            # 'body',
+            'body_html',
+            'can_gild',
+            'can_mod_post',
+            'category',
+            # 'children',
+            'clicked',
+            'collapsed',
+            'collapsed_reason',
+            'content_categories',
+            'contest_mode',
+            'controversiality',
+            'count',
+            # 'created',
+            # 'created_utc',
+            'delta',
+            'depth',
+            'distinguished',
+            'domain',
+            'downs',
+            'edited',
+            'gilded',
+            'hidden',
+            'hide_score',
+            # 'id',
+            'is_crosspostable',
+            'is_meta',
+            'is_original_content',
+            'is_reddit_media_domain',
+            'is_self',
+            'is_submitter',
+            'is_video',
+            'kind',
+            'likes',
+            'link_flair_background_color',
+            'link_flair_css_class',
+            'link_flair_richtext',
+            'link_flair_template_id',
+            'link_flair_text',
+            'link_flair_text_color',
+            'link_flair_type',
+            'link_id',
+            'locked',
+            'media',
+            'media_embed',
+            'media_only',
+            'mod_note',
+            'mod_reason_by',
+            'mod_reason_title',
+            'mod_reports',
+            # 'name',
+            'no_follow',
+            'num_comments',
+            'num_crossposts',
+            'num_reports',
+            'over_18',
+            # 'parent_id',
+            'parent_whitelist_status',
+            'permalink',
+            'pinned',
+            'post_categories',
+            'post_hint',
+            'preview',
+            'previous_visits',
+            'pwls',
+            'quarantine',
+            'removal_reason',
+            # 'replies',
+            'report_reasons',
+            'rte_mode',
+            'saved',
+            'score',
+            'score_hidden',
+            'secure_media',
+            'secure_media_embed',
+            # 'selftext',
+            'selftext_html',
+            'send_replies',
+            'spoiler',
+            'stickied',
+            'subreddit',
+            'subreddit_id',
+            'subreddit_name_prefixed',
+            'subreddit_subscribers',
+            'subreddit_type',
+            'suggested_sort',
+            'thumbnail',
+            'thumbnail_height',
+            'thumbnail_width',
+            # 'title',
+            'ups',
+            'upvote_ratio',
+            'url',
+            'user_reports',
+            'view_count',
+            'violated_rule',
+            'visited',
+            'whitelist_status',
+            'wls'
         }
 
+        out = []
         for key, value in data.items():
             if key in ignore_keys:
                 continue
 
-            if key == 'author_name':
+            if key == 'author_name' or key == 'author':
                 post_cons['author'] = value
-            elif key == 'body':
-                post_cons['text'] = post_cons['text'] + ' ' + value if 'text' in post_cons else value
+            elif key == 'body' or key == 'selftext':
+                post_cons['text'] = post_cons['text'] + '\n' + value if 'text' in post_cons else value
             elif key == 'title':
-                post_cons['text'] = value + ' ' + post_cons['text'] if 'text' in post_cons else value
+                post_cons['text'] = value + '\n' + post_cons['text'] if 'text' in post_cons else value
             elif key == 'created':
                 post_cons['created_at'] = RedditPost.parse_datestr(value)
             elif key == 'created_utc':
+                if 'created' in data:
+                    continue
                 post_cons['created_at'] = RedditPost.parse_datestr(value)
-            elif key == 'name':
+            elif key == 'id':
                 post_cons['uid'] = value
+            elif key == 'name':
+                if 'id' not in data:
+                    post_cons['uid'] = value
             elif key == 'parent_id':
+                if re.search(r't\d_', value):
+                    value = re.sub(r't\d_', '', value)
                 post_cons['reply_to'].add(value)
+            elif key == 'replies' or key == 'children':
+                if value:
+                    out.extend(RedditPost.parse_raw(value, lang_detect=lang_detect))
             else:
+                print(data.keys())
                 raise KeyError(f'RedditPost::parse_raw - Unrecognized key: {key} --> {value}')
 
-        return RedditPost(**post_cons)
+        if post_cons['uid'] != '_':
+            out.append(RedditPost(**post_cons))
+        return out
 
     @staticmethod
     def parse_rd(data, lang_detect=True):
@@ -144,12 +277,12 @@ class RedditPost(UniMessage):
             The parsed post
         """
         cons = {
-            'platform': 'Reddit',
+            'platform':    'Reddit',
             'lang_detect': lang_detect,
-            'uid': data['id'],  # 't3_' + data['id'],
-            'author': data['author'],
-            'created_at': RedditPost.parse_datestr(data['created_utc']),
-            'tags': {f'board={data["subreddit"]}'}
+            'uid':         data['id'],  # 't3_' + data['id'],
+            'author':      data['author'],
+            'created_at':  RedditPost.parse_datestr(data['created_utc']),
+            'tags':        {f'board={data["subreddit"]}'}
         }
         if data['type'] == 'comment':
             cons['text'] = data['body']

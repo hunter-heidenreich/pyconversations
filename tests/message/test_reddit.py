@@ -32,8 +32,8 @@ def mock_post(mock_json_post):
 
 @pytest.fixture
 def mock_raw_post():
-    test_keys = ["name", "author_name", 'created_utc', "parent_id", "link_id", "score", "body", 'subreddit']
-    test_vals = ['t3_c1234', 'poster', '9999999999', 't3_c1230', '', '4', 'text here please', 'r/reddit.com']
+    test_keys = ["id", "author_name", 'created_utc', "parent_id", "link_id", "score", "body", 'subreddit']
+    test_vals = ['c1234', 'poster', '9999999999', 't3_c1230', '', '4', 'text here please', 'r/reddit.com']
     return {
         k: v for k, v in zip(test_keys, test_vals)
     }
@@ -125,24 +125,24 @@ def test_reddit_mentions(mock_post):
 def test_read_raw_post(mock_raw_post):
     from datetime import datetime
 
-    post = RedditPost.parse_raw(mock_raw_post)
-    assert post.uid == "t3_c1234"
+    post = RedditPost.parse_raw(mock_raw_post)[0]
+    assert post.uid == "c1234"
     assert post.text == "text here please"
     assert post.author == 'poster'
     assert post.created_at == datetime(2286, 11, 20, 12, 46, 39)
-    assert post.reply_to == {'t3_c1230'}
+    assert post.reply_to == {'c1230'}
     assert post.platform == 'Reddit'
     assert post.tags == set()
     assert post.lang is None
 
     mock_raw_post['created'] = mock_raw_post['created_utc']
     del mock_raw_post['created_utc']
-    post = RedditPost.parse_raw(mock_raw_post)
+    post = RedditPost.parse_raw(mock_raw_post)[0]
     assert post.created_at == datetime(2286, 11, 20, 12, 46, 39)
 
     mock_raw_post['title'] = 'title:'
-    post = RedditPost.parse_raw(mock_raw_post)
-    assert post.text == "title: text here please"
+    post = RedditPost.parse_raw(mock_raw_post)[0]
+    assert post.text == "title:\ntext here please"
 
     mock_raw_post['errorr'] = 'error'
     with pytest.raises(KeyError):
