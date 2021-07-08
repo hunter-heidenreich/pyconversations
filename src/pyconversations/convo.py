@@ -521,7 +521,7 @@ class Conversation:
 
         return self._stats['tree_width']
 
-    def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None):
+    def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None):
         """
         Removes posts from this Conversation based on specified parameters.
 
@@ -537,6 +537,8 @@ class Conversation:
             The latest datetime desired. (Default: None)
         by_tags : set(str)
             The required tags. (Default: None)
+        by_platform : set(str)
+            A set of string names of platforms that should be retained
 
         Returns
         -------
@@ -562,6 +564,10 @@ class Conversation:
                 continue
 
             if by_tags and by_tags != (by_tags & post.tags):
+                drop.add(uid)
+                continue
+
+            if by_platform and post.platform not in by_platform:
                 drop.add(uid)
                 continue
 
