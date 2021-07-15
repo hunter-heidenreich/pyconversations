@@ -9,6 +9,12 @@ class FBPost(UniMessage):
     FB-specific FB Post object with Facebook specific features
     """
 
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = 'Facebook'
+
+        super(FBPost, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -105,7 +111,6 @@ class FBPost(UniMessage):
             return
 
         post_cons = {
-            'platform': 'Facebook',
             'lang_detect': lang_detect,
             'author': in_reply_to,
             'text': '',
@@ -170,7 +175,6 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook',
                 'lang_detect': lang_detect,
             }
 
@@ -230,7 +234,6 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook',
                 'lang_detect': lang_detect,
             }
 
