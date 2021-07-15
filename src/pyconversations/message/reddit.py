@@ -40,15 +40,8 @@ class RedditPost(UniMessage):
             The set of extracted usernames
         """
         # Reddit mention regex
-        names = re.findall(r'/?u/([A-Za-z0-9_-]+)', self.text)
-        adj_names = []
-        for name in names:
-            if '/u/' in name:
-                name = name.replace('/u/', '')
-            elif 'u/' in name:
-                name = name.replace('u/', '')
-
-            adj_names.append(name)
+        names = re.findall(r'(^|[^\w])/?u/([A-Za-z0-9_-]+)\b', self.text)
+        names = [n[1] for n in names]
 
         return super(RedditPost, self).get_mentions() | set(names)
 

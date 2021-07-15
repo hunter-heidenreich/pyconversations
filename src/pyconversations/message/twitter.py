@@ -31,8 +31,8 @@ class Tweet(UniMessage):
         Returns a set of usernames.
         """
         # twitter mention regex
-        names = re.findall(r'@[a-zA-Z0-9_]{1,15}', self.text)
-        names = [name[1:] for name in names]
+        names = re.findall(r'(^|[^@\w])@(\w{1,15})\b', self.text)
+        names = [name[1] for name in names]
 
         return super(Tweet, self).get_mentions() | set(names)
 
