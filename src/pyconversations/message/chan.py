@@ -11,6 +11,12 @@ class ChanPost(UniMessage):
     4chan post object with additional 4chan-specific features
     """
 
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = '4chan'
+
+        super(ChanPost, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -124,7 +130,6 @@ class ChanPost(UniMessage):
             'created_at': datetime.fromtimestamp(data['time']),
             'text':       txt,
             'author':     data['name'] if 'name' in data else None,
-            'platform':   '4Chan',
             'reply_to':   reps,
             'lang_detect': lang_detect
         })
