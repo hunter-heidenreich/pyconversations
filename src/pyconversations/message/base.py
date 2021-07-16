@@ -527,7 +527,7 @@ class UniMessage(ABC):
             'mention_cnt': self._mention_cnt,
             'mentions':    self._mentions,
 
-            'child_cnt': self._child_cnt,
+            'parent_cnt': self._parent_cnt,
         }
 
     def get_feature(self, key):
@@ -646,14 +646,14 @@ class UniMessage(ABC):
         """
         return len(self._mentions())
 
-    def _child_cnt(self):
+    def _parent_cnt(self):
         """
-        Returns the number of children posts of this post
+        Returns the number of parent posts of this post
 
         Returns
         -------
         int
-            The number of child posts
+            The number of parent posts
         """
         return len(self._reply_to)
 
