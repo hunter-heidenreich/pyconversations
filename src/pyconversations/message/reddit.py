@@ -9,6 +9,12 @@ class RedditPost(UniMessage):
     Reddit post object with additional Reddit-specific features
     """
 
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = 'Reddit'
+
+        super(RedditPost, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """

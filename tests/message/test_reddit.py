@@ -46,7 +46,7 @@ def test_null_post(null_post):
     assert null_post.author is None
     assert null_post.created_at is None
     assert null_post.reply_to == set()
-    assert null_post.platform is None
+    assert null_post.platform == 'Reddit'
     assert null_post.tags == set()
     assert null_post.lang is None
 
