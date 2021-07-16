@@ -1,18 +1,16 @@
-import nltk
-
 from .base import BaseTokenizer
 
 
-class NLTKTokenizer(BaseTokenizer):
+class LambdaTokenizer(BaseTokenizer):
 
     """
-    An NLTK-based tokenizer
+    An interface that wraps a lambda function
     """
 
-    def __init__(self):
-        super(NLTKTokenizer, self).__init__('NLTK')
+    def __init__(self, func):
+        super(LambdaTokenizer, self).__init__('Lambda')
+        self._func = func
 
-    @staticmethod
     def tokenize(self, s):
         """
         Splits a string into tokens.
@@ -27,4 +25,4 @@ class NLTKTokenizer(BaseTokenizer):
         list(str)
             A list of tokens
         """
-        return nltk.word_tokenize(s)
+        return self._func(s)

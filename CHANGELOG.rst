@@ -2,6 +2,22 @@
 Changelog
 =========
 
+0.0.3
+------------------
+
+* Reading raw formats
+    * Update known keys in reading raw tweet data
+    * Update (and greatly expand) the known keys for extracting data from raw Reddit data
+* Filtration
+    * Conversation.filter now returns a new Conversation object without modifying the original object
+    * Add ability to filter by platform
+* Message objects
+    * Set platforms in specific message type constructors
+    * Upgrade user detection regex (Twitter and Reddit)
+* Tokenizer
+    * Alter tokenizers into an object centered format (no longer a functional one)
+    * Add a wrapper for generic tokenizer types
+
 0.0.2 (2021-07-01)
 ------------------
 

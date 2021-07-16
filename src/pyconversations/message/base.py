@@ -4,7 +4,11 @@ from abc import abstractmethod
 from datetime import datetime
 
 from ..ld import LangidLangDetect
+
+from ..tokenizers import DefaultTokenizer
+from ..tokenizers import NLTKTokenizer
 from ..tokenizers import PartitionTokenizer
+from ..tokenizers import LambdaTokenizer
 
 # Langauge detection module; do not initialize unless asked for!
 DETECTOR = None
@@ -18,6 +22,14 @@ def get_detector():
         DETECTOR = LangidLangDetect()
 
     return DETECTOR
+
+
+def get_tokenizer(key):
+    return {
+        'default': DefaultTokenizer(),
+        'NLTK': NLTKTokenizer(),
+        'partitioner': PartitionTokenizer(),
+    }[key]
 
 
 class UniMessage(ABC):
@@ -34,8 +46,35 @@ class UniMessage(ABC):
     def __init__(self, uid,
                  text='', author=None,
                  created_at=None, reply_to=None, platform=None, lang=None, tags=None,
-                 lang_detect=False, tokenizer=PartitionTokenizer):
-        # a unique identifier
+                 lang_detect=False, tokenizer='partitioner'):
+        """
+        UniMessage base class initializer
+
+        Parameters
+        ----------
+        uid : Hashable
+            A unique identifier for the post. The only mandatory field.
+        text : str
+            Text of the message
+        author : Hashable
+            The author or some identifier thereof
+        created_at : datetime.datetime
+            The time of creation
+        reply_to : set
+            A set of UIDs of the posts this message replies to
+        platform : str
+            The name of the platform, service, etc. where this message was generated
+        lang : str
+            The language identifier for the language the text of this post is written (or detected to be written) in
+        tags : set
+            The set of tagged properties
+        lang_detect : bool
+            Whether or not language detection should be activated when updating post text
+        tokenizer : pyconversations.tokenizers.BaseTokenizer
+            A pyconversation tokenizer object for text tokenization
+            (Default: pyconversations.tokenizers.PartitionTokenizer)
+        """
+        # a unique identifier{
         self._uid = uid
 
         # the text of the post
@@ -62,6 +101,7 @@ class UniMessage(ABC):
         self._detect_language()
 
         self._tok = tokenizer
+        self._init_tokenizer()
 
     def __hash__(self):
         return self._uid
@@ -89,6 +129,15 @@ class UniMessage(ABC):
         self._tags |= other.tags
 
         return self
+
+    def _init_tokenizer(self):
+        if callable(self._tok):
+            self._tok = LambdaTokenizer(self._tok)
+        elif type(self._tok) == str:
+            # load from dictionary of available choices
+            self._tok = get_tokenizer(self._tok)
+        else:
+            raise ValueError(f'UniMessage._init_tokenizer. Unrecognized value: {self._tok}')
 
     def _detect_language(self):
         """
