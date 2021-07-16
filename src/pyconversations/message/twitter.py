@@ -10,6 +10,8 @@ class Tweet(UniMessage):
     Twitter post object with additional Twitter-specific features
     """
 
+    MENTION_REGEX = r'(^|[^@\w])@(\w{1,15})\b'
+
     def __init__(self, **kwargs):
 
         kwargs['platform'] = 'Twitter'
@@ -37,7 +39,7 @@ class Tweet(UniMessage):
         Returns a set of usernames.
         """
         # twitter mention regex
-        names = re.findall(r'(^|[^@\w])@(\w{1,15})\b', self.text)
+        names = re.findall(self.MENTION_REGEX, self.text)
         names = [name[1] for name in names]
 
         return super(Tweet, self).get_mentions() | set(names)

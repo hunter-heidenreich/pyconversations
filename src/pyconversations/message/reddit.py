@@ -9,6 +9,8 @@ class RedditPost(UniMessage):
     Reddit post object with additional Reddit-specific features
     """
 
+    MENTION_REGEX = r'(^|[^\w])/?u/([A-Za-z0-9_-]+)\b'
+
     def __init__(self, **kwargs):
 
         kwargs['platform'] = 'Reddit'
@@ -46,7 +48,7 @@ class RedditPost(UniMessage):
             The set of extracted usernames
         """
         # Reddit mention regex
-        names = re.findall(r'(^|[^\w])/?u/([A-Za-z0-9_-]+)\b', self.text)
+        names = re.findall(self.MENTION_REGEX, self.text)
         names = [n[1] for n in names]
 
         return super(RedditPost, self).get_mentions() | set(names)
