@@ -156,7 +156,7 @@ def test_null_tweet(null_tweet):
     assert null_tweet.author is None
     assert null_tweet.created_at is None
     assert null_tweet.reply_to == set()
-    assert null_tweet.platform is None
+    assert null_tweet.platform == 'Twitter'
     assert null_tweet.tags == set()
     assert null_tweet.lang is None
 

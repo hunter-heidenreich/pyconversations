@@ -10,6 +10,12 @@ class Tweet(UniMessage):
     Twitter post object with additional Twitter-specific features
     """
 
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = 'Twitter'
+
+        super(Tweet, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -65,7 +71,6 @@ class Tweet(UniMessage):
             A boolean which specifies whether language detection should be activated. (Default: False)
         """
         cons_vals = {
-            'platform': 'Twitter',
             'reply_to': set(),
             'lang_detect': lang_detect
         }
