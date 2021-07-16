@@ -100,7 +100,6 @@ class RedditPost(UniMessage):
 
         post_cons = {
             'reply_to':    set(),
-            'platform':    'Reddit',
             'lang_detect': lang_detect
         }
 
@@ -276,7 +275,6 @@ class RedditPost(UniMessage):
             The parsed post
         """
         cons = {
-            'platform':    'Reddit',
             'lang_detect': lang_detect,
             'uid':         data['id'],  # 't3_' + data['id'],
             'author':      data['author'],
