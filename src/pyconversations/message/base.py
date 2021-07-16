@@ -510,6 +510,7 @@ class UniMessage(ABC):
             'uid':         self.uid,
             'author':      self.author,
             'lang':        self.lang,
+            'platform':    self.platform,
 
             'char_len':    self._char_len,
 
