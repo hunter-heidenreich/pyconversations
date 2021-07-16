@@ -70,9 +70,8 @@ class UniMessage(ABC):
             The set of tagged properties
         lang_detect : bool
             Whether or not language detection should be activated when updating post text
-        tokenizer : pyconversations.tokenizers.BaseTokenizer
-            A pyconversation tokenizer object for text tokenization
-            (Default: pyconversations.tokenizers.PartitionTokenizer)
+        tokenizer : str or lambda(str -> list(str))
+            Which tokenizer to use (Default: partitioner)
         """
         # a unique identifier{
         self._uid = uid
@@ -102,80 +101,6 @@ class UniMessage(ABC):
 
         self._tok = tokenizer
         self._init_tokenizer()
-
-    def __hash__(self):
-        return self._uid
-
-    def __repr__(self):
-        return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
-
-    def __ior__(self, other):
-        # Setting this to always take the larger text chunk...
-        if len(self._text) < len(other.text):
-            self._text = other.text
-
-        if self._author is None:
-            self._author = other.author
-
-        if self._created_at is None:
-            self._created_at = other.created_at
-        elif self._created_at and other.created_at and other.created_at < self._created_at:
-            self._created_at = other.created_at
-
-        if self._lang is None:
-            self._lang = other.lang
-
-        self._reply_to |= other.reply_to
-        self._tags |= other.tags
-
-        return self
-
-    def _init_tokenizer(self):
-        if callable(self._tok):
-            self._tok = LambdaTokenizer(self._tok)
-        elif type(self._tok) == str:
-            # load from dictionary of available choices
-            self._tok = get_tokenizer(self._tok)
-        else:
-            raise ValueError(f'UniMessage._init_tokenizer. Unrecognized value: {self._tok}')
-
-    def _detect_language(self):
-        """
-        Classifies the text of the post and updates the language field, if asked for.
-        """
-        if (not self._lang or self.lang == 'und') and self._lang_detect and self._text:
-            res = get_detector().get(text=self.text)
-            self.lang = res[0] if res[1] >= 0.5 else 'und'
-
-    @staticmethod
-    @abstractmethod
-    def parse_raw(raw, lang_detect=False):
-        """
-        Abstract static method that must be implemented by all non-abstract child classes.
-        Concrete implementations should specify how to parse the raw data into this object.
-
-        Parameters
-        ----------
-        raw : JSON/dict
-            The raw data to be pre-processed.
-        lang_detect : bool
-            A boolean which specifies whether language detection should be activated. (Default: False)
-        """
-        raise NotImplementedError
-
-    @staticmethod
-    @abstractmethod
-    def parse_datestr(x):
-        """
-        Abstract static method that specifies how to convert the native datetime string
-        into a a Python datetime object.
-
-        Parameters
-        ----------
-        x : str
-            The raw datetime string
-        """
-        raise NotImplementedError
 
     @property
     def uid(self):
@@ -220,6 +145,44 @@ class UniMessage(ABC):
         self._detect_language()
 
     @property
+    def created_at(self):
+        """
+        Returns the datetime associated with this message.
+
+        Returns
+        -------
+        datetime.datetime
+            Time of creation of post. Could be None if not available/processed.
+        """
+        return self._created_at
+
+    @created_at.setter
+    def created_at(self, x):
+        """
+        Updates the timesttamp for when this message was created.
+
+        Parameters
+        ----------
+        x : str or float
+            The new datetime
+
+        Returns
+        -------
+        None
+
+        Raises
+        ------
+        TypeError
+            When setting this property with a value that is not a string nor a float.
+        """
+        if type(x) == str:
+            self._created_at = self.parse_datestr(x)
+        elif type(x) == float:
+            self._created_at = datetime.fromtimestamp(x)
+        else:
+            raise TypeError(f'Unrecognized created_at conversion: {type(x)} --> {x}')
+
+    @property
     def author(self):
         """
         Returns the author of this message.
@@ -248,43 +211,6 @@ class UniMessage(ABC):
         self._author = a
 
     @property
-    def created_at(self):
-        """
-        Returns the datetime associated with this message.
-
-        Returns
-        -------
-        datetime.datetime
-            Time of creation of post. Could be None if not available/processed.
-        """
-        return self._created_at
-
-    def set_created_at(self, x):
-        """
-        Updates the timesttamp for when this message was created.
-
-        Parameters
-        ----------
-        x : str or float
-            The new datetime
-
-        Returns
-        -------
-        None
-
-        Raises
-        ------
-        TypeError
-            When setting this property with a value that is not a string nor a float.
-        """
-        if type(x) == str:
-            self._created_at = self.parse_datestr(x)
-        elif type(x) == float:
-            self._created_at = datetime.fromtimestamp(x)
-        else:
-            raise TypeError(f'Unrecognized created_at conversion: {type(x)} --> {x}')
-
-    @property
     def reply_to(self):
         """
         Returns the unique identifiers of the messages that are replied to by this message.
@@ -295,32 +221,6 @@ class UniMessage(ABC):
             The set of UIDs of the posts this message replies to
         """
         return self._reply_to
-
-    def add_reply_to(self, tid):
-        """
-        Adds a new UID that this message is replying to.
-
-        Parameters
-        ----------
-        tid : UID
-            The UID to be added
-
-        Returns
-        -------
-        None
-        """
-        self._reply_to.add(tid)
-
-    def remove_reply_to(self, tid):
-        """
-        Removes a UID from the set this message is replying to.
-
-        Parameters
-        ----------
-        tid : UID
-            The UID to be removed
-        """
-        self._reply_to.remove(tid)
 
     @property
     def tags(self):
@@ -333,36 +233,6 @@ class UniMessage(ABC):
             Set of string tags associated with this message
         """
         return self._tags
-
-    def add_tag(self, tag):
-        """
-        Adds a new tag to this message.
-
-        Parameters
-        ----------
-        tag : str
-            The tag to be added
-
-        Returns
-        -------
-        None
-        """
-        self._tags.add(tag)
-
-    def remove_tag(self, tag):
-        """
-        Removes a tag from this message.
-
-        Parameters
-        ----------
-        tag : str
-            The tag to remove
-
-        Returns
-        -------
-        None
-        """
-        self._tags.remove(tag)
 
     @property
     def platform(self):
@@ -420,6 +290,53 @@ class UniMessage(ABC):
         """
         self._lang = lang
 
+    def __hash__(self):
+        return self._uid
+
+    def __repr__(self):
+        return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
+
+    def __ior__(self, other):
+        # Setting this to always take the larger text chunk...
+        if len(self._text) < len(other.text):
+            self._text = other.text
+
+        if self._author is None:
+            self._author = other.author
+
+        if self._created_at is None:
+            self._created_at = other.created_at
+        elif self._created_at and other.created_at and other.created_at < self._created_at:
+            self._created_at = other.created_at
+
+        if self._lang is None:
+            self._lang = other.lang
+
+        self._reply_to |= other.reply_to
+        self._tags |= other.tags
+
+        return self
+
+    def _init_tokenizer(self):
+        """
+        Sub-selects the tokenizer to use in this class.
+        """
+        if callable(self._tok):
+            self._tok = LambdaTokenizer(self._tok)
+        elif type(self._tok) == str:
+            # load from dictionary of available choices
+            self._tok = get_tokenizer(self._tok)
+        else:
+            raise ValueError(f'UniMessage._init_tokenizer. Unrecognized value: {self._tok}')
+
+    def _detect_language(self):
+        """
+        Classifies the text of the post and updates the language field, if asked for.
+        """
+        if (not self._lang or self.lang == 'und') and self._lang_detect and self._text:
+            res = get_detector().get(text=self.text)
+            self.lang = res[0] if res[1] >= 0.5 else 'und'
+
     @staticmethod
     def from_json(data):
         """
@@ -436,6 +353,92 @@ class UniMessage(ABC):
         NotImplementedError
         """
         raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def parse_raw(raw, lang_detect=False):
+        """
+        Abstract static method that must be implemented by all non-abstract child classes.
+        Concrete implementations should specify how to parse the raw data into this object.
+
+        Parameters
+        ----------
+        raw : JSON/dict
+            The raw data to be pre-processed.
+        lang_detect : bool
+            A boolean which specifies whether language detection should be activated. (Default: False)
+        """
+        raise NotImplementedError
+
+    @staticmethod
+    @abstractmethod
+    def parse_datestr(x):
+        """
+        Abstract static method that specifies how to convert the native datetime string
+        into a a Python datetime object.
+
+        Parameters
+        ----------
+        x : str
+            The raw datetime string
+        """
+        raise NotImplementedError
+
+    def add_reply_to(self, tid):
+        """
+        Adds a new UID that this message is replying to.
+
+        Parameters
+        ----------
+        tid : UID
+            The UID to be added
+
+        Returns
+        -------
+        None
+        """
+        self._reply_to.add(tid)
+
+    def remove_reply_to(self, tid):
+        """
+        Removes a UID from the set this message is replying to.
+
+        Parameters
+        ----------
+        tid : UID
+            The UID to be removed
+        """
+        self._reply_to.remove(tid)
+
+    def add_tag(self, tag):
+        """
+        Adds a new tag to this message.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to be added
+
+        Returns
+        -------
+        None
+        """
+        self._tags.add(tag)
+
+    def remove_tag(self, tag):
+        """
+        Removes a tag from this message.
+
+        Parameters
+        ----------
+        tag : str
+            The tag to remove
+
+        Returns
+        -------
+        None
+        """
+        self._tags.remove(tag)
 
     def to_json(self):
         """
@@ -532,3 +535,12 @@ class UniMessage(ABC):
             Set of unique tokens in this post. The vocabulary of this post.
         """
         return set(self.tokens)
+
+    def featurize(self):
+        """
+
+        :return:
+        """
+        return {
+
+        }

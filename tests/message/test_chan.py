@@ -73,7 +73,7 @@ def test_update_post(null_post, mock_json_post):
     null_post.author = mock_json_post['author']
     assert null_post.author == mock_json_post['author']
 
-    null_post.set_created_at(mock_json_post['created_at'])
+    null_post.created_at = mock_json_post['created_at']
     assert null_post.created_at.timestamp() == mock_json_post['created_at']
 
     for uid in mock_json_post['reply_to']:

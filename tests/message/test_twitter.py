@@ -168,7 +168,7 @@ def test_update_tweet(null_tweet, mock_json_tweet):
     null_tweet.author = mock_json_tweet['author']
     assert null_tweet.author == mock_json_tweet['author']
 
-    null_tweet.set_created_at(mock_json_tweet['created_at'])
+    null_tweet.created_at = mock_json_tweet['created_at']
     assert null_tweet.created_at.timestamp() == mock_json_tweet['created_at']
 
     for uid in mock_json_tweet['reply_to']:
@@ -244,11 +244,11 @@ def test_tweet_datetime_parsing(null_tweet):
     dt = 'Thu Dec 31 23:59:59 +0000 2020'
     assert datetime(2020, 12, 31, 23, 59, 59) == Tweet.parse_datestr(dt)
 
-    null_tweet.set_created_at(dt)
+    null_tweet.created_at = dt
     assert datetime(2020, 12, 31, 23, 59, 59) == null_tweet.created_at
 
     with pytest.raises(TypeError):
-        null_tweet.set_created_at({})
+        null_tweet.created_at = {}
 
 
 def test_read_raw_tweet(mock_raw_tweet):
