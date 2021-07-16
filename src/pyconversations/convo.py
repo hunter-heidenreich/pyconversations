@@ -678,9 +678,15 @@ class Conversation:
 
         return None
 
-    def redact(self):
+    def redact(self, assign_ints=True):
         """
         Redacts user information from the conversation.
+
+        Parameters
+        ----------
+        assign_ints : bool
+            If True, assigns a unique integer to each user such the user will be referred to as `USER\d+`
+            Otherwise, all user rdactions will become a `USER` token.
 
         Returns
         -------
@@ -690,7 +696,7 @@ class Conversation:
         for uid in self._posts:
             for user in self._posts[uid].get_mentions():
                 if user not in rd:
-                    rd[user] = f'USER{len(rd)}'
+                    rd[user] = f'USER{len(rd)}' if assign_ints else 'USER'
 
         for uid in self._posts:
             self._posts[uid].redact(rd)
