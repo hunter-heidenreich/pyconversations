@@ -500,7 +500,8 @@ class UniMessage(ABC):
         if self.author in redact_map:
             self.author = redact_map[self.author]
 
-    def _toks(self):
+    @property
+    def tokens(self):
         """
         Tokenizes the text of this message
 
@@ -510,14 +511,3 @@ class UniMessage(ABC):
             The tokenized text
         """
         return self._tok.tokenize(self.text)
-
-    def _types(self):
-        """
-        The set of unique types in the text of this post.
-
-        Returns
-        -------
-        set(str)
-            The set of unique tokens (types)
-        """
-        return set(self._toks())

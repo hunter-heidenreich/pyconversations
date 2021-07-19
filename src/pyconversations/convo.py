@@ -273,7 +273,7 @@ class Conversation:
         int
             Size of the conversation vocabulary
         """
-        return len(set(reduce(lambda x, y: x | y, map(lambda x: x._types(), self._posts.values()))))
+        return len(set(reduce(lambda x, y: x | y, map(lambda x: set(x.tokens), self._posts.values()))))
 
     @property
     def sources(self):
