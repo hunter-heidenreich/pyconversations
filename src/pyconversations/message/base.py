@@ -1,7 +1,6 @@
 import re
 from abc import ABC
 from abc import abstractmethod
-from collections import Counter
 from datetime import datetime
 
 from ..ld import LangidLangDetect
@@ -102,10 +101,6 @@ class UniMessage(ABC):
 
         self._tok = tokenizer
         self._init_tokenizer()
-
-        self._conv = None
-        self._parent = None
-        self._children = None
 
     @property
     def uid(self):
@@ -505,45 +500,6 @@ class UniMessage(ABC):
         if self.author in redact_map:
             self.author = redact_map[self.author]
 
-    def _features_available(self):
-        return {
-            'uid':         self.uid,
-            'author':      self.author,
-            'lang':        self.lang,
-            'platform':    self.platform,
-
-            'char_len':    self._char_len,
-
-            'tok_len':     self._tok_len,
-            'tok_dist':    self._tok_dist,
-            'toks':        self._toks,
-
-            'type_len':    self._type_len,
-            'types':       self._types,
-
-            'url_cnt':     self._url_cnt,
-            'urls':        self._urls,
-
-            'mention_cnt': self._mention_cnt,
-            'mentions':    self._mentions,
-
-            'parent_cnt': self._parent_cnt,
-        }
-
-    def get_feature(self, key):
-        return self._features_available()[key]()
-
-    def _char_len(self):
-        """
-        The number of characters in this message.
-
-        Returns
-        -------
-        int
-            Number of character in the text of this post
-        """
-        return len(self._text)
-
     def _toks(self):
         """
         Tokenizes the text of this message
@@ -555,28 +511,6 @@ class UniMessage(ABC):
         """
         return self._tok.tokenize(self.text)
 
-    def _tok_len(self):
-        """
-        The number of tokens in this message.
-
-        Returns
-        -------
-        int
-            Number of tokens in the text of this post
-        """
-        return len(self._toks())
-
-    def _tok_dist(self):
-        """
-        The unigram frequency distribution of tokens within this message
-
-        Returns
-        -------
-        Counter
-            A counter of the types and the number of times they occur
-        """
-        return Counter(self._toks())
-
     def _types(self):
         """
         The set of unique types in the text of this post.
@@ -587,87 +521,3 @@ class UniMessage(ABC):
             The set of unique tokens (types)
         """
         return set(self._toks())
-
-    def _type_len(self):
-        """
-        The number of unique types within this post
-
-        Returns
-        -------
-        int
-            Number of unique tokens in this post
-        """
-        return len(self._types())
-
-    def _urls(self):
-        """
-        Returns the URLs contained within the post
-
-        Returns
-        -------
-        list(str)
-            A list of the URLs identified with regex
-        """
-        return re.findall(r'(\b(https?|ftp|file)://)[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]', self._text)
-
-    def _url_cnt(self):
-        """
-        Returns the number of URLs found in this message
-
-        Returns
-        -------
-        int
-            The number of URLs in the text of this message
-        """
-        return len(self._urls())
-
-    def _mentions(self):
-        """
-        Returns a list of the mentions within a post
-
-        Returns
-        -------
-        list(str)
-            The list of string user mentions within the post
-        """
-        if self.MENTION_REGEX is None:
-            return []
-
-        return re.findall(self.MENTION_REGEX, self._text)
-
-    def _mention_cnt(self):
-        """
-        The count of direct mentions within the post
-
-        Returns
-        -------
-        int
-            The count of the number of mentions in this post
-        """
-        return len(self._mentions())
-
-    def _parent_cnt(self):
-        """
-        Returns the number of parent posts of this post
-
-        Returns
-        -------
-        int
-            The number of parent posts
-        """
-        return len(self._reply_to)
-
-    def features(self, features=None):
-        """
-        Returns features ripe for machine learning or combining through a conversational structure
-        (aggregation of higher-order statistics)
-
-        Returns
-        -------
-        dict(str, ?)
-            A dictionary mapping string feature names to their values
-        """
-        return {
-            feat: self.get_feature(feat)
-            for feat in self._features_available() if (features is None) or (features is not None and feat in features)
-        }

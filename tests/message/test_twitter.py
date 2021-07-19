@@ -313,4 +313,4 @@ def test_tweet_lang_detect(mock_raw_tweet):
 
 
 def test_tokenization(mock_tweet):
-    assert mock_tweet.get_feature('toks') == ['This', ' ', 'is', ' ', 'a', ' ', 'tweet', '!', ' ', '@Twitter']
+    assert mock_tweet._toks() == ['This', ' ', 'is', ' ', 'a', ' ', 'tweet', '!', ' ', '@Twitter']
