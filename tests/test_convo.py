@@ -168,7 +168,7 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.density == 1.0
     assert mock_convo_path.degree_hist == [0, 2]
     assert mock_convo_path.in_degree_hist == [1, 0]
-    assert mock_convo_path.out_degree_hist == [1, 0]
+    assert mock_convo_path.out_degree_hist == [1]
 
     assert mock_convo_path.duration is None
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']

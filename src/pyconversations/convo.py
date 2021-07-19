@@ -30,8 +30,8 @@ class Conversation:
 
         self._posts = posts  # uid -> post object
         self._edges = edges  # uid -> {reply_tos}
-        self._stats = {}
-        self._cache = {}
+
+        self._depth_cache = {}
 
     @property
     def posts(self):
@@ -82,9 +82,6 @@ class Conversation:
             # update knowledge of edges
             self._edges[post.uid] = post.reply_to
 
-        # clear cached stats
-        self._stats = {}
-
     def remove_post(self, uid):
         """
         Deletes a post from the conversational container using its UID.
@@ -103,9 +100,6 @@ class Conversation:
 
         # update knowledge of edges
         del self._edges[uid]
-
-        # clear cached stats
-        self._stats = {}
 
     def __add__(self, other):
         """
@@ -140,9 +134,6 @@ class Conversation:
         networkx.Graph
             The networkx graph associated with this Conversation
         """
-        if 'graph' in self._cache:
-            return self._cache['graph']
-
         graph = nx.Graph()
 
         # add posts as nodes
@@ -154,7 +145,7 @@ class Conversation:
             for rid in reps:
                 if uid in self._posts and rid in self._posts:
                     graph.add_edge(uid, rid)
-        self._cache['graph'] = graph
+
         return graph
 
     def segment(self):
@@ -220,11 +211,7 @@ class Conversation:
         int
             Number of messages in the conversation
         """
-        try:
-            return self._stats['messages']
-        except KeyError:
-            self._stats['messages'] = len(self._posts)
-            return self._stats['messages']
+        return len(self._posts)
 
     @property
     def connections(self):
@@ -236,11 +223,7 @@ class Conversation:
         int
             Number of reply connections in conversation
         """
-        try:
-            return self._stats['connections']
-        except KeyError:
-            self._stats['connections'] = sum(map(lambda x: len({r for r in x if r in self._posts}), self._edges.values()))
-            return self._stats['connections']
+        return sum(map(lambda x: len({r for r in x if r in self._posts}), self._edges.values()))
 
     @property
     def users(self):
@@ -252,11 +235,7 @@ class Conversation:
         int
             Number of unique users participating in the conversation
         """
-        try:
-            return self._stats['users']
-        except KeyError:
-            self._stats['users'] = len(set([post.author for post in self._posts.values()]))
-            return self._stats['users']
+        return len(set([post.author for post in self._posts.values()]))
 
     @property
     def chars(self):
@@ -269,11 +248,7 @@ class Conversation:
         int
             Length of the conversation in characters
         """
-        try:
-            return self._stats['chars']
-        except KeyError:
-            self._stats['chars'] = sum(map(lambda x: post_char_len(x), self._posts.values()))
-            return self._stats['chars']
+        return sum(map(lambda x: post_char_len(x), self._posts.values()))
 
     @property
     def tokens(self):
@@ -286,12 +261,7 @@ class Conversation:
         int
             Length of the conversation in tokens
         """
-        try:
-            return self._stats['tokens']
-        except KeyError:
-            self._stats['tokens'] = sum(map(lambda x: post_tok_len(x), self._posts.values()))
-
-            return self._stats['tokens']
+        return sum(map(lambda x: post_tok_len(x), self._posts.values()))
 
     @property
     def token_types(self):
@@ -303,12 +273,7 @@ class Conversation:
         int
             Size of the conversation vocabulary
         """
-        try:
-            return self._stats['token_types']
-        except KeyError:
-            self._stats['token_types'] = len(set(
-                reduce(lambda x, y: x | y, map(lambda x: x._types(), self._posts.values()))))
-            return self._stats['token_types']
+        return len(set(reduce(lambda x, y: x | y, map(lambda x: x._types(), self._posts.values()))))
 
     @property
     def sources(self):
@@ -320,12 +285,8 @@ class Conversation:
         set(UID)
             The set of unique IDs of posts that originate conversation (are not replies)
         """
-        try:
-            return self._stats['sources']
-        except KeyError:
-            es = {uid: set([e for e in ex if e in self._posts]) for uid, ex in self._edges.items()}
-            self._stats['sources'] = {uid for uid in es if not es[uid]}
-            return self._stats['sources']
+        es = {uid: set([e for e in ex if e in self._posts]) for uid, ex in self._edges.items()}
+        return {uid for uid in es if not es[uid]}
 
     @property
     def density(self):
@@ -364,14 +325,11 @@ class Conversation:
         dict(UID, int)
             Mapping from post UID to number of replies received
         """
-        if 'replies' not in self._stats:
-            rep_cnts = defaultdict(int)
-            for post in self._posts.values():
-                for rid in post.reply_to:
-                    rep_cnts[rid] += 1
-            self._stats['replies'] = rep_cnts
-
-        return self._stats['replies']
+        rep_cnts = defaultdict(int)
+        for post in self._posts.values():
+            for rid in post.reply_to:
+                rep_cnts[rid] += 1
+        return rep_cnts
 
     @property
     def reply_counts(self):
@@ -427,10 +385,7 @@ class Conversation:
         int
             The depth of the post
         """
-        if 'depth' not in self._stats:
-            self._stats['depth'] = {}
-
-        if uid not in self._stats['depth']:
+        if uid not in self._depth_cache:
             if self._posts[uid].reply_to:
                 reply = self._posts[uid]
                 depth = None
@@ -451,9 +406,9 @@ class Conversation:
             else:
                 depth = 0
 
-            self._stats['depth'][uid] = depth
+            self._depth_cache[uid] = depth
 
-        return self._stats['depth'][uid]
+        return self._depth_cache[uid]
 
     @property
     def depths(self):
@@ -466,12 +421,7 @@ class Conversation:
         list(int)
             List of the depths of each post
         """
-        if 'depths' in self._stats:
-            return self._stats['depths']
-
-        self._stats['depths'] = [self.get_depth(uid) for uid in self.posts]
-
-        return self._stats['depths']
+        return [self.get_depth(uid) for uid in self.posts]
 
     @property
     def tree_depth(self):
@@ -484,10 +434,7 @@ class Conversation:
         int
             Depth of the conversation DAG
         """
-        if 'tree_depth' not in self._stats:
-            self._stats['tree_depth'] = max(self.depths)
-
-        return self._stats['tree_depth']
+        return max(self.depths)
 
     @property
     def widths(self):
@@ -499,11 +446,9 @@ class Conversation:
         list(int)
             List of the width (# of posts) of each depth level
         """
-        if 'widths' not in self._stats:
-            cnts = dict(Counter(self.depths))
-            self._stats['widths'] = [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
+        cnts = dict(Counter(self.depths))
 
-        return self._stats['widths']
+        return [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
 
     @property
     def tree_width(self):
@@ -519,10 +464,7 @@ class Conversation:
         -----
         The width of the conversation is equal to the fattest depth level.
         """
-        if 'tree_width' not in self._stats:
-            self._stats['tree_width'] = max(self.widths)
-
-        return self._stats['tree_width']
+        return max(self.widths)
 
     def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None):
         """
@@ -591,13 +533,9 @@ class Conversation:
             The list of UIDs of the posts in the conversation, in temporal order
         """
         try:
-            return self._stats['time_order']
-        except KeyError:
-            try:
-                self._stats['time_order'] = sorted(self._posts.keys(), key=lambda k: self._posts[k].created_at)
-            except TypeError:
-                self._stats['time_order'] = None
-            return self._stats['time_order']
+            return sorted(self._posts.keys(), key=lambda k: self._posts[k].created_at)
+        except TypeError:
+            return []
 
     @property
     def text_stream(self):
@@ -625,11 +563,7 @@ class Conversation:
         datetime.datetime or None
             The earliest post in the Conversation, if available
         """
-        try:
-            return self._stats['start_time']
-        except KeyError:
-            self._stats['start_time'] = self._posts[self.time_order[0]].created_at if self.time_order else None
-            return self._stats['start_time']
+        return self._posts[self.time_order[0]].created_at if self.time_order else None
 
     @property
     def end_time(self):
@@ -641,11 +575,7 @@ class Conversation:
         datetime.datetime or None
             The latest post in the Conversation, if available
         """
-        try:
-            return self._stats['end_time']
-        except KeyError:
-            self._stats['end_time'] = self._posts[self.time_order[-1]].created_at if self.time_order else None
-            return self._stats['end_time']
+        return self._posts[self.time_order[-1]].created_at if self.time_order else None
 
     @property
     def duration(self):
@@ -657,14 +587,10 @@ class Conversation:
         float
             Length of the conversation in seconds
         """
-        try:
-            return self._stats['duration']
-        except KeyError:
-            if self.end_time and self.start_time:
-                self._stats['duration'] = (self.end_time - self.start_time).total_seconds()
-            else:
-                self._stats['duration'] = None
-            return self._stats['duration']
+        if self.end_time and self.start_time:
+            return (self.end_time - self.start_time).total_seconds()
+        else:
+            return
 
     @property
     def time_series(self):
