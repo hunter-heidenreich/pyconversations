@@ -125,7 +125,7 @@ def test_to_from_json(mock_convo):
     assert 0 in mock_convo.edges
 
     raw_json = mock_convo.to_json()
-    new_convo = Conversation.from_json(raw_json, Tweet)
+    new_convo = Conversation.from_json(raw_json)
 
     assert 0 in new_convo.posts
     assert 0 in new_convo.edges

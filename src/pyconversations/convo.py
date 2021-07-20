@@ -6,6 +6,7 @@ import networkx as nx
 
 from .feature_extraction import post_char_len
 from .feature_extraction import post_tok_len
+from .message import get_constructor_by_platform
 
 
 class Conversation:
@@ -180,7 +181,7 @@ class Conversation:
         return [post.to_json() for post in self.posts.values()]
 
     @staticmethod
-    def from_json(raw, cons):
+    def from_json(raw):
         """
         Converts a JSON representation of a Conversation into a full object.
 
@@ -188,8 +189,6 @@ class Conversation:
         ---------
         raw : JSON/dict
             The raw JSON
-        cons : UniMessage constructor
-            The post/UniversalMessage constructor to use.
 
         Returns
         -------
@@ -197,7 +196,7 @@ class Conversation:
             The conversation read from the raw JSON
         """
         convo = Conversation()
-        for p in [cons.from_json(pjson) for pjson in raw]:
+        for p in [get_constructor_by_platform(pjson['platform']).from_json(pjson) for pjson in raw]:
             convo.add_post(p)
         return convo
 
