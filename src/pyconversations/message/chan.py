@@ -11,6 +11,8 @@ class ChanPost(UniMessage):
     4chan post object with additional 4chan-specific features
     """
 
+    CLASS_STR = '4chanPost'
+
     def __init__(self, **kwargs):
 
         kwargs['platform'] = '4chan'

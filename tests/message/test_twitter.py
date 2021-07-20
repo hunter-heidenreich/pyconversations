@@ -235,7 +235,7 @@ def test_post_redaction(mock_tweet):
 
 
 def test_tweet_repr(mock_tweet):
-    assert mock_tweet.__repr__() == 'UniMessage(Twitter::tweeter1::9999999.0::This is a tweet! @Twitter::tags=test_tag)'
+    assert mock_tweet.__repr__() == 'Tweet(Twitter::tweeter1::9999999.0::This is a tweet! @Twitter::tags=test_tag)'
 
 
 def test_tweet_datetime_parsing(null_tweet):

@@ -11,6 +11,7 @@ class Tweet(UniMessage):
     """
 
     MENTION_REGEX = r'(^|[^@\w])@(\w{1,15})\b'
+    CLASS_STR = 'Tweet'
 
     def __init__(self, **kwargs):
 

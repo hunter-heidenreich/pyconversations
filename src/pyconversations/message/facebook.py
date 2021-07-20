@@ -9,6 +9,8 @@ class FBPost(UniMessage):
     FB-specific FB Post object with Facebook specific features
     """
 
+    CLASS_STR = 'FBPost'
+
     def __init__(self, **kwargs):
 
         kwargs['platform'] = 'Facebook'

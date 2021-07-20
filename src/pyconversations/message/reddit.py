@@ -10,6 +10,7 @@ class RedditPost(UniMessage):
     """
 
     MENTION_REGEX = r'(^|[^\w])/?u/([A-Za-z0-9_-]+)\b'
+    CLASS_STR = 'RedditPost'
 
     def __init__(self, **kwargs):
 

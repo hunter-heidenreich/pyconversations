@@ -42,6 +42,7 @@ class UniMessage(ABC):
     """
 
     MENTION_REGEX = None
+    CLASS_STR = 'UniMessage'
 
     def __init__(self, uid,
                  text='', author=None,
@@ -294,7 +295,7 @@ class UniMessage(ABC):
         return self._uid
 
     def __repr__(self):
-        return f'UniMessage({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
+        return f'{self.CLASS_STR}({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
 
     def __ior__(self, other):
         # Setting this to always take the larger text chunk...
