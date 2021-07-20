@@ -9,7 +9,7 @@ from .message import get_constructor_by_platform
 class Conversation:
     """A conversational container for the PyConversations package."""
 
-    def __init__(self, posts=None, edges=None, convo_id=None):
+    def __init__(self, posts=None, convo_id=None):
         """
         Constructor for Conversation object.
 
@@ -17,17 +17,11 @@ class Conversation:
         ---------
         posts
             An optional dictionary of messages/posts; keys should be unique IDs.
-        edges
-            An optional dictionary containing information of the posts replied to, also indexed by unique IDs.
         """
         if not posts:
             posts = {}
 
-        if not edges:
-            edges = {}
-
         self._posts = posts  # uid -> post object
-        self._edges = edges  # uid -> {reply_tos}
 
         self._depth_cache = {}
 
@@ -44,18 +38,6 @@ class Conversation:
             The dictionary of posts contained in this Conversation object
         """
         return self._posts
-
-    @property
-    def edges(self):
-        """
-        Returns a dictionary of reply edges, keyed by post UIDs.
-
-        Returns
-        -------
-        dict(UID, set(UID))
-            The dictionary reply "edges" that map a post to the UIDs of the posts it replies to
-        """
-        return self._edges
 
     @property
     def convo_id(self):
@@ -84,15 +66,9 @@ class Conversation:
         """
         if post.uid in self._posts and self._posts[post.uid]:
             self._posts[post.uid] |= post
-
-            # update knowledge of edges
-            self._edges[post.uid] |= post.reply_to
         else:
             # to dictionary
             self._posts[post.uid] = post
-
-            # update knowledge of edges
-            self._edges[post.uid] = post.reply_to
 
     def remove_post(self, uid):
         """
@@ -109,9 +85,6 @@ class Conversation:
         """
         # remove from post dictionary
         del self._posts[uid]
-
-        # update knowledge of edges
-        del self._edges[uid]
 
     def __add__(self, other):
         """
@@ -136,7 +109,7 @@ class Conversation:
             convo.add_post(post)
         return convo
 
-    def _build_graph(self):
+    def as_graph(self):
         """
         Constructs (and returns) a networkx Graph object
         from the contained posts and edges.
@@ -152,9 +125,9 @@ class Conversation:
         for uid in self._posts:
             graph.add_node(uid)
 
-        # add reply connections as sedges
-        for uid, reps in self._edges.items():
-            for rid in reps:
+        # add reply connections as edges
+        for uid, post in self._posts.items():
+            for rid in post.reply_to:
                 if uid in self._posts and rid in self._posts:
                     graph.add_edge(uid, rid)
 
@@ -172,7 +145,7 @@ class Conversation:
             A list of sub-conversations
         """
         segments = []
-        for node_set in nx.connected_components(self._build_graph()):
+        for node_set in nx.connected_components(self.as_graph()):
             convo = Conversation()
             for uid in node_set:
                 convo.add_post(self.posts[uid])
@@ -233,8 +206,7 @@ class Conversation:
         set(UID)
             The set of unique IDs of posts that originate conversation (are not replies)
         """
-        es = {uid: set([e for e in ex if e in self._posts]) for uid, ex in self._edges.items()}
-        return {uid for uid in es if not es[uid]}
+        return {uid for uid, post in self._posts.items() if not {rid for rid in post.reply_to if rid in self._posts}}
 
     @property
     def density(self):
@@ -247,7 +219,7 @@ class Conversation:
         float
             The density of the conversation graph
         """
-        return nx.density(self._build_graph())
+        return nx.density(self.as_graph())
 
     @property
     def degree_hist(self):
@@ -260,7 +232,7 @@ class Conversation:
             A list of frequencies of degrees.
             The degree values are the index in the list.
         """
-        return nx.degree_histogram(self._build_graph())
+        return nx.degree_histogram(self.as_graph())
 
     @property
     def replies(self):
@@ -466,9 +438,8 @@ class Conversation:
 
         keep -= drop
         filt_ps = {pid: post for pid, post in self.posts.items() if pid in keep}
-        filt_es = {pid: es & keep for pid, es in self.edges.items() if pid in keep}
 
-        return Conversation(posts=filt_ps, edges=filt_es)
+        return Conversation(posts=filt_ps)
 
     @property
     def time_order(self):
