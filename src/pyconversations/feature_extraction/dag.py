@@ -7,6 +7,9 @@ from .base import FeatureCache
 
 class DAGFeatures(FeatureCache):
 
+    def post_out_degree(self, post, conv=None):
+        return self.wrap(post.uid, 'post_out_degree', post_out_degree, post=post, conv=conv)
+
     def convo_messages(self, conv):
         return self.wrap(conv.convo_id, 'messages', convo_messages, conv=conv)
 
@@ -21,6 +24,28 @@ class DAGFeatures(FeatureCache):
 
     def convo_density(self, conv):
         return self.wrap(conv.convo_id, 'nx.density', convo_density, conv=conv)
+
+
+def post_out_degree(post, conv=None):
+    """
+    Returns the out-degree (# of posts replied to) of this post.
+    If the conversation is specified, specifically restricts to the reply actions
+    that have a valid recipient (e.g., the post replied to is in the Conversation)
+
+    Parameters
+    ----------
+    post : UniMessage
+        The message to compute the out-degree of
+
+    conv : Conversation
+        An optional collection of posts. If specified, replies only count if the reply is in the Conversation
+
+    Returns
+    -------
+    int
+        The out-degree of the `post`
+    """
+    return len([rid for rid in post.reply_to if rid in conv.posts]) if conv else len(post.reply_to)
 
 
 def convo_messages(conv):

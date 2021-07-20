@@ -45,3 +45,11 @@ def test_convo_messages_per_user(mock_convo, cache):
 
 def test_convo_density(mock_convo, cache):
     assert cache.convo_density(mock_convo) == 0.4
+
+
+def test_post_out_degree(mock_convo, cache):
+    assert cache.post_out_degree(mock_convo.posts[0], conv=mock_convo) == 0
+
+
+def test_post_out_degree_no_conv(mock_convo, cache):
+    assert cache.post_out_degree(mock_convo.posts[0]) == 1

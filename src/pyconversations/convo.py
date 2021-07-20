@@ -252,18 +252,6 @@ class Conversation:
         rep_cnts = self.replies
         return [rep_cnts[pid] for pid in self.posts]
 
-    @property
-    def out_degree_hist(self):
-        """
-        Returns a list of all out-degrees.
-
-        Returns
-        -------
-        list(int)
-            List of the replies generated for each post
-        """
-        return list(self.replies.values())
-
     def get_depth(self, uid):
         """
         Returns the depth of a specific post within this Conversation.
