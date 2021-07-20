@@ -1,5 +1,4 @@
 from collections import Counter
-from collections import defaultdict
 
 import networkx as nx
 
@@ -193,64 +192,6 @@ class Conversation:
             The set of unique IDs of posts that originate conversation (are not replies)
         """
         return {uid for uid, post in self._posts.items() if not {rid for rid in post.reply_to if rid in self._posts}}
-
-    @property
-    def degree_hist(self):
-        """
-        Returns the degree (# of replies received) histogram of this conversation.
-
-        Returns
-        -------
-        list(int)
-            A list of frequencies of degrees.
-            The degree values are the index in the list.
-        """
-        return nx.degree_histogram(self.as_graph())
-
-    @property
-    def replies(self):
-        """
-        Returns the number of replies received (as collected in this Conversation)
-        for each post within the Conversation.
-
-        Returns
-        -------
-        dict(UID, int)
-            Mapping from post UID to number of replies received
-        """
-        rep_cnts = defaultdict(int)
-        for post in self._posts.values():
-            for rid in post.reply_to:
-                rep_cnts[rid] += 1
-        return rep_cnts
-
-    @property
-    def reply_counts(self):
-        """
-        Returns a list of 3-tuples of the form (total replies, replies in, replies out) for each post
-
-        Returns
-        -------
-        list(3-tuple(total replies in conversation, replies received, replies out))
-            List of 3-tuples of the form (total replies, replies in, replies out) for each post
-        """
-        # for each post, we'll have a 3-tuple of form (total replies, replies in, replies out)
-        reps = self.replies
-        total = sum(reps.values())
-        return [(total, reps[pid], len(self.posts[pid].reply_to)) for pid in self.posts]
-
-    @property
-    def in_degree_hist(self):
-        """
-        Returns a list of all in-degrees.
-
-        Returns
-        -------
-        list(int)
-            List of the replies received for each post
-        """
-        rep_cnts = self.replies
-        return [rep_cnts[pid] for pid in self.posts]
 
     def get_depth(self, uid):
         """

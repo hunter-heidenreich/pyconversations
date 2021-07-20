@@ -10,6 +10,12 @@ class DAGFeatures(FeatureCache):
     def post_out_degree(self, post, conv=None):
         return self.wrap(post.uid, 'post_out_degree', post_out_degree, post=post, conv=conv)
 
+    def post_in_degree(self, post, conv):
+        return self.wrap(str(post.uid) + '_' + conv.convo_id, 'post_in_degree', post_in_degree, post=post, conv=conv, cache=self)
+
+    def convo_in_degrees(self, conv):
+        return self.wrap(conv.convo_id, 'convo_in_degrees', convo_in_degrees, conv=conv)
+
     def convo_messages(self, conv):
         return self.wrap(conv.convo_id, 'messages', convo_messages, conv=conv)
 
@@ -46,6 +52,53 @@ def post_out_degree(post, conv=None):
         The out-degree of the `post`
     """
     return len([rid for rid in post.reply_to if rid in conv.posts]) if conv else len(post.reply_to)
+
+
+def post_in_degree(post, conv, cache=None):
+    """
+    Returns the in-degree (# of posts that reply to this one) of this post.
+    The conversation must be specified.
+
+    Parameters
+    ----------
+    post : UniMessage
+        The message to compute the out-degree of
+
+    conv : Conversation
+        A collection of posts
+
+    cache : DAGFeatures
+        An optional cache
+
+    Returns
+    -------
+    int
+        The in-degree of the `post`
+    """
+    cnt = cache.convo_in_degrees(conv) if cache else convo_in_degrees(conv)
+    return cnt[post.uid]
+
+
+def convo_in_degrees(conv):
+    """
+    Returns a Counter of the post IDs mapping to the # of replies that post received in this Conversation
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    Counter
+        A mapping from post IDs to the # of replies they receive in `conv`
+    """
+    cnt = Counter()
+    for p in conv.posts.values():
+        for r in p.reply_to:
+            if r in conv.posts:
+                cnt[r] += 1
+    return cnt
 
 
 def convo_messages(conv):

@@ -53,3 +53,7 @@ def test_post_out_degree(mock_convo, cache):
 
 def test_post_out_degree_no_conv(mock_convo, cache):
     assert cache.post_out_degree(mock_convo.posts[0]) == 1
+
+
+def test_post_in_degree(mock_convo, cache):
+    assert cache.post_in_degree(mock_convo.posts[0], mock_convo) == 1

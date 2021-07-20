@@ -112,14 +112,9 @@ def test_stats(mock_convo):
     assert mock_convo.sources == {0}
     assert mock_convo.sources == {0}
 
-    assert mock_convo.degree_hist == [1]
-
 
 def test_stats_path(mock_convo_path):
     assert mock_convo_path.sources == {0}
-    assert mock_convo_path.degree_hist == [0, 2]
-    assert mock_convo_path.in_degree_hist == [1, 0]
-
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
 
 
@@ -128,8 +123,6 @@ def test_stats_no_parent(mock_tweet):
     convo.add_post(mock_tweet)
 
     assert convo.sources == {1}
-
-    assert convo.degree_hist == [1]
 
 
 def test_conversation_filter_min_char(mock_convo_path):
@@ -234,10 +227,6 @@ def test_conversation_post_merge_lang():
 
     assert len(convo.posts) == 1
     assert convo.posts[0].lang == 'en'
-
-
-def test_reply_counts(mock_convo):
-    assert mock_convo.reply_counts == [(0, 0, 0)]
 
 
 def test_get_depth(mock_convo):
