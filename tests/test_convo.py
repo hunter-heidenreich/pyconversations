@@ -159,7 +159,6 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.out_degree_hist == [1]
 
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
-    assert mock_convo_path.time_series is None
 
 
 def test_stats_no_parent(mock_tweet):

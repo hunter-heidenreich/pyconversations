@@ -525,21 +525,6 @@ class Conversation:
         else:
             return [self._posts[uid].text for uid in self._posts]
 
-    @property
-    def time_series(self):
-        """
-        Returns the time series of the conversation as floating point timestamps.
-
-        Returns
-        -------
-        list(float)
-            List of datetime objects of conversation's posts (in order) as floating-point timestamps
-        """
-        if self.time_order:
-            return [self._posts[uid].created_at.timestamp() for uid in self.time_order]
-
-        return None
-
     def redact(self, assign_ints=True):
         """
         Redacts user information from the conversation.
