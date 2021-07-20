@@ -1,5 +1,3 @@
-from collections import Counter
-
 import networkx as nx
 
 from .message import get_constructor_by_platform
@@ -21,8 +19,6 @@ class Conversation:
             posts = {}
 
         self._posts = posts  # uid -> post object
-
-        self._depth_cache = {}
 
         self._convo_id = convo_id
 
@@ -71,7 +67,7 @@ class Conversation:
         Any (or str)
             Returns a conversation identifier. Creates ones from sources if unspecified.
         """
-        return self._convo_id if self._convo_id else 'CONV_' + '-'.join(map(str, sorted(self.sources)))
+        return self._convo_id if self._convo_id else 'CONV_' + '-'.join(map(str, sorted(self.get_sources())))
 
     def add_post(self, post):
         """
@@ -181,8 +177,7 @@ class Conversation:
             convo.add_post(p)
         return convo
 
-    @property
-    def sources(self):
+    def get_sources(self):
         """
         Returns the originating (non-reply) posts included in this conversation.
 
@@ -192,101 +187,6 @@ class Conversation:
             The set of unique IDs of posts that originate conversation (are not replies)
         """
         return {uid for uid, post in self._posts.items() if not {rid for rid in post.reply_to if rid in self._posts}}
-
-    def get_depth(self, uid):
-        """
-        Returns the depth of a specific post within this Conversation.
-
-        Parameters
-        ---------
-        uid : Hashable
-            The unique identifier of the post
-
-        Returns
-        -------
-        int
-            The depth of the post
-        """
-        if uid not in self._depth_cache:
-            if self._posts[uid].reply_to:
-                reply = self._posts[uid]
-                depth = None
-
-                for rid in self._posts[uid].reply_to:
-                    if rid in self._posts:
-                        post = self._posts[rid]
-
-                        if (reply.created_at and post.created_at and reply.created_at > post.created_at) or \
-                           post.created_at is None or reply.created_at is None:
-
-                            d = self.get_depth(rid) + 1
-                            if depth is None or d < depth:
-                                depth = d
-
-                if depth is None:
-                    depth = 0
-            else:
-                depth = 0
-
-            self._depth_cache[uid] = depth
-
-        return self._depth_cache[uid]
-
-    @property
-    def depths(self):
-        """
-        Returns a list of depths of posts within this Conversation.
-        This is useful for understanding how the Conversation is structured/dispersed.
-
-        Returns
-        -------
-        list(int)
-            List of the depths of each post
-        """
-        return [self.get_depth(uid) for uid in self.posts]
-
-    @property
-    def tree_depth(self):
-        """
-        Returns the depth of this Conversation.
-        Specifically, the longest path from source to leaf.
-
-        Returns
-        -------
-        int
-            Depth of the conversation DAG
-        """
-        return max(self.depths)
-
-    @property
-    def widths(self):
-        """
-        Returns a list of the width (# of posts) at each depth level within the Conversation.
-
-        Returns
-        -------
-        list(int)
-            List of the width (# of posts) of each depth level
-        """
-        cnts = dict(Counter(self.depths))
-
-        return [cnts.get(ix, 0) for ix in range(self.tree_depth + 1)]
-
-    @property
-    def tree_width(self):
-        """
-        Returns the width of the full Conversation (the max width of any depth level).
-
-        Returns
-        -------
-        int
-            Width of the tree
-
-        Notes
-        -----
-        The width of the conversation is equal to the fattest depth level.
-        """
-        return max(self.widths)
 
     def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None):
         """
@@ -343,7 +243,6 @@ class Conversation:
 
         return Conversation(posts=filt_ps)
 
-    @property
     def time_order(self):
         """
         Returns a time series of the UIDs of posts within this Conversation.
@@ -358,7 +257,6 @@ class Conversation:
         except TypeError:
             return []
 
-    @property
     def text_stream(self):
         """
         Returns the text of the Conversation as a single stream.
@@ -369,8 +267,9 @@ class Conversation:
         list(str)
             The text of the conversation, by post, in temporal order (if available)
         """
-        if self.time_order:
-            return [self._posts[uid].text for uid in self.time_order]
+        order = self.time_order()
+        if order:
+            return [self._posts[uid].text for uid in order]
         else:
             return [self._posts[uid].text for uid in self._posts]
 

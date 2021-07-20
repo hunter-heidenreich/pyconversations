@@ -30,7 +30,8 @@ def convo_start_time(conv):
     float
         The earliest time stamp. -1 if time order is not available
     """
-    return conv.posts[conv.time_order[0]].created_at.timestamp() if conv.time_order else -1
+    order = conv.time_order()
+    return conv.posts[order[0]].created_at.timestamp() if order else -1
 
 
 def convo_end_time(conv):
@@ -47,7 +48,8 @@ def convo_end_time(conv):
     float
         The latest time stamp. -1 if time order is not available
     """
-    return conv.posts[conv.time_order[-1]].created_at.timestamp() if conv.time_order else -1
+    order = conv.time_order()
+    return conv.posts[order[-1]].created_at.timestamp() if order else -1
 
 
 def convo_duration(conv, cache=None):
@@ -86,4 +88,5 @@ def convo_timeseries(conv):
     list(float)
         The in-order list of message creation timestamps
     """
-    return [conv.posts[uid].created_at.timestamp() for uid in conv.time_order] if conv.time_order else []
+    order = conv.time_order()
+    return [conv.posts[uid].created_at.timestamp() for uid in order] if order else []

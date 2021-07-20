@@ -11,7 +11,7 @@ class DAGFeatures(FeatureCache):
         return self.wrap(post.uid, 'post_out_degree', post_out_degree, post=post, conv=conv)
 
     def post_in_degree(self, post, conv):
-        return self.wrap(str(post.uid) + '_' + conv.convo_id, 'post_in_degree', post_in_degree, post=post, conv=conv, cache=self)
+        return self.wrap(str(post.uid) + '_' + str(conv.convo_id), 'post_in_degree', post_in_degree, post=post, conv=conv, cache=self)
 
     def convo_in_degrees(self, conv):
         return self.wrap(conv.convo_id, 'convo_in_degrees', convo_in_degrees, conv=conv)
@@ -30,6 +30,19 @@ class DAGFeatures(FeatureCache):
 
     def convo_density(self, conv):
         return self.wrap(conv.convo_id, 'nx.density', convo_density, conv=conv)
+
+    def convo_post_depth(self, post, conv):
+        return self.wrap(str(post.uid) + '_' + str(conv.convo_id), 'post_depth', convo_post_depth,
+                         post=post, conv=conv, cache=self)
+
+    def convo_depth_dist(self, conv):
+        return self.wrap(conv.convo_id, 'depth_dist', convo_depth_dist, conv=conv, cache=self)
+
+    def convo_tree_depth(self, conv):
+        return self.wrap(conv.convo_id, 'tree_depth', convo_tree_depth, conv=conv, cache=self)
+
+    def convo_tree_width(self, conv):
+        return self.wrap(conv.convo_id, 'tree_width', convo_tree_width, conv=conv, cache=self)
 
 
 def post_out_degree(post, conv=None):
@@ -192,3 +205,101 @@ def convo_density(conv):
     See for more information: https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.density.html
     """
     return nx.density(conv.as_graph())
+
+
+def convo_post_depth(post, conv, cache=None):
+    """
+    Returns the depth of this post within the conversation.
+    Depth is defined for a node in a DAG as the longest path
+    from a source node to the requested post
+
+    Parameters
+    ----------
+    post : UniMessage
+        The target message
+
+    conv : Conversation
+        A collection of posts
+
+    cache : DAGFeatures
+        An optional cache
+
+    Returns
+    -------
+    int
+        The depth of the `post` in the conversation DAG
+    """
+    parent_depths = [
+        cache.convo_post_depth(conv.posts[rid], conv) if cache else convo_post_depth(conv.posts[rid], conv)
+        for rid in post.reply_to if rid in conv.posts
+    ]
+
+    if not parent_depths:
+        return 0
+    else:
+        return 1 + max(parent_depths)
+
+
+def convo_depth_dist(conv, cache=None):
+    """
+    Returns the depth distribution of posts within the conversation.
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    cache : DAGFeatures
+        An optional cache
+
+    Returns
+    -------
+    Counter
+        The counts of posts at various depths within the conversation
+    """
+    depths = [cache.convo_post_depth(p, conv) if cache else convo_post_depth(p, conv) for p in conv.posts.values()]
+    return Counter(depths)
+
+
+def convo_tree_depth(conv, cache=None):
+    """
+    Returns the depth of the full conversation.
+    This is the max depth of any post within the Conversation.
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    cache : DAGFeatures
+        An optional cache
+
+    Returns
+    -------
+    int
+        Depth of the entire conversation as a DAG
+    """
+    dist = cache.convo_depth_dist(conv) if cache else convo_depth_dist(conv)
+    return max(dist.keys())
+
+
+def convo_tree_width(conv, cache=None):
+    """
+    Returns the width of the full conversation.
+    This is the max width (# of posts) at any depth level within the Conversation
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    cache : DAGFeatures
+        An optional cache
+
+    Returns
+    -------
+    int
+        Width of the entire conversation as a DAG
+    """
+    dist = cache.convo_depth_dist(conv) if cache else convo_depth_dist(conv)
+    return max(dist.values())

@@ -108,21 +108,8 @@ def test_to_from_json(mock_convo):
     assert 0 in new_convo.posts
 
 
-def test_stats(mock_convo):
-    assert mock_convo.sources == {0}
-    assert mock_convo.sources == {0}
-
-
-def test_stats_path(mock_convo_path):
-    assert mock_convo_path.sources == {0}
-    assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
-
-
-def test_stats_no_parent(mock_tweet):
-    convo = Conversation()
-    convo.add_post(mock_tweet)
-
-    assert convo.sources == {1}
+def test_text_stream(mock_convo_path):
+    assert mock_convo_path.text_stream() == ['Root tweet text', 'test text']
 
 
 def test_conversation_filter_min_char(mock_convo_path):
@@ -161,6 +148,16 @@ def test_conversation_filter_by_after(mock_convo_path):
     assert len(filt.posts) == 0
 
 
+def test_filter_by_platform(mock_convo_path):
+    assert len(mock_convo_path.posts) == 2
+
+    filt = mock_convo_path.filter(by_platform={'Twitter'})
+    assert len(filt.posts) == 2
+
+    filt = mock_convo_path.filter(by_platform={'4chan'})
+    assert len(filt.posts) == 0
+
+
 @pytest.fixture
 def mock_temporal_convo():
     from datetime import datetime
@@ -174,13 +171,13 @@ def mock_temporal_convo():
 
 
 def test_ordered_properties(mock_temporal_convo):
-    assert mock_temporal_convo.time_order == list(range(4))
-    assert mock_temporal_convo.text_stream == [f'@tweet {i}' for i in range(4)]
+    assert mock_temporal_convo.time_order() == list(range(4))
+    assert mock_temporal_convo.text_stream() == [f'@tweet {i}' for i in range(4)]
 
 
 def test_convo_redaction(mock_temporal_convo):
     mock_temporal_convo.redact()
-    assert mock_temporal_convo.text_stream == [f'@USER0 {i}' for i in range(4)]
+    assert mock_temporal_convo.text_stream() == [f'@USER0 {i}' for i in range(4)]
 
 
 def test_conversation_post_merge(mock_root_tweet, mock_tweet):
@@ -227,25 +224,3 @@ def test_conversation_post_merge_lang():
 
     assert len(convo.posts) == 1
     assert convo.posts[0].lang == 'en'
-
-
-def test_get_depth(mock_convo):
-    assert mock_convo.get_depth(0) == 0
-    assert mock_convo.get_depth(0) == 0
-
-    assert mock_convo.depths == [0]
-    assert mock_convo.depths == [0]
-
-    assert mock_convo.tree_depth == 0
-    assert mock_convo.tree_depth == 0
-
-    assert mock_convo.widths == [1]
-    assert mock_convo.widths == [1]
-
-    assert mock_convo.tree_width == 1
-    assert mock_convo.tree_width == 1
-
-
-def test_path_shape(mock_convo_path):
-    assert mock_convo_path.get_depth(1) == 1
-    assert mock_convo_path.get_depth(1) == 1
