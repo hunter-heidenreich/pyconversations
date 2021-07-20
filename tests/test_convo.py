@@ -141,15 +141,6 @@ def test_stats(mock_convo):
     assert mock_convo.users == 1
     assert mock_convo.users == 1
 
-    assert mock_convo.chars == 15
-    assert mock_convo.chars == 15
-
-    assert mock_convo.tokens == 5
-    assert mock_convo.tokens == 5
-
-    assert mock_convo.token_types == 4
-    assert mock_convo.token_types == 4
-
     assert mock_convo.sources == {0}
     assert mock_convo.sources == {0}
 
@@ -161,9 +152,6 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.messages == 2
     assert mock_convo_path.connections == 1
     assert mock_convo_path.users == 2
-    assert mock_convo_path.chars == 24
-    assert mock_convo_path.tokens == 8
-    assert mock_convo_path.token_types == 5
     assert mock_convo_path.sources == {0}
     assert mock_convo_path.density == 1.0
     assert mock_convo_path.degree_hist == [0, 2]
@@ -182,8 +170,6 @@ def test_stats_no_parent(mock_tweet):
     assert convo.messages == 1
     assert convo.connections == 0
     assert convo.users == 1
-    assert convo.chars == 9
-    assert convo.tokens == 3
     assert convo.sources == {1}
 
     assert convo.density == 0

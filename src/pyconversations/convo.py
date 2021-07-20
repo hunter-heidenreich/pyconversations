@@ -1,18 +1,15 @@
 from collections import Counter
 from collections import defaultdict
-from functools import reduce
 
 import networkx as nx
 
-from .feature_extraction import post_char_len
-from .feature_extraction import post_tok_len
 from .message import get_constructor_by_platform
 
 
 class Conversation:
     """A conversational container for the PyConversations package."""
 
-    def __init__(self, posts=None, edges=None):
+    def __init__(self, posts=None, edges=None, convo_id=None):
         """
         Constructor for Conversation object.
 
@@ -33,6 +30,8 @@ class Conversation:
         self._edges = edges  # uid -> {reply_tos}
 
         self._depth_cache = {}
+
+        self._convo_id = convo_id
 
     @property
     def posts(self):
@@ -57,6 +56,18 @@ class Conversation:
             The dictionary reply "edges" that map a post to the UIDs of the posts it replies to
         """
         return self._edges
+
+    @property
+    def convo_id(self):
+        """
+        The conversation identifier
+
+        Returns
+        -------
+        Any (or str)
+            Returns a conversation identifier. Creates ones from sources if unspecified.
+        """
+        return self._convo_id if self._convo_id else 'CONV_' + '-'.join(map(str, sorted(self.sources)))
 
     def add_post(self, post):
         """
@@ -235,44 +246,6 @@ class Conversation:
             Number of unique users participating in the conversation
         """
         return len(set([post.author for post in self._posts.values()]))
-
-    @property
-    def chars(self):
-        """
-        Returns the integer character length of the entire conversation.
-        This is a summation over the character counts for all posts within it.
-
-        Returns
-        -------
-        int
-            Length of the conversation in characters
-        """
-        return sum(map(lambda x: post_char_len(x), self._posts.values()))
-
-    @property
-    def tokens(self):
-        """
-        Returns the integer token length of the entire conversation.
-        This is a summation over the token counts for all posts within it.
-
-        Returns
-        -------
-        int
-            Length of the conversation in tokens
-        """
-        return sum(map(lambda x: post_tok_len(x), self._posts.values()))
-
-    @property
-    def token_types(self):
-        """
-        Returns the number of unique tokens used in this conversation (as an integer).
-
-        Returns
-        -------
-        int
-            Size of the conversation vocabulary
-        """
-        return len(set(reduce(lambda x, y: x | y, map(lambda x: set(x.tokens), self._posts.values()))))
 
     @property
     def sources(self):
