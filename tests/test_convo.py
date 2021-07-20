@@ -112,13 +112,11 @@ def test_stats(mock_convo):
     assert mock_convo.sources == {0}
     assert mock_convo.sources == {0}
 
-    assert mock_convo.density == 0
     assert mock_convo.degree_hist == [1]
 
 
 def test_stats_path(mock_convo_path):
     assert mock_convo_path.sources == {0}
-    assert mock_convo_path.density == 1.0
     assert mock_convo_path.degree_hist == [0, 2]
     assert mock_convo_path.in_degree_hist == [1, 0]
     assert mock_convo_path.out_degree_hist == [1]
@@ -132,7 +130,6 @@ def test_stats_no_parent(mock_tweet):
 
     assert convo.sources == {1}
 
-    assert convo.density == 0
     assert convo.degree_hist == [1]
 
 

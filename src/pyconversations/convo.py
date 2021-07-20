@@ -195,19 +195,6 @@ class Conversation:
         return {uid for uid, post in self._posts.items() if not {rid for rid in post.reply_to if rid in self._posts}}
 
     @property
-    def density(self):
-        """
-        Returns the density (a float) of the conversation,
-        when represented as a graph.
-
-        Returns
-        -------
-        float
-            The density of the conversation graph
-        """
-        return nx.density(self.as_graph())
-
-    @property
     def degree_hist(self):
         """
         Returns the degree (# of replies received) histogram of this conversation.

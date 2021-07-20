@@ -1,5 +1,7 @@
 from collections import Counter
 
+import networkx as nx
+
 from .base import FeatureCache
 
 
@@ -16,6 +18,9 @@ class DAGFeatures(FeatureCache):
 
     def convo_messages_per_user(self, conv):
         return self.wrap(conv.convo_id, 'post_per_user', convo_messages_per_user, conv=conv)
+
+    def convo_density(self, conv):
+        return self.wrap(conv.convo_id, 'nx.density', convo_density, conv=conv)
 
 
 def convo_messages(conv):
@@ -88,3 +93,24 @@ def convo_messages_per_user(conv):
         The counts of messages written per user (keyed by author name)
     """
     return Counter([p.author for p in conv.posts.values()])
+
+
+def convo_density(conv):
+    """
+    The density of the conversation as a DAG
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    float
+        The density of connection with in the conversation
+
+    Notes
+    -----
+    See for more information: https://networkx.org/documentation/stable/reference/generated/networkx.classes.function.density.html
+    """
+    return nx.density(conv.as_graph())

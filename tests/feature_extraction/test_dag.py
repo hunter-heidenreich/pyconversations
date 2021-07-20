@@ -41,3 +41,7 @@ def test_convo_user_count(mock_convo, cache):
 
 def test_convo_messages_per_user(mock_convo, cache):
     assert dict(cache.convo_messages_per_user(mock_convo)) == {'USER0': 3, 'USER1': 2}
+
+
+def test_convo_density(mock_convo, cache):
+    assert cache.convo_density(mock_convo) == 0.4
