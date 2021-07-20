@@ -4,7 +4,6 @@ from abc import abstractmethod
 from glob import glob
 
 from ..convo import Conversation
-from ..message import Tweet
 
 
 class BaseReader(ABC):
@@ -74,7 +73,7 @@ class ConvoReader(BaseReader):
         raise NotImplementedError
 
     @staticmethod
-    def iter_read(path_pattern, cons=Tweet):
+    def iter_read(path_pattern):
         """
         Function for creating a conversation reading iterator.
         Will read and parse part of a file/directory, yielding conversations as queried.
@@ -84,8 +83,6 @@ class ConvoReader(BaseReader):
         path_pattern : str
             The path to a directory containing Conversation data.
             This path will be appended with the pattern `*.json`.
-        cons : UniMessage (specifically a concrete derivative class)
-            Message constructor. The type of message Conversation posts will be parsed as
 
         Yields
         ------
@@ -95,4 +92,4 @@ class ConvoReader(BaseReader):
         for f in glob(path_pattern + '*.json'):
             with open(f) as fp:
                 for line in fp.readlines():
-                    yield Conversation.from_json(json.loads(line), cons)
+                    yield Conversation.from_json(json.loads(line))
