@@ -526,45 +526,6 @@ class Conversation:
             return [self._posts[uid].text for uid in self._posts]
 
     @property
-    def start_time(self):
-        """
-        Returns the start datetime of the Conversation.
-
-        Returns
-        -------
-        datetime.datetime or None
-            The earliest post in the Conversation, if available
-        """
-        return self._posts[self.time_order[0]].created_at if self.time_order else None
-
-    @property
-    def end_time(self):
-        """
-        Returns the end datetime of the Conversation.
-
-        Returns
-        -------
-        datetime.datetime or None
-            The latest post in the Conversation, if available
-        """
-        return self._posts[self.time_order[-1]].created_at if self.time_order else None
-
-    @property
-    def duration(self):
-        """
-        Returns the duration (in seconds) of the Conversation.
-
-        Returns
-        -------
-        float
-            Length of the conversation in seconds
-        """
-        if self.end_time and self.start_time:
-            return (self.end_time - self.start_time).total_seconds()
-        else:
-            return
-
-    @property
     def time_series(self):
         """
         Returns the time series of the conversation as floating point timestamps.

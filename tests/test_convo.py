@@ -158,7 +158,6 @@ def test_stats_path(mock_convo_path):
     assert mock_convo_path.in_degree_hist == [1, 0]
     assert mock_convo_path.out_degree_hist == [1]
 
-    assert mock_convo_path.duration is None
     assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
     assert mock_convo_path.time_series is None
 
@@ -225,14 +224,8 @@ def mock_temporal_convo():
 
 
 def test_ordered_properties(mock_temporal_convo):
-    from datetime import datetime
-
     assert mock_temporal_convo.time_order == list(range(4))
     assert mock_temporal_convo.text_stream == [f'@tweet {i}' for i in range(4)]
-    assert mock_temporal_convo.duration == 7240.0
-    assert mock_temporal_convo.start_time == datetime(2020, 12, 1, 10, 5, 5)
-    assert mock_temporal_convo.end_time == datetime(2020, 12, 1, 12, 5, 45)
-    assert mock_temporal_convo.time_series == [1606835105.0, 1606835135.0, 1606835145.0, 1606842345.0]
 
 
 def test_convo_redaction(mock_temporal_convo):

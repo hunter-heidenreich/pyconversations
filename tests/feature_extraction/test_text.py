@@ -2,7 +2,6 @@ import pytest
 
 from pyconversations.convo import Conversation
 from pyconversations.feature_extraction import TextFeatures
-from pyconversations.feature_extraction import post_type_len
 from pyconversations.message import Tweet
 
 
@@ -69,7 +68,6 @@ def test_type_len(mock_tweet):
     fx = TextFeatures()
     assert fx.post_type_len(mock_tweet) == 7
     assert fx.post_type_len(mock_tweet) == 7
-    assert post_type_len(mock_tweet) == 7
 
 
 def test_convo_chars(mock_convo):
