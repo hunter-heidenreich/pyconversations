@@ -27,6 +27,29 @@ class Conversation:
 
         self._convo_id = convo_id
 
+    def __add__(self, other):
+        """
+        Defines the addition operation over Conversation objects.
+        Returns a new copy of a conversation.
+
+        Parameters
+        ---------
+        other : UniMessage
+            Another conversation to be added to this one.
+
+        Returns
+        -------
+        Conversation
+            The combination of this conversation and the conversation in `other`
+        """
+
+        convo = Conversation()
+        for post in other.posts.values():
+            convo.add_post(post)
+        for post in self.posts.values():
+            convo.add_post(post)
+        return convo
+
     @property
     def posts(self):
         """
@@ -67,7 +90,6 @@ class Conversation:
         if post.uid in self._posts and self._posts[post.uid]:
             self._posts[post.uid] |= post
         else:
-            # to dictionary
             self._posts[post.uid] = post
 
     def remove_post(self, uid):
@@ -83,31 +105,7 @@ class Conversation:
         -------
         None
         """
-        # remove from post dictionary
         del self._posts[uid]
-
-    def __add__(self, other):
-        """
-        Defines the addition operation over Conversation objects.
-        Returns a new copy of a conversation.
-
-        Parameters
-        ---------
-        other : UniMessage
-            Another conversation to be added to this one.
-
-        Returns
-        -------
-        Conversation
-            The combination of this conversation and the conversation in `other`
-        """
-
-        convo = Conversation()
-        for post in other.posts.values():
-            convo.add_post(post)
-        for post in self.posts.values():
-            convo.add_post(post)
-        return convo
 
     def as_graph(self):
         """
@@ -183,18 +181,6 @@ class Conversation:
         for p in [get_constructor_by_platform(pjson['platform']).from_json(pjson) for pjson in raw]:
             convo.add_post(p)
         return convo
-
-    @property
-    def users(self):
-        """
-        Returns the number of unique users participating in a conversations as an integer.
-
-        Returns
-        -------
-        int
-            Number of unique users participating in the conversation
-        """
-        return len(set([post.author for post in self._posts.values()]))
 
     @property
     def sources(self):

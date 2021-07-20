@@ -1,3 +1,5 @@
+from collections import Counter
+
 from .base import FeatureCache
 
 
@@ -8,6 +10,12 @@ class DAGFeatures(FeatureCache):
 
     def convo_connections(self, conv, check=True):
         return self.wrap(conv.convo_id, 'connections', convo_connections, conv=conv, check=check)
+
+    def convo_user_count(self, conv):
+        return self.wrap(conv.convo_id, 'user_cnt', convo_user_count, conv=conv)
+
+    def convo_messages_per_user(self, conv):
+        return self.wrap(conv.convo_id, 'post_per_user', convo_messages_per_user, conv=conv)
 
 
 def convo_messages(conv):
@@ -46,3 +54,37 @@ def convo_connections(conv, check=True):
         The number of message reply connections contained in this collection
     """
     return len([1 for p in conv.posts.values() for ix in p.reply_to if (ix in conv.posts or not check)])
+
+
+def convo_user_count(conv):
+    """
+    Given a Conversation, returns the # of unique users who created messages within it
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of messages
+
+    Returns
+    -------
+    int
+        The number of unique authors (users) of messages in the Conversation
+    """
+    return len({p.author for p in conv.posts.values()})
+
+
+def convo_messages_per_user(conv):
+    """
+    Returns the user-distribution of posts written per user
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    Counter
+        The counts of messages written per user (keyed by author name)
+    """
+    return Counter([p.author for p in conv.posts.values()])

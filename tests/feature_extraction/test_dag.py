@@ -10,7 +10,10 @@ def mock_convo():
     c = Conversation()
 
     for ix in range(5):
-        c.add_post(Tweet(uid=ix, text=f'Text {ix}', reply_to={ix - 1} if ix else {999}))
+        c.add_post(Tweet(
+            uid=ix, text=f'Text {ix}', reply_to={ix - 1} if ix else {999},
+            author=f'USER{ix % 2}'
+        ))
 
     return c
 
@@ -30,3 +33,11 @@ def test_convo_connections(mock_convo, cache):
 
 def test_convo_connections_no_check(mock_convo, cache):
     assert cache.convo_connections(mock_convo, check=False) == 5
+
+
+def test_convo_user_count(mock_convo, cache):
+    assert cache.convo_user_count(mock_convo) == 2
+
+
+def test_convo_messages_per_user(mock_convo, cache):
+    assert dict(cache.convo_messages_per_user(mock_convo)) == {'USER0': 3, 'USER1': 2}
