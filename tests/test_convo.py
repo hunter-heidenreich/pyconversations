@@ -69,16 +69,6 @@ def test_build_conversation(mock_tweet):
         conversation.remove_post(uid)
 
 
-def test_convo_constructor(mock_tweet):
-    pdict = {mock_tweet.uid: mock_tweet}
-    edict = {mock_tweet.uid: mock_tweet.reply_to}
-
-    c = Conversation(posts=pdict, edges=edict)
-
-    assert c.messages == 1
-    assert c.connections == 0
-
-
 def test_add_convo_to_self(mock_tweet):
     conversation = Conversation()
 
@@ -132,12 +122,6 @@ def test_to_from_json(mock_convo):
 
 
 def test_stats(mock_convo):
-    assert mock_convo.messages == 1
-    assert mock_convo.messages == 1
-
-    assert mock_convo.connections == 0
-    assert mock_convo.connections == 0
-
     assert mock_convo.users == 1
     assert mock_convo.users == 1
 
@@ -149,8 +133,6 @@ def test_stats(mock_convo):
 
 
 def test_stats_path(mock_convo_path):
-    assert mock_convo_path.messages == 2
-    assert mock_convo_path.connections == 1
     assert mock_convo_path.users == 2
     assert mock_convo_path.sources == {0}
     assert mock_convo_path.density == 1.0
@@ -165,8 +147,6 @@ def test_stats_no_parent(mock_tweet):
     convo = Conversation()
     convo.add_post(mock_tweet)
 
-    assert convo.messages == 1
-    assert convo.connections == 0
     assert convo.users == 1
     assert convo.sources == {1}
 
@@ -175,39 +155,39 @@ def test_stats_no_parent(mock_tweet):
 
 
 def test_conversation_filter_min_char(mock_convo_path):
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     mock_convo_path.posts[0].text = ''
 
     filt = mock_convo_path.filter(min_chars=1)
-    assert filt.messages == 1
+    assert len(filt.posts) == 1
 
 
 def test_conversation_filter_by_langs(mock_convo_path):
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(by_langs={'en'})
-    assert filt.messages == 0
+    assert len(filt.posts) == 0
 
 
 def test_conversation_filter_by_tags(mock_convo_path):
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(by_tags={'#FakeNews'})
-    assert filt.messages == 0
+    assert len(filt.posts) == 0
 
 
 def test_conversation_filter_by_before(mock_convo_path):
     from datetime import datetime
 
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
-    assert filt.messages == 0
+    assert len(filt.posts) == 0
 
 
 def test_conversation_filter_by_after(mock_convo_path):
     from datetime import datetime
 
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
-    assert filt.messages == 0
+    assert len(filt.posts) == 0
 
 
 @pytest.fixture
@@ -247,7 +227,7 @@ def test_conversation_post_merge_text():
     convo = Conversation()
     convo.add_post(t0)
     convo.add_post(t1)
-    assert convo.messages == 1
+    assert len(convo.posts) == 1
     assert convo.posts[0].text == 'longer text'
 
 
@@ -262,7 +242,7 @@ def test_conversation_post_merge_created_at():
     convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 12)))
     convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 19)))
 
-    assert convo.messages == 2
+    assert len(convo.posts) == 2
     assert convo.posts[0].created_at == datetime(2020, 12, 1, 12, 12, 12)
     assert convo.posts[1].created_at == datetime(2020, 12, 1, 12, 12, 12)
 
@@ -274,7 +254,7 @@ def test_conversation_post_merge_lang():
     convo.add_post(Tweet(uid=0, lang='en'))
     convo.add_post(Tweet(uid=0, lang='en'))
 
-    assert convo.messages == 1
+    assert len(convo.posts) == 1
     assert convo.posts[0].lang == 'en'
 
 

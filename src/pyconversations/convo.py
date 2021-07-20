@@ -212,30 +212,6 @@ class Conversation:
         return convo
 
     @property
-    def messages(self):
-        """
-        Returns the number of messages contained in this conversation as an integer.
-
-        Returns
-        -------
-        int
-            Number of messages in the conversation
-        """
-        return len(self._posts)
-
-    @property
-    def connections(self):
-        """
-        Returns the number of reply connections contained in this conversation as an integer.
-
-        Returns
-        -------
-        int
-            Number of reply connections in conversation
-        """
-        return sum(map(lambda x: len({r for r in x if r in self._posts}), self._edges.values()))
-
-    @property
     def users(self):
         """
         Returns the number of unique users participating in a conversations as an integer.
