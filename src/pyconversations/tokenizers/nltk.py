@@ -12,7 +12,6 @@ class NLTKTokenizer(BaseTokenizer):
     def __init__(self):
         super(NLTKTokenizer, self).__init__('NLTK')
 
-    @staticmethod
     def tokenize(self, s):
         """
         Splits a string into tokens.

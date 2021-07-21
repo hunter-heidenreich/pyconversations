@@ -27,5 +27,10 @@ class BaseTokenizer:
         -------
         list(str)
             A list of tokens
+
+        Raises
+        ------
+        NotImplementedError
+            Must be implemented in extensions
         """
-        pass
+        raise NotImplementedError
