@@ -38,25 +38,6 @@ class ChanPost(UniMessage):
         return datetime.fromtimestamp(float(x))
 
     @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields.
-
-        Parameters
-        ----------
-        data : JSON/dict
-            Raw JSON data
-
-        Returns
-        -------
-        ChanPost
-            The loaded post
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return ChanPost(**data)
-
-    @staticmethod
     def exclude_replies(comment):
         """
         Function to remove quotes from a reply and return reference to the posts that were replied to

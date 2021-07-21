@@ -36,25 +36,6 @@ class FBPost(UniMessage):
         return datetime.strptime(x, '%Y-%m-%dT%H:%M:%S+0000')
 
     @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields
-
-        Parameters
-        ----------
-        data : JSON/dict
-            Raw JSON data
-
-        Returns
-        -------
-        FBPost
-            The loaded post
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return FBPost(**data)
-
-    @staticmethod
     def parse_raw(data, post_type='post', in_reply_to=None, lang_detect=False):
         """
         Static method that must be implemented by all non-abstract child classes.

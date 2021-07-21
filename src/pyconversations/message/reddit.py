@@ -55,25 +55,6 @@ class RedditPost(UniMessage):
         return super(RedditPost, self).get_mentions() | set(names)
 
     @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields
-
-        Parameters
-        ----------
-        data : JSON/dict
-            Raw JSON data
-
-        Returns
-        -------
-        RedditPost
-            The loaded post
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return RedditPost(**data)
-
-    @staticmethod
     def parse_raw(data, lang_detect=False):
         """
         Static method that must be implemented by all non-abstract child classes.

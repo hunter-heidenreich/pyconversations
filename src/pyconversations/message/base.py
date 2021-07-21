@@ -338,8 +338,8 @@ class UniMessage(ABC):
             res = get_detector().get(text=self.text)
             self.lang = res[0] if res[1] >= 0.5 else 'und'
 
-    @staticmethod
-    def from_json(data):
+    @classmethod
+    def from_json(cls, data):
         """
         Given an exported JSON object for a Universal Message,
         this function loads the saved data into its fields
@@ -349,11 +349,13 @@ class UniMessage(ABC):
         data : JSON/dict
             The raw message JSON
 
-        Raises
-        ------
-        NotImplementedError
+        Returns
+        -------
+        Message class
+            Created inherited UniMessage object
         """
-        raise NotImplementedError
+        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
+        return cls(**data)
 
     @staticmethod
     @abstractmethod
