@@ -233,6 +233,11 @@ def test_post_redaction(mock_tweet):
     mock_tweet.redact({'tweeter1': 'NAME2'})
     assert mock_tweet.author == 'NAME2'
 
+    mock_tweet.text = ''
+    mock_tweet.redact({'tweeter1': 'NAME2'})
+    assert mock_tweet.author == 'NAME2'
+    assert mock_tweet.text == ''
+
 
 def test_tweet_repr(mock_tweet):
     assert mock_tweet.__repr__() == 'Tweet(Twitter::tweeter1::9999999.0::This is a tweet! @Twitter::tags=test_tag)'
