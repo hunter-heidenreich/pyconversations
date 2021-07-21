@@ -93,3 +93,22 @@ class FeatureCache:
         None
         """
         self._cache = defaultdict(dict)
+
+    @staticmethod
+    def merge_ids(post, convo):
+        """
+        Merges the identifiers of a post and conversation.
+
+        Parameters
+        ----------
+        post : UniMessage
+            A message
+        convo : Conversation
+            A collection of messages
+
+        Returns
+        -------
+        str
+            A new, merged ID
+        """
+        return str(post.uid) + '_' + str(convo.convo_id)

@@ -36,3 +36,16 @@ def test_convo_duration(mock_convo, cache):
 
 def test_convo_timeseries(mock_convo, cache):
     assert cache.convo_timeseries(mock_convo) == [0, 1, 2, 3, 4]
+
+
+def test_reply_time(mock_convo, cache):
+    for post in mock_convo.posts.values():
+        if post.uid:
+            assert cache.post_reply_time(post, mock_convo) == 1
+        else:
+            assert cache.post_reply_time(post, mock_convo) == 0
+
+
+def test_to_source(mock_convo, cache):
+    for post in mock_convo.posts.values():
+        assert cache.post_to_source(post, mock_convo) == post.uid

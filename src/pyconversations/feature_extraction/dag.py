@@ -11,7 +11,7 @@ class DAGFeatures(FeatureCache):
         return self.wrap(post.uid, 'post_out_degree', post_out_degree, post=post, conv=conv)
 
     def post_in_degree(self, post, conv):
-        return self.wrap(str(post.uid) + '_' + str(conv.convo_id), 'post_in_degree', post_in_degree, post=post, conv=conv, cache=self)
+        return self.wrap(self.merge_ids(post, conv), 'post_in_degree', post_in_degree, post=post, conv=conv, cache=self)
 
     def convo_in_degrees(self, conv):
         return self.wrap(conv.convo_id, 'convo_in_degrees', convo_in_degrees, conv=conv)
@@ -32,8 +32,7 @@ class DAGFeatures(FeatureCache):
         return self.wrap(conv.convo_id, 'nx.density', convo_density, conv=conv)
 
     def convo_post_depth(self, post, conv):
-        return self.wrap(str(post.uid) + '_' + str(conv.convo_id), 'post_depth', convo_post_depth,
-                         post=post, conv=conv, cache=self)
+        return self.wrap(self.merge_ids(post, conv), 'post_depth', convo_post_depth, post=post, conv=conv, cache=self)
 
     def convo_depth_dist(self, conv):
         return self.wrap(conv.convo_id, 'depth_dist', convo_depth_dist, conv=conv, cache=self)

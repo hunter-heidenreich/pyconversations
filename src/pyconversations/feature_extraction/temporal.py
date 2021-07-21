@@ -15,6 +15,12 @@ class TemporalFeatures(FeatureCache):
     def convo_timeseries(self, conv):
         return self.wrap(conv.convo_id, 'timeseries', convo_timeseries, conv=conv)
 
+    def post_reply_time(self, post, conv):
+        return self.wrap(self.merge_ids(post, conv), 'reply_time', post_reply_time, post=post, conv=conv)
+
+    def post_to_source(self, post, conv):
+        return self.wrap(self.merge_ids(post, conv), 'to_source', post_to_source, post=post, conv=conv)
+
 
 def convo_start_time(conv):
     """
@@ -90,3 +96,56 @@ def convo_timeseries(conv):
     """
     order = conv.time_order()
     return [conv.posts[uid].created_at.timestamp() for uid in order] if order else []
+
+
+def post_reply_time(post, conv):
+    """
+    Returns the time between the post and its parent
+
+    Parameters
+    ----------
+    post : UniMessage
+        The message
+
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    float
+       The time between the `post` and its parent. If multiple parents, returns the minimum response difference
+    """
+    diffs = [
+        (post.created_at - conv.posts[rid].created_at).total_seconds()
+        for rid in post.reply_to if rid in conv.posts
+    ]
+
+    if not diffs:
+        return 0
+
+    return min(diffs)
+
+
+def post_to_source(post, conv):
+    """
+    Returns the time between the post and the conversation source
+
+    Parameters
+    ----------
+    post : UniMessage
+        The message
+
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    float
+       The time between the `post` and its parent. If multiple sources, returns the maximum response difference
+    """
+    timeorder = conv.time_order()
+
+    if not timeorder:
+        return 0
+
+    return post.created_at.timestamp() - timeorder[0]
