@@ -310,7 +310,7 @@ class Conversation:
         Conversation
             The collection of ancestor posts
         """
-        ancestors = Conversation()
+        ancestors = Conversation(convo_id=str(uid) + '-ancestors')
 
         queue = [uid]
         done = set()
@@ -348,7 +348,7 @@ class Conversation:
         Conversation
             The collection of descendant posts
         """
-        descendants = Conversation()
+        descendants = Conversation(convo_id=str(uid) + '-descendant')
 
         queue = [uid]
         done = set()
@@ -387,7 +387,7 @@ class Conversation:
             The collection of parent posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if pid in self.posts[uid].reply_to}
-        return Conversation(posts=filt_ps)
+        return Conversation(posts=filt_ps, convo_id=str(uid) + '-parents')
 
     def get_children(self, uid):
         """
@@ -404,7 +404,7 @@ class Conversation:
             The collection of children posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if uid in self.posts[pid].reply_to}
-        return Conversation(posts=filt_ps)
+        return Conversation(posts=filt_ps, convo_id=str(uid) + '-children')
 
     def get_siblings(self, uid):
         """
@@ -422,7 +422,7 @@ class Conversation:
             The collection of sibling posts
         """
         parents = self.get_parents(uid)
-        siblings = Conversation()
+        siblings = Conversation(convo_id=str(uid) + '-siblings')
         for pid in parents.posts:
             siblings += self.get_children(pid)
 
@@ -451,7 +451,8 @@ class Conversation:
         KeyError
             When `uid` is not in the Conversation
         """
-        return self.filter(before=self._posts[uid].created_at)
+        cx = self.filter(before=self._posts[uid].created_at)
+        return Conversation(posts=cx.posts, convo_id=str(uid) + '-before')
 
     def get_after(self, uid):
         """
@@ -473,4 +474,5 @@ class Conversation:
         KeyError
             When `uid` is not in the Conversation
         """
-        return self.filter(after=self._posts[uid].created_at)
+        cx = self.filter(after=self._posts[uid].created_at)
+        return Conversation(posts=cx.posts, convo_id=str(uid) + '-after')
