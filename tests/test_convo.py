@@ -224,3 +224,86 @@ def test_conversation_post_merge_lang():
 
     assert len(convo.posts) == 1
     assert convo.posts[0].lang == 'en'
+
+
+def test_get_before(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_before(post.uid)
+        assert {sid for sid in sub.posts} == set(range(post.uid))
+
+
+def test_get_after(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_after(post.uid)
+        assert {sid for sid in sub.posts} == set(range(post.uid + 1, 4))
+
+
+def test_get_parents(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_parents(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1 or post.uid == 2:
+            assert ids == {0}
+        elif post.uid == 3:
+            assert ids == {1}
+
+
+def test_get_children(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_children(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == {1, 2}
+        elif post.uid == 1:
+            assert ids == {3}
+        elif post.uid == 2 or post.uid == 3:
+            assert ids == set()
+
+
+def test_get_siblings(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_siblings(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1:
+            assert ids == {2}
+        elif post.uid == 2:
+            assert ids == {1}
+        elif post.uid == 3:
+            assert ids == set()
+
+
+def test_get_ancestors(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_ancestors(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1:
+            assert ids == {0}
+        elif post.uid == 2:
+            assert ids == {0}
+        elif post.uid == 3:
+            assert ids == {0, 1}
+
+
+def test_get_descendants(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_descendants(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == {1, 2, 3}
+        elif post.uid == 1:
+            assert ids == {3}
+        elif post.uid == 2:
+            assert ids == set()
+        elif post.uid == 3:
+            assert ids == set()
