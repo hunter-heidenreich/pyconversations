@@ -1,7 +1,18 @@
 import pytest
 
 from pyconversations.convo import Conversation
-from pyconversations.feature_extraction import TextFeatures
+from pyconversations.feature_extraction.text import convo_chars
+from pyconversations.feature_extraction.text import convo_chars_per_post
+from pyconversations.feature_extraction.text import convo_token_dist
+from pyconversations.feature_extraction.text import convo_tokens
+from pyconversations.feature_extraction.text import convo_tokens_per_post
+from pyconversations.feature_extraction.text import convo_types
+from pyconversations.feature_extraction.text import convo_types_per_post
+from pyconversations.feature_extraction.text import post_char_len
+from pyconversations.feature_extraction.text import post_tok_dist
+from pyconversations.feature_extraction.text import post_tok_len
+from pyconversations.feature_extraction.text import post_type_len
+from pyconversations.feature_extraction.text import post_types
 from pyconversations.message import Tweet
 
 
@@ -37,54 +48,36 @@ def mock_convo():
 
 
 def test_char_len(mock_tweet):
-    fx = TextFeatures()
-    assert fx.post_char_len(mock_tweet) == 25
-
-    # to hit the second wrap condition
-    assert fx.post_char_len(mock_tweet) == 25
+    assert post_char_len(post=mock_tweet) == 25
 
 
 def test_tok_len(mock_tweet):
-    fx = TextFeatures()
-    assert fx.post_tok_len(mock_tweet) == 10
+    assert post_tok_len(post=mock_tweet) == 10
 
 
 def test_tok_dist(mock_tweet):
-    fx = TextFeatures()
-    assert dict(fx.post_tok_dist(mock_tweet)) == {' ': 4, 'This': 1, 'is': 1, 'a': 1, 'tweet': 1, '!': 1, '@Twitter': 1}
+    assert dict(post_tok_dist(post=mock_tweet)) == {' ': 4, 'This': 1, 'is': 1, 'a': 1, 'tweet': 1, '!': 1, '@Twitter': 1}
 
 
 def test_types(mock_tweet):
-    fx = TextFeatures()
-    assert fx.post_types(mock_tweet) == {'!', '@Twitter', 'is', 'a', 'This', ' ', 'tweet'}
-    assert fx.post_types(mock_tweet) == {'!', '@Twitter', 'is', 'a', 'This', ' ', 'tweet'}
-
-    fx.clear()
-    fx.post_tok_dist(mock_tweet)
-    assert fx.post_types(mock_tweet) == {'!', '@Twitter', 'is', 'a', 'This', ' ', 'tweet'}
+    assert post_types(post=mock_tweet) == {'!', '@Twitter', 'is', 'a', 'This', ' ', 'tweet'}
 
 
 def test_type_len(mock_tweet):
-    fx = TextFeatures()
-    assert fx.post_type_len(mock_tweet) == 7
-    assert fx.post_type_len(mock_tweet) == 7
+    assert post_type_len(post=mock_tweet) == 7
 
 
 def test_convo_chars(mock_convo):
-    fx = TextFeatures()
-    assert fx.convo_chars(mock_convo) == 30
-    assert dict(fx.convo_chars_per_post(mock_convo)) == {6: 5}
+    assert convo_chars(conv=mock_convo) == 30
+    assert dict(convo_chars_per_post(conv=mock_convo)) == {6: 5}
 
 
 def test_convo_tokens(mock_convo):
-    fx = TextFeatures()
-
-    assert fx.convo_tokens(mock_convo) == 15
-    assert dict(fx.convo_tokens_per_post(mock_convo)) == {3: 5}
-    assert dict(fx.convo_token_dist(mock_convo)) == {'Text': 5, ' ': 5, '0': 1, '1': 1, '2': 1, '3': 1, '4': 1}
+    assert convo_tokens(conv=mock_convo) == 15
+    assert dict(convo_tokens_per_post(conv=mock_convo)) == {3: 5}
+    assert dict(convo_token_dist(conv=mock_convo)) == {'Text': 5, ' ': 5, '0': 1, '1': 1, '2': 1, '3': 1, '4': 1}
 
 
 def test_convo_types(mock_convo):
-    fx = TextFeatures()
-    assert fx.convo_types(mock_convo) == 7
-    assert dict(fx.convo_types_per_post(mock_convo)) == {3: 5}
+    assert convo_types(conv=mock_convo) == 7
+    assert dict(convo_types_per_post(conv=mock_convo)) == {3: 5}

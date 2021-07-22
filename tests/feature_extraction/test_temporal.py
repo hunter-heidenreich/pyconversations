@@ -3,7 +3,12 @@ from datetime import datetime as dt
 import pytest
 
 from pyconversations.convo import Conversation
-from pyconversations.feature_extraction import TemporalFeatures
+from pyconversations.feature_extraction.temporal import convo_duration
+from pyconversations.feature_extraction.temporal import convo_end_time
+from pyconversations.feature_extraction.temporal import convo_start_time
+from pyconversations.feature_extraction.temporal import convo_timeseries
+from pyconversations.feature_extraction.temporal import post_reply_time
+from pyconversations.feature_extraction.temporal import post_to_source
 from pyconversations.message import Tweet
 
 
@@ -17,35 +22,30 @@ def mock_convo():
     return c
 
 
-@pytest.fixture
-def cache():
-    return TemporalFeatures()
+def test_convo_start_time(mock_convo):
+    assert convo_start_time(conv=mock_convo) == 0
 
 
-def test_convo_start_time(mock_convo, cache):
-    assert cache.convo_start_time(mock_convo) == 0
+def test_convo_end_time(mock_convo):
+    assert convo_end_time(conv=mock_convo) == 4
 
 
-def test_convo_end_time(mock_convo, cache):
-    assert cache.convo_end_time(mock_convo) == 4
+def test_convo_duration(mock_convo):
+    assert convo_duration(conv=mock_convo) == 4
 
 
-def test_convo_duration(mock_convo, cache):
-    assert cache.convo_duration(mock_convo) == 4
+def test_convo_timeseries(mock_convo):
+    assert convo_timeseries(conv=mock_convo) == [0, 1, 2, 3, 4]
 
 
-def test_convo_timeseries(mock_convo, cache):
-    assert cache.convo_timeseries(mock_convo) == [0, 1, 2, 3, 4]
-
-
-def test_reply_time(mock_convo, cache):
+def test_reply_time(mock_convo):
     for post in mock_convo.posts.values():
         if post.uid:
-            assert cache.post_reply_time(post, mock_convo) == 1
+            assert post_reply_time(post=post, conv=mock_convo) == 1
         else:
-            assert cache.post_reply_time(post, mock_convo) == 0
+            assert post_reply_time(post=post, conv=mock_convo) == 0
 
 
-def test_to_source(mock_convo, cache):
+def test_to_source(mock_convo):
     for post in mock_convo.posts.values():
-        assert cache.post_to_source(post, mock_convo) == post.uid
+        assert post_to_source(post=post, conv=mock_convo) == post.uid

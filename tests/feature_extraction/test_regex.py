@@ -1,6 +1,7 @@
 import pytest
 
-from pyconversations.feature_extraction import RegexFeatures
+from pyconversations.feature_extraction.regex import post_urls
+from pyconversations.feature_extraction.regex import post_user_mentions
 from pyconversations.message import ChanPost
 from pyconversations.message import RedditPost
 from pyconversations.message import Tweet
@@ -20,26 +21,26 @@ def mock_reddit_post():
 
 
 def test_url_patterns(mock_tweet):
-    fe = RegexFeatures()
-    assert fe.post_url_cnt(mock_tweet) == 1
-    assert fe.post_urls(mock_tweet) == ['https://www.twitter.com']
+    cnt, urls = post_urls(post=mock_tweet)
+    assert cnt == 1
+    assert urls == ['https://www.twitter.com']
 
 
 def test_twitter_mention_patterns(mock_tweet):
-    fe = RegexFeatures()
-    assert fe.post_mention_cnt(mock_tweet) == 1
-    assert fe.post_mentions(mock_tweet) == ['@Twitter']
+    cnt, mentions = post_user_mentions(post=mock_tweet)
+    assert cnt == 1
+    assert mentions == ['@Twitter']
 
 
 def test_chan_null_mentions():
     null = ChanPost(uid=0)
-    fe = RegexFeatures()
+    cnt, mentions = post_user_mentions(post=null)
 
-    assert fe.post_mention_cnt(null) == 0
-    assert fe.post_mentions(null) == []
+    assert cnt == 0
+    assert mentions == []
 
 
 def test_reddit_mention_patterns(mock_reddit_post):
-    fe = RegexFeatures()
-    assert fe.post_mention_cnt(mock_reddit_post) == 1
-    assert fe.post_mentions(mock_reddit_post) == ['/u/mod']
+    cnt, mentions = post_user_mentions(post=mock_reddit_post)
+    assert cnt == 1
+    assert mentions == ['/u/mod']

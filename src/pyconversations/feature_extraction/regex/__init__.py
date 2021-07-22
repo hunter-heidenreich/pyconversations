@@ -1,37 +1,11 @@
 import re
 
-from .base import FeatureCache
+from ..utils import memoize
 
 URL_REGEX = re.compile(r'(\b(https?|ftp|file)://)[-A-Za-z0-9+&@#/%?=~_|!:,.;]+[-A-Za-z0-9+&@#/%=~_|]')
 
 
-class RegexFeatures(FeatureCache):
-
-    """
-    Feature extraction based on regex pattern matching over text.
-    """
-
-    def post_url_cnt(self, post):
-        cnt, _ = self.wrap(post.uid, 'urls', post_urls, post=post)
-
-        return cnt
-
-    def post_urls(self, post):
-        _, urls = self.wrap(post.uid, 'urls', post_urls, post=post)
-
-        return urls
-
-    def post_mention_cnt(self, post):
-        cnt, _ = self.wrap(post.uid, 'mentions', post_user_mentions, post=post)
-
-        return cnt
-
-    def post_mentions(self, post):
-        _, mentions = self.wrap(post.uid, 'mentions', post_user_mentions, post=post)
-
-        return mentions
-
-
+@memoize
 def post_urls(post):
     """
     Given a post, extracts the URLs mentioned within its text
@@ -71,3 +45,9 @@ def post_user_mentions(post):
     mentions = [x.group() for x in re.finditer(post.MENTION_REGEX, post.text)]
 
     return len(mentions), mentions
+
+
+__all__ = [
+    'post_urls',
+    'post_user_mentions',
+]
