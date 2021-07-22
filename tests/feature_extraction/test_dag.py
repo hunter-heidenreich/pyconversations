@@ -15,6 +15,7 @@ from pyconversations.feature_extraction.dag import convo_messages_per_user
 from pyconversations.feature_extraction.dag import convo_out_degrees
 from pyconversations.feature_extraction.dag import convo_out_degrees_dist
 from pyconversations.feature_extraction.dag import convo_post_depth
+from pyconversations.feature_extraction.dag import convo_post_width
 from pyconversations.feature_extraction.dag import convo_sources
 from pyconversations.feature_extraction.dag import convo_tree_degree
 from pyconversations.feature_extraction.dag import convo_tree_depth
@@ -138,6 +139,10 @@ def test_convo_density(mock_convo):
 def test_post_depth(mock_convo):
     assert convo_post_depth(post=mock_convo.posts[0], conv=mock_convo) == 0
     assert convo_post_depth(post=mock_convo.posts[1], conv=mock_convo) == 1
+
+
+def test_post_width(mock_convo):
+    assert convo_post_width(post=mock_convo.posts[0], conv=mock_convo) == 1
 
 
 def test_convo_depth_dist(mock_convo):

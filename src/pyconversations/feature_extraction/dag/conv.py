@@ -330,6 +330,30 @@ def convo_tree_depth(conv):
 
 
 @memoize
+def convo_post_width(post, conv):
+    """
+    Returns the width of the depth-level that `post` is at
+    within `conv`.
+
+    Parameters
+    ----------
+    post : UniMessage
+        The target message
+
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    int
+        The width of the depth level of `posts` in `conv`
+    """
+    depth = convo_post_depth(post=post, conv=conv)
+    dist = convo_depth_dist(conv=conv)
+    return dist[depth]
+
+
+@memoize
 def convo_tree_width(conv):
     """
     Returns the width of the full conversation.

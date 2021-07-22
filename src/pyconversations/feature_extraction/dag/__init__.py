@@ -12,6 +12,7 @@ from .conv import convo_messages_per_user
 from .conv import convo_out_degrees
 from .conv import convo_out_degrees_dist
 from .conv import convo_post_depth
+from .conv import convo_post_width
 from .conv import convo_sources
 from .conv import convo_tree_degree
 from .conv import convo_tree_depth
@@ -42,7 +43,9 @@ __all__ = [
     'convo_messages',
     'convo_messages_per_user',
     'convo_out_degrees', 'convo_out_degrees_dist',
-    'convo_post_depth', 'convo_depth_dist',
+    'convo_post_depth',
+    'convo_post_width',
+    'convo_depth_dist',
     'convo_sources',
     'convo_tree_degree',
     'convo_tree_depth',
