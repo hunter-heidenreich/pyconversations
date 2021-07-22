@@ -296,7 +296,7 @@ class Conversation:
         for uid in self._posts:
             self._posts[uid].redact(rd)
 
-    def get_ancestors(self, uid):
+    def get_ancestors(self, uid, include_post=False):
         """
         Returns the ancestor posts/path for post `uid`.
 
@@ -304,6 +304,9 @@ class Conversation:
         ----------
         uid : Hashable
             The unique identifier of desired post
+
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
 
         Returns
         -------
@@ -332,9 +335,12 @@ class Conversation:
             # aggregate parents into ancestors
             ancestors += ps
 
+        if include_post:
+            ancestors.add_post(self.posts[uid])
+
         return ancestors
 
-    def get_descendants(self, uid):
+    def get_descendants(self, uid, include_post=False):
         """
         Returns the descendant sub-tree for post `uid`.
 
@@ -342,6 +348,9 @@ class Conversation:
         ----------
         uid : Hashable
             The unique identifier of desired post
+
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
 
         Returns
         -------
@@ -370,9 +379,12 @@ class Conversation:
             # aggregate children into descendants
             descendants += cs
 
+        if include_post:
+            descendants.add_post(self.posts[uid])
+
         return descendants
 
-    def get_parents(self, uid):
+    def get_parents(self, uid, include_post=False):
         """
         Returns the parent(s) of a post specified by `uid`.
 
@@ -381,15 +393,23 @@ class Conversation:
         uid : Hashable
             The unique identifier of desired post
 
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
+
         Returns
         -------
         Conversation
             The collection of parent posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if pid in self.posts[uid].reply_to}
-        return Conversation(posts=filt_ps, convo_id=str(uid) + '-parents')
+        cx = Conversation(posts=filt_ps, convo_id=str(uid) + '-parents')
 
-    def get_children(self, uid):
+        if include_post:
+            cx.add_post(self.posts[uid])
+
+        return cx
+
+    def get_children(self, uid, include_post=False):
         """
         Returns the children of a post specified by `uid`.
 
@@ -398,15 +418,23 @@ class Conversation:
         uid : Hashable
             The unique identifier of desired post
 
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
+
         Returns
         -------
         Conversation
             The collection of children posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if uid in self.posts[pid].reply_to}
-        return Conversation(posts=filt_ps, convo_id=str(uid) + '-children')
+        cx = Conversation(posts=filt_ps, convo_id=str(uid) + '-children')
 
-    def get_siblings(self, uid):
+        if include_post:
+            cx.add_post(self.posts[uid])
+
+        return cx
+
+    def get_siblings(self, uid, include_post=False):
         """
         Returns the siblings of a post specified by `uid`.
         Siblings are the child posts of this post's parent posts.
@@ -415,6 +443,9 @@ class Conversation:
         ----------
         uid : Hashable
             The unique identifier of desired post
+
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
 
         Returns
         -------
@@ -426,12 +457,15 @@ class Conversation:
         for pid in parents.posts:
             siblings += self.get_children(pid)
 
-        if uid in siblings.posts:
+        if uid in siblings.posts and not include_post:
             siblings.remove_post(uid)
+
+        if include_post and uid not in siblings.posts:
+            siblings.add_post(self.posts[uid])
 
         return siblings
 
-    def get_before(self, uid):
+    def get_before(self, uid, include_post=False):
         """
         Returns the collection of posts in this conversation that were created before the post
         with UID `uid`
@@ -446,15 +480,23 @@ class Conversation:
         Conversation
             The collection of posts posted before uid
 
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
+
         Raises
         ------
         KeyError
             When `uid` is not in the Conversation
         """
         cx = self.filter(before=self._posts[uid].created_at)
-        return Conversation(posts=cx.posts, convo_id=str(uid) + '-before')
+        cx = Conversation(posts=cx.posts, convo_id=str(uid) + '-before')
 
-    def get_after(self, uid):
+        if include_post:
+            cx.add_post(self.posts[uid])
+
+        return cx
+
+    def get_after(self, uid, include_post=False):
         """
         Returns the collection of posts in this conversation that were created after the post
         with UID `uid`
@@ -463,6 +505,9 @@ class Conversation:
         ----------
         uid : Hashable
             The UID of the post that is the pivot
+
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
 
         Returns
         -------
@@ -475,4 +520,9 @@ class Conversation:
             When `uid` is not in the Conversation
         """
         cx = self.filter(after=self._posts[uid].created_at)
-        return Conversation(posts=cx.posts, convo_id=str(uid) + '-after')
+        cx = Conversation(posts=cx.posts, convo_id=str(uid) + '-after')
+
+        if include_post:
+            cx.add_post(self.posts[uid])
+
+        return cx

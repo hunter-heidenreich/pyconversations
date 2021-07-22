@@ -1,3 +1,5 @@
+from .conv import avg_token_entropy
+from .conv import avg_token_entropy_all_splits
 from .conv import convo_chars
 from .conv import convo_chars_per_post
 from .conv import convo_token_dist
@@ -12,6 +14,7 @@ from .post import post_type_len
 from .post import post_types
 
 __all__ = [
+    'avg_token_entropy', 'avg_token_entropy_all_splits',
     'convo_chars',
     'convo_chars_per_post',
     'convo_token_dist',

@@ -36,6 +36,8 @@ def memoize(func):
             uid = kwargs['post'].uid
         elif 'conv' in kwargs:
             uid = kwargs['conv'].convo_id
+        elif 'conv_a' in kwargs and 'conv_b' in kwargs:
+            uid = str(kwargs['conv_a']) + '_' + str(kwargs['conv_b'])
         else:
             uid = -1
 
