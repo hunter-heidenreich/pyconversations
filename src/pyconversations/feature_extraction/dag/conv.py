@@ -236,6 +236,25 @@ def convo_user_count(conv):
 
 
 @memoize
+def convo_user_size_dist(conv):
+    """
+    Returns a distribution of the number of posts per user mapping to the number of users
+    that contributed that many posts to `conv`.
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    Returns
+    -------
+    Counter
+        The size distribution mapping from (# of posts) -> (# of users that added that many posts to `conv`)
+    """
+    return Counter(list(convo_messages_per_user(conv=conv).values()))
+
+
+@memoize
 def convo_density(conv):
     """
     The density of the conversation as a DAG

@@ -1,3 +1,6 @@
+import numpy as np
+
+
 def sum_bools_in_conversation(conv, check_fn):
     """
     Iterates across the posts in `conv` and counts the number
@@ -23,6 +26,48 @@ def sum_bools_in_conversation(conv, check_fn):
             n += 1
 
     return n
+
+
+def agg_nums_in_conversation(conv, get_num_fn, use_conv=True):
+    """
+    Given a conversation and a function that computes a numerical statistic on a post,
+    this function returns a dictionary of the total, average, std. dev., median, min, and max.
+
+    Parameters
+    ----------
+    conv : Conversation
+        A collection of posts
+
+    get_num_fn : lambda (post -> number)
+        A function that maps a post to a numerical statistic
+
+    use_conv : bool
+        Whether the post function needs the conversation as input. Default: True
+
+    Returns
+    -------
+    dict
+        The total, avg., std. dev., median, min, and max of the numerical statistic
+    """
+    n = None
+    dist = []
+    for p in conv.posts.values():
+        x = get_num_fn(post=p, conv=conv) if use_conv else get_num_fn(post=p)
+        dist.append(x)
+
+        if n is None:
+            n = x
+        else:
+            n += x
+
+    return {
+        'total':  n,
+        'avg':    np.average(dist),
+        'std':    np.std(dist),
+        'median': np.median(dist),
+        'min':    np.min(dist),
+        'max':    np.max(dist),
+    }
 
 
 def memoize(func):

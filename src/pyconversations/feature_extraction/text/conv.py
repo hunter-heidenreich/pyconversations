@@ -3,6 +3,7 @@ from functools import reduce
 
 import numpy as np
 
+from ..utils import agg_nums_in_conversation
 from ..utils import memoize
 from .post import post_char_len
 from .post import post_tok_dist
@@ -46,6 +47,21 @@ def convo_chars_per_post(conv):
         The per-post char distribution within this conversation
     """
     return Counter([post_char_len(post=p) for p in conv.posts.values()])
+
+
+@memoize
+def convo_char_stats(conv):
+    return agg_nums_in_conversation(conv, post_char_len, use_conv=False)
+
+
+@memoize
+def convo_token_stats(conv):
+    return agg_nums_in_conversation(conv, post_tok_len, use_conv=False)
+
+
+@memoize
+def convo_type_stats(conv):
+    return agg_nums_in_conversation(conv, post_type_len, use_conv=False)
 
 
 @memoize

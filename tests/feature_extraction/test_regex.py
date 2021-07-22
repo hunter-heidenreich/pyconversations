@@ -17,7 +17,7 @@ def mock_tweet():
 @pytest.fixture
 def mock_reddit_post():
     txt = '/u/mod get outta here'
-    return RedditPost(uid=1234, text=txt)
+    return RedditPost(uid=12349999, text=txt)
 
 
 def test_url_patterns(mock_tweet):
