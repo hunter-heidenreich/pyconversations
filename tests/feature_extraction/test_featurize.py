@@ -35,3 +35,8 @@ def test_post_get_all_is_dict(mock_post):
 
 def test_convo_get_all_is_dict(mock_convo):
     assert type(ConvFeatures.get_all(mock_convo)) == dict
+
+
+def test_convo_get_all_is_dict_static_and_post(mock_convo):
+    fx = ConvFeatures.get_all(mock_convo, include_static=True, include_post_features=True)
+    assert type(fx) == dict

@@ -96,7 +96,7 @@ def test_avg_token_entropy(mock_convo):
 
 
 def test_avg_token_entropy_all_splits(mock_convo):
-    ent = avg_token_entropy_all_splits(post=mock_convo.posts[1], conv=mock_convo)
+    ent = avg_token_entropy_all_splits(post=mock_convo.posts[1], conv=mock_convo, refresh=True)
     assert ent == {
         'after-ancestors':       0.5579833421424286,
         'after-before':          0.5579833421424286,

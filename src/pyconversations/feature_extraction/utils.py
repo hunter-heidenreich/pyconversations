@@ -117,3 +117,28 @@ def merge_ids(post, convo):
         A new, merged ID
     """
     return str(post.uid) + '_' + str(convo.convo_id)
+
+
+def merge_dicts(this, that):
+    """
+    Assuming two dictionaries of the form dict(str, dict(str, Any))
+    where the nested dictionaries _do not_ overlap in key space,
+    merges these dictionaries.
+
+    Paramters
+    ---------
+    this : dict(str, dict(str, Any))
+    that : dict(str, dict(str, Any))
+
+    Returns
+    -------
+    dict(str, dict(str, Any))
+        The merged dictionary
+    """
+    for k, v in that.items():
+        if k in this and k not in ['id', 'convo_id']:
+            this[k] = {**this[k], **that[k]}  # merges two dictionaries, assuming no key overlap)
+        else:
+            this[k] = v
+
+    return this
