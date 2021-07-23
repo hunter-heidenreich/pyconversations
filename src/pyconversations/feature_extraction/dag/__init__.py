@@ -24,6 +24,7 @@ from .conv import convo_users_posts_in_convo
 from .post import is_post_internal_node
 from .post import is_post_leaf
 from .post import is_post_source
+from .post import is_post_source_author
 from .post import post_degree
 from .post import post_in_degree
 from .post import post_out_degree
@@ -32,6 +33,7 @@ __all__ = [
     'is_post_internal_node',
     'is_post_leaf',
     'is_post_source',
+    'is_post_source_author',
 
     'post_degree',
     'post_in_degree',

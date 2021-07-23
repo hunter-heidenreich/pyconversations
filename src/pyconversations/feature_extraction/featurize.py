@@ -18,6 +18,7 @@ from .dag import convo_users_posts_in_convo
 from .dag import is_post_internal_node
 from .dag import is_post_leaf
 from .dag import is_post_source
+from .dag import is_post_source_author
 from .dag import post_degree
 from .dag import post_in_degree
 from .dag import post_out_degree
@@ -70,9 +71,10 @@ class PostFeaturizer:
 
         if conv is not None:
             ft_in_conv = {
-                'is_source':   1 if is_post_source(post=post, conv=conv) else 0,
-                'is_leaf':     1 if is_post_leaf(post=post, conv=conv) else 0,
-                'is_internal': 1 if is_post_internal_node(post=post, conv=conv) else 0,
+                'is_source':        1 if is_post_source(post=post, conv=conv) else 0,
+                'is_leaf':          1 if is_post_leaf(post=post, conv=conv) else 0,
+                'is_internal':      1 if is_post_internal_node(post=post, conv=conv) else 0,
+                'is_source_author': 1 if is_post_source_author(post=post, conv=conv) else 0,
             }
             ft = {**ft, **ft_in_conv}
 

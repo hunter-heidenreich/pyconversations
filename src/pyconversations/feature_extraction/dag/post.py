@@ -132,3 +132,13 @@ def is_post_internal_node(post, conv):
         Whether `post` is an internal node in `conv`
     """
     return not is_post_source(post=post, conv=conv) and not is_post_leaf(post=post, conv=conv)
+
+
+@memoize
+def is_post_source_author(post, conv):
+    """
+    Returns a boolean indicating whether this post is written by an author that is also a source post author
+    """
+    sids = conv.get_sources()
+    auths = set([conv.posts[s].author for s in sids])
+    return post.author in auths
