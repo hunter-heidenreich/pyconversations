@@ -12,6 +12,7 @@ class ChanPost(UniMessage):
     """
 
     CLASS_STR = '4chanPost'
+    MENTION_REGEX = r'>>(\d+)'
 
     def __init__(self, **kwargs):
 
