@@ -76,3 +76,51 @@ def post_mention_cnt(post):
     int
     """
     return post_user_mentions(post=post)[0]
+
+
+def post_regex_findall_count(post, regex):
+    """
+    Given a regex pattern, counts all instances of it within the text of a post.
+
+    Parameters
+    ----------
+    post : UniMessage
+    regex : str
+
+    Returns
+    -------
+    int
+    """
+    return len(re.findall(regex, post.text))
+
+
+@memoize
+def post_uppercase_count(post):
+    """
+    Returns a count of the uppercase characters in the text of this post
+
+    Parameters
+    ----------
+    post : UniMessage
+
+    Returns
+    -------
+    int
+    """
+    return post_regex_findall_count(post, r'[A-Z]')
+
+
+@memoize
+def post_lowercase_count(post):
+    """
+    Returns a count of the lowercase characters in the text of this post
+
+    Parameters
+    ----------
+    post : UniMessage
+
+    Returns
+    -------
+    int
+    """
+    return post_regex_findall_count(post, r'[a-z]')

@@ -26,6 +26,8 @@ from .dag import post_in_degree
 from .dag import post_out_degree
 from .regex import convo_mention_stats
 from .regex import convo_url_stats
+from .regex import post_lowercase_count
+from .regex import post_uppercase_count
 from .regex import post_urls
 from .regex import post_user_mentions
 from .temporal import convo_duration
@@ -115,7 +117,9 @@ class PostFeatures(Features):
                 'mentions': post_user_mentions(post=post)[0],
                 'chars':    post_char_len(post=post),
                 'tokens':   post_tok_len(post=post),
-                'types':    post_type_len(post=post)
+                'types':    post_type_len(post=post),
+                'uppercase': post_uppercase_count(post=post),
+                'lowercase': post_lowercase_count(post=post),
             }
         }
 
@@ -139,6 +143,17 @@ class PostFeatures(Features):
         return {
             'dists': {
                 'unigrams': post_tok_dist(post=post)
+            }
+        }
+
+    @staticmethod
+    def get_nums(post):
+        upper = post_uppercase_count(post=post)
+        lower = post_lowercase_count(post=post)
+
+        return {
+            'nums': {
+                'uppercase_ratio': upper / (upper + lower) if upper and lower else 0,
             }
         }
 
