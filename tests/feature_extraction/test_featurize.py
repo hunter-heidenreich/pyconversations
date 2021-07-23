@@ -3,8 +3,7 @@ from datetime import datetime
 import pytest
 
 from pyconversations.convo import Conversation
-from pyconversations.feature_extraction.featurize import ConvFeatures
-from pyconversations.feature_extraction.featurize import PostFeatures
+from pyconversations.feature_extraction import ConversationFeaturizer
 from pyconversations.message import Tweet
 
 
@@ -29,14 +28,11 @@ def mock_convo():
     return c
 
 
-def test_post_get_all_is_dict(mock_post):
-    assert type(PostFeatures.get_all(mock_post)) == dict
+@pytest.fixture
+def conv_ext():
+    return ConversationFeaturizer(include_post=True)
 
 
-def test_convo_get_all_is_dict(mock_convo):
-    assert type(ConvFeatures.get_all(mock_convo)) == dict
-
-
-def test_convo_get_all_is_dict_static_and_post(mock_convo):
-    fx = ConvFeatures.get_all(mock_convo, include_static=True, include_post_features=True)
+def test_convo_get_all_is_dict_static_and_post(mock_convo, conv_ext):
+    fx = conv_ext.transform(mock_convo)
     assert type(fx) == dict

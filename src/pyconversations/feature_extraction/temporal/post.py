@@ -53,4 +53,4 @@ def post_to_source(post, conv):
     if not timeorder:
         return 0
 
-    return post.created_at.timestamp() - timeorder[0]
+    return (post.created_at - conv.posts[timeorder[0]].created_at).total_seconds()
