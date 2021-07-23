@@ -3,6 +3,7 @@ from functools import reduce
 
 import numpy as np
 
+from ...convo import Conversation
 from ..utils import agg_nums_in_conversation
 from ..utils import memoize
 from .post import post_char_len
@@ -174,9 +175,17 @@ def avg_token_entropy(post, conv):
     float
         The entropy
     """
+    if post.uid not in conv.posts:
+        cx = Conversation(posts=conv.posts)
+        cx.add_post(post)
+        conv = cx
+
     conv_n = convo_types(conv=conv)
     conv_m = convo_tokens(conv=conv)
     post_m = post_tok_len(post=post)
+
+    if not post_m or not conv_m:
+        return 0
 
     post_dist = post_tok_dist(post=post)
     convo_dist = convo_token_dist(conv=conv)
@@ -204,14 +213,23 @@ def avg_token_entropy_conv(conv_a, conv_b):
     float
         The entropy
     """
+    if not len(conv_a.posts) or not len(conv_b.posts):
+        return 0
+
     joint_conv = conv_a + conv_b
 
     joint_n = convo_types(conv=joint_conv)
     joint_m = convo_tokens(conv=joint_conv)
     joint_dist = convo_token_dist(conv=joint_conv)
 
+    if not joint_m or not joint_n:
+        return 0
+
     left_m = convo_tokens(conv=conv_a)
     left_dist = convo_token_dist(conv=conv_a)
+
+    if not left_m:
+        return 0
 
     entropy = -(np.log([joint_dist[w] / joint_m for w in left_dist]) / (np.log(joint_n) * left_m)).sum()
     return entropy

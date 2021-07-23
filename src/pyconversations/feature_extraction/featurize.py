@@ -1,3 +1,7 @@
+from collections import defaultdict
+
+import numpy as np
+
 from .dag import convo_connections
 from .dag import convo_density
 from .dag import convo_internal_nodes
@@ -125,7 +129,7 @@ class ConversationFeaturizer:
         self._include_post = include_post
         self._post_ft = PostFeaturizer(
             binary=binary, numeric=numeric, categorical=categorical
-        ) if self._include_post else None
+        )
 
     def transform(self, conv):
         features = {
@@ -199,10 +203,24 @@ class ConversationFeaturizer:
         #         ft[key + '_' + k] = v
 
         if self._include_post:
-            ft['posts'] = {
-                pid: self._post_ft.transform_numeric(post, conv)
-                for pid, post in conv.posts.items()
-            }
+            ft['posts'] = {}
+
+        aggregator = defaultdict(list)
+        for pid, post in conv.posts.items():
+            fx = self._post_ft.transform_numeric(post, conv)
+
+            for k, v in fx.items():
+                aggregator[k].append(v)
+
+            if self._include_post:
+                ft['posts'][pid] = fx
+
+        for key, vals in aggregator.items():
+            ft[key + '_min'] = np.min(vals)
+            ft[key + '_max'] = np.max(vals)
+            ft[key + '_mean'] = np.mean(vals)
+            ft[key + '_std'] = np.std(vals)
+            ft[key + '_median'] = np.median(vals)
 
         return ft
 

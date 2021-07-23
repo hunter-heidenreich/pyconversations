@@ -38,7 +38,7 @@ class Conversation:
             The combination of this conversation and the conversation in `other`
         """
 
-        convo = Conversation()
+        convo = Conversation(convo_id=self.convo_id + '++' + other.convo_id)
         for post in other.posts.values():
             convo.add_post(post)
         for post in self.posts.values():
@@ -313,7 +313,7 @@ class Conversation:
         Conversation
             The collection of ancestor posts
         """
-        ancestors = Conversation(convo_id=str(uid) + '-ancestors')
+        ancestors = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-ancestors')
 
         queue = [uid]
         done = set()
@@ -357,7 +357,7 @@ class Conversation:
         Conversation
             The collection of descendant posts
         """
-        descendants = Conversation(convo_id=str(uid) + '-descendant')
+        descendants = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-descendant')
 
         queue = [uid]
         done = set()
@@ -402,7 +402,7 @@ class Conversation:
             The collection of parent posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if pid in self.posts[uid].reply_to}
-        cx = Conversation(posts=filt_ps, convo_id=str(uid) + '-parents')
+        cx = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-parents')
 
         if include_post:
             cx.add_post(self.posts[uid])
@@ -427,7 +427,7 @@ class Conversation:
             The collection of children posts
         """
         filt_ps = {pid: post for pid, post in self.posts.items() if uid in self.posts[pid].reply_to}
-        cx = Conversation(posts=filt_ps, convo_id=str(uid) + '-children')
+        cx = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-children')
 
         if include_post:
             cx.add_post(self.posts[uid])
@@ -453,7 +453,7 @@ class Conversation:
             The collection of sibling posts
         """
         parents = self.get_parents(uid)
-        siblings = Conversation(convo_id=str(uid) + '-siblings')
+        siblings = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-siblings')
         for pid in parents.posts:
             siblings += self.get_children(pid)
 
@@ -489,7 +489,7 @@ class Conversation:
             When `uid` is not in the Conversation
         """
         cx = self.filter(before=self._posts[uid].created_at)
-        cx = Conversation(posts=cx.posts, convo_id=str(uid) + '-before')
+        cx = Conversation(posts=cx.posts, convo_id=self.convo_id + '-' + str(uid) + '-before')
 
         if include_post:
             cx.add_post(self.posts[uid])
@@ -520,7 +520,7 @@ class Conversation:
             When `uid` is not in the Conversation
         """
         cx = self.filter(after=self._posts[uid].created_at)
-        cx = Conversation(posts=cx.posts, convo_id=str(uid) + '-after')
+        cx = Conversation(posts=cx.posts, convo_id=self.convo_id + '-' + str(uid) + '-after')
 
         if include_post:
             cx.add_post(self.posts[uid])
