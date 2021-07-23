@@ -16,6 +16,8 @@ from .dag import convo_tree_depth
 from .dag import convo_tree_width
 from .dag import convo_user_count
 from .dag import convo_user_size_dist
+from .dag import convo_user_size_stats
+from .dag import convo_users_posts_in_convo
 from .dag import is_post_internal_node
 from .dag import is_post_leaf
 from .dag import is_post_source
@@ -253,11 +255,12 @@ class ConvFeatures(Features):
         """
         out = {
             'nums': {
-                'duration':       convo_duration(conv=conv),
-                'density':        convo_density(conv=conv),
-                'source_ratio':   convo_sources(conv=conv) / convo_messages(conv=conv),
-                'leaf_ratio':     convo_leaves(conv=conv) / convo_messages(conv=conv),
-                'internal_ratio': convo_internal_nodes(conv=conv) / convo_messages(conv=conv),
+                'duration':        convo_duration(conv=conv),
+                'density':         convo_density(conv=conv),
+                'source_ratio':    convo_sources(conv=conv) / convo_messages(conv=conv),
+                'leaf_ratio':      convo_leaves(conv=conv) / convo_messages(conv=conv),
+                'internal_ratio':  convo_internal_nodes(conv=conv) / convo_messages(conv=conv),
+                'user_post_ratio': convo_user_count(conv=conv) / convo_messages(conv=conv),
             }
         }
 
@@ -269,6 +272,7 @@ class ConvFeatures(Features):
             ('chars', convo_char_stats),
             ('tokens', convo_token_stats),
             ('types', convo_type_stats),
+            ('user_sizes', convo_user_size_stats),
         ]:
             for k, v in fn(conv=conv).items():
                 if k == 'total':
@@ -356,11 +360,12 @@ class PostInConvFeatures(Features):
 
         return {
             'counts': {
-                'depth':      convo_post_depth(post=post, conv=conv),
-                'width':      convo_post_width(post=post, conv=conv),
-                'degree':     post_degree(post=post, conv=conv),
-                'in_degree':  post_in_degree(post=post, conv=conv),
-                'out_degree': post_out_degree(post=post, conv=conv),
+                'depth':        convo_post_depth(post=post, conv=conv),
+                'width':        convo_post_width(post=post, conv=conv),
+                'degree':       post_degree(post=post, conv=conv),
+                'in_degree':    post_in_degree(post=post, conv=conv),
+                'out_degree':   post_out_degree(post=post, conv=conv),
+                'author_posts': convo_users_posts_in_convo(post=post, conv=conv),
             }
         }
 

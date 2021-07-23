@@ -2,6 +2,7 @@ from collections import Counter
 
 import networkx as nx
 
+from ..utils import agg_nums_in_conversation
 from ..utils import memoize
 from ..utils import sum_bools_in_conversation
 from .post import is_post_internal_node
@@ -252,6 +253,29 @@ def convo_user_size_dist(conv):
         The size distribution mapping from (# of posts) -> (# of users that added that many posts to `conv`)
     """
     return Counter(list(convo_messages_per_user(conv=conv).values()))
+
+
+def convo_users_posts_in_convo(post, conv):
+    """
+    Given a post and a conversation,
+    returns the number of posts that the author of `post`
+    contributed to `conv`.
+
+    Parameters
+    ----------
+    post : UniMessage
+    conv : Conversation
+
+    Returns
+    --------
+    int
+    """
+    return convo_messages_per_user(conv=conv)[post.author]
+
+
+@memoize
+def convo_user_size_stats(conv):
+    return agg_nums_in_conversation(conv, convo_users_posts_in_convo, use_conv=True)
 
 
 @memoize

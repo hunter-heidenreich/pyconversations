@@ -19,6 +19,8 @@ from .conv import convo_tree_depth
 from .conv import convo_tree_width
 from .conv import convo_user_count
 from .conv import convo_user_size_dist
+from .conv import convo_user_size_stats
+from .conv import convo_users_posts_in_convo
 from .post import is_post_internal_node
 from .post import is_post_leaf
 from .post import is_post_source
@@ -53,4 +55,6 @@ __all__ = [
     'convo_tree_width',
     'convo_user_count',
     'convo_user_size_dist',
+    'convo_user_size_stats',
+    'convo_users_posts_in_convo',
 ]
