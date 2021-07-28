@@ -45,12 +45,40 @@ def get_all(ux, cx, keys=None, ignore_keys=None, include_post=True):
 
 
 def get_bools(ux, cx, keys=None, ignore_keys=None):
+    """
+    Returns the boolean features for a user in a conversation.
+
+    Parameters
+    ----------
+    ux : str
+    cx : Conversation
+    keys : None or Iterable(str)
+    ignore_keys : None or Iterable(str)
+
+    Returns
+    -------
+    dict(str, bool)
+    """
     return apply_extraction({
         'is_source_author': is_source_author,
     }, keyset=keys, ignore=ignore_keys, user=ux, convo=cx)
 
 
 def get_floats(ux, cx, keys=None, ignore_keys=None):
+    """
+    Returns the float features for a user in a conversation.
+
+    Parameters
+    ----------
+    ux : str
+    cx : Conversation
+    keys : None or Iterable(str)
+    ignore_keys : None or Iterable(str)
+
+    Returns
+    -------
+    dict(str, float)
+    """
     return {
         **apply_extraction({
             'mixing_k1':      lambda user, convo: mixing_features(user, convo)['k1'],
@@ -75,7 +103,7 @@ def get_ints(ux, cx, keys=None, ignore_keys=None):
 
     Returns
     -------
-    dict(str, Any)
+    dict(str, int)
     """
     return {
         **apply_extraction({
@@ -89,6 +117,19 @@ def get_ints(ux, cx, keys=None, ignore_keys=None):
 
 @lru_cache(maxsize=CACHE_SIZE)
 def is_source_author(user, convo):
+    """
+    Returns if this user created a source message
+    for the conversation
+
+    Parameters
+    ----------
+    user : str
+    convo : Conversation
+
+    Returns
+    -------
+    bool
+    """
     auths = {convo.posts[pid].author for pid in convo.get_sources()}
     return user in auths
 
