@@ -188,7 +188,7 @@ class Conversation:
         """
         return {uid for uid, post in self._posts.items() if not {rid for rid in post.reply_to if rid in self._posts}}
 
-    def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None):
+    def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None, by_author=None):
         """
         Removes posts from this Conversation based on specified parameters.
 
@@ -206,6 +206,8 @@ class Conversation:
             The required tags. (Default: None)
         by_platform : set(str)
             A set of string names of platforms that should be retained
+        by_author : str
+            An author
 
         Returns
         -------
@@ -215,6 +217,10 @@ class Conversation:
         drop = set()
         keep = set(self.posts.keys())
         for uid, post in self._posts.items():
+            if by_author is not None and post.author != by_author:
+                drop.add(uid)
+                continue
+
             if len(post.text) < min_chars:
                 drop.add(uid)
                 continue

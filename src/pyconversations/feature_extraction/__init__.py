@@ -1,7 +1,6 @@
-from .featurize import ConversationFeaturizer
-from .featurize import PostFeaturizer
+
+CACHE_SIZE = 256
 
 __all__ = [
-    'ConversationFeaturizer',
-    'PostFeaturizer',
+    'CACHE_SIZE',
 ]
