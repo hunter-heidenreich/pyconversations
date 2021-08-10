@@ -16,8 +16,6 @@ DETECTOR = None
 def get_detector():
     global DETECTOR
     if DETECTOR is None:
-        # DETECTOR = gcld3.NNetLanguageIdentifier(min_num_bytes=0, max_num_bytes=1000)
-        # DETECTOR = FTLangDetect()
         DETECTOR = LangidLangDetect()
 
     return DETECTOR
@@ -292,7 +290,7 @@ class UniMessage(ABC):
         self._lang = lang
 
     def __hash__(self):
-        return self._uid
+        return hash(self._uid)
 
     def __repr__(self):
         return f'{self.CLASS_STR}({self._platform}::{self._author}::{self._created_at}::{self._text[:50]}::tags={",".join(self._tags)})'
