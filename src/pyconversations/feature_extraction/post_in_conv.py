@@ -6,7 +6,7 @@ from functools import reduce
 import numpy as np
 
 from ..convo import Conversation
-from . import CACHE_SIZE
+from .params import CACHE_SIZE
 from .post import get_all as post_get_all
 from .post import get_bools as post_get_bools
 from .post import get_floats as post_get_floats

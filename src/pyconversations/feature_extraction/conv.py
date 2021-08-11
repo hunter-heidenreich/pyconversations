@@ -4,9 +4,9 @@ from functools import reduce
 
 import networkx as nx
 
-from . import CACHE_SIZE
 from .harmonic import mixing
 from .harmonic import novelty
+from .params import CACHE_SIZE
 from .post import get_all as post_get_all
 from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats

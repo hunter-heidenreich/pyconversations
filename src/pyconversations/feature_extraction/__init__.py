@@ -1,6 +1,5 @@
-
-CACHE_SIZE = 256
+from .extractors import PostVectorizer
 
 __all__ = [
-    'CACHE_SIZE',
+    'PostVectorizer',
 ]

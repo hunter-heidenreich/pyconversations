@@ -3,9 +3,9 @@ from functools import lru_cache
 
 from demoji import findall_list
 
-from . import CACHE_SIZE
 from .harmonic import mixing
 from .harmonic import novelty
+from .params import CACHE_SIZE
 from .regex import get_all as get_all_regex
 from .regex import HASHTAG_REGEX
 from .regex import URL_REGEX

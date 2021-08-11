@@ -2,9 +2,9 @@ from collections import Counter
 from functools import lru_cache
 from functools import reduce
 
-from . import CACHE_SIZE
 from .harmonic import mixing
 from .harmonic import novelty
+from .params import CACHE_SIZE
 from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
