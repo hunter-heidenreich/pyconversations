@@ -450,3 +450,53 @@ class ConversationVectorizer(Vectorizer):
             return np.array(out)
         else:
             raise ValueError
+
+
+class UserVectorizer(Vectorizer):
+
+    def __init__(self, normalization=None, agg_post_fts=False, agg_conv_fts=False):
+        super(UserVectorizer, self).__init__(normalization)
+
+        self._agg_post_fts = agg_post_fts
+        self._agg_conv_fts = agg_conv_fts
+
+    def fit(self, conv=None, convs=None):
+        if conv is not None:
+            return self.fit(convs=[conv])
+        elif convs is not None:
+            vals = defaultdict(list)
+            cxs = collapse_convos(convs)
+            for user in iter_over_users(cxs):
+                for k, v in user_floats(user, cxs, include_post=self._agg_post_fts).items():
+                    vals[k].append(v)
+
+                for k, v in user_ints(user, cxs).items():
+                    vals[k].append(v)
+
+            self._fit_params(vals)
+
+            return self
+        else:
+            raise ValueError()
+
+    def transform(self, conv=None, convs=None):
+        if conv is not None:
+            return self.transform(convs=[conv])
+        elif convs is not None:
+            out = []
+            cx = collapse_convos(convs)
+            for user in iter_over_users(cx):
+                vec = []
+                for k, v in sorted(
+                    user_floats(user, cx, include_post=self._agg_post_fts).items(), key=lambda kv: kv[0]
+                ):
+                    vec.append(self._normalize(k, v))
+
+                for k, v in sorted(user_ints(user, cx).items(), key=lambda kv: kv[0]):
+                    vec.append(self._normalize(k, v))
+
+                out.append(np.array(vec))
+
+            return np.array(out)
+        else:
+            raise ValueError

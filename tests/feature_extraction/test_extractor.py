@@ -7,6 +7,7 @@ import pytest
 from pyconversations.convo import Conversation
 from pyconversations.feature_extraction import ConversationVectorizer
 from pyconversations.feature_extraction import PostVectorizer
+from pyconversations.feature_extraction import UserVectorizer
 from pyconversations.message import Tweet
 
 
@@ -46,6 +47,20 @@ def all_conv_vecs():
     return [
         ConversationVectorizer(normalization=n, agg_post_fts=p, agg_user_fts=u, include_source_user=s)
         for (n, p, u, s) in params
+    ]
+
+
+@pytest.fixture
+def all_user_vecs():
+    params = product(*[
+        [None, 'minmax', 'mean', 'standard'],
+        [True, False],
+        [True, False],
+    ])
+
+    return [
+        UserVectorizer(normalization=n, agg_post_fts=p, agg_conv_fts=c)
+        for (n, p, c) in params
     ]
 
 
@@ -179,3 +194,17 @@ def test_conversation_vec_fail():
 
     with pytest.raises(ValueError):
         ConversationVectorizer().transform()
+
+
+def test_user_vec_convs(mock_convo, all_user_vecs):
+    for v in all_user_vecs:
+        xs = v.fit_transform(convs=[mock_convo])
+        assert type(xs) == np.ndarray
+
+
+def test_user_vec_fail():
+    with pytest.raises(ValueError):
+        UserVectorizer().fit()
+
+    with pytest.raises(ValueError):
+        UserVectorizer().transform()
