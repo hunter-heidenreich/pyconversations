@@ -380,3 +380,73 @@ class PostVectorizer(Vectorizer):
                 out.append(np.array(vec))
 
         return np.array(out)
+
+
+class ConversationVectorizer(Vectorizer):
+
+    def __init__(self, normalization=None, agg_post_fts=False, agg_user_fts=False, include_source_user=True):
+        super(ConversationVectorizer, self).__init__(normalization)
+
+        self._agg_post_fts = agg_post_fts
+        self._agg_user_fts = agg_user_fts
+        self._include_source_user = include_source_user
+
+    def fit(self, conv=None, convs=None):
+        if conv is not None:
+            return self.fit(convs=[conv])
+        elif convs is not None:
+            vals = defaultdict(list)
+            for conv in convs:
+                for k, v in conv_floats(conv, include_post=self._agg_post_fts, include_user=self._agg_user_fts).items():
+                    vals[k].append(v)
+
+                for k, v in conv_ints(conv).items():
+                    vals[k].append(v)
+
+                if self._include_source_user:
+                    pid = list(conv.get_sources())[0]
+                    user = conv.posts[pid].author
+
+                    fs = [user_floats, user_ints]
+                    for f in fs:
+                        for k, v in f(user, conv).items():
+                            vals['source_user_' + k].append(v)
+
+            self._fit_params(vals)
+
+            return self
+        else:
+            raise ValueError()
+
+    def transform(self, conv=None, convs=None):
+        if conv is not None:
+            return self.transform(convs=[conv])
+        elif convs is not None:
+            out = []
+
+            for conv in convs:
+                vec = []
+
+                for k, v in sorted(
+                    conv_floats(conv, include_post=self._agg_post_fts, include_user=self._agg_user_fts).items(),
+                    key=lambda kv: kv[0]
+                ):
+                    vec.append(self._normalize(k, v))
+
+                for k, v in sorted(conv_ints(conv).items(), key=lambda kv: kv[0]):
+                    vec.append(self._normalize(k, v))
+
+                if self._include_source_user:
+                    pid = list(conv.get_sources())[0]
+                    user = conv.posts[pid].author
+
+                    fs = [user_floats, user_ints]
+                    for f in fs:
+                        for k, v in sorted(f(user, conv).items(), key=lambda kv: kv[0]):
+                            vec.append(self._normalize('source_user_' + k, v))
+
+                out.append(np.array(vec))
+
+            return np.array(out)
+        else:
+            raise ValueError

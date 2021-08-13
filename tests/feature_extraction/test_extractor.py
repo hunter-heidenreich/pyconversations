@@ -1,9 +1,11 @@
 from datetime import datetime as dt
+from itertools import product
 
 import numpy as np
 import pytest
 
 from pyconversations.convo import Conversation
+from pyconversations.feature_extraction import ConversationVectorizer
 from pyconversations.feature_extraction import PostVectorizer
 from pyconversations.message import Tweet
 
@@ -30,6 +32,21 @@ def mock_convo(mock_tweet):
         created_at=dt(year=2020, month=12, day=12, hour=12, minute=54, second=2)
     ))
     return cx
+
+
+@pytest.fixture
+def all_conv_vecs():
+    params = product(*[
+        [None, 'minmax', 'mean', 'standard'],
+        [True, False],
+        [True, False],
+        [True, False],
+    ])
+
+    return [
+        ConversationVectorizer(normalization=n, agg_post_fts=p, agg_user_fts=u, include_source_user=s)
+        for (n, p, u, s) in params
+    ]
 
 
 def test_post_vectorizer_cons():
@@ -142,3 +159,23 @@ def test_post_invalid(mock_convo):
         v.fit(conv=mock_convo)
     with pytest.raises(ValueError):
         v.transform(conv=mock_convo)
+
+
+def test_conversation_vec_conv(mock_convo, all_conv_vecs):
+    for v in all_conv_vecs:
+        xs = v.fit_transform(conv=mock_convo)
+        assert type(xs) == np.ndarray
+
+
+def test_conversation_vec_convs(mock_convo, all_conv_vecs):
+    for v in all_conv_vecs:
+        xs = v.fit_transform(convs=[mock_convo])
+        assert type(xs) == np.ndarray
+
+
+def test_conversation_vec_fail():
+    with pytest.raises(ValueError):
+        ConversationVectorizer().fit()
+
+    with pytest.raises(ValueError):
+        ConversationVectorizer().transform()
