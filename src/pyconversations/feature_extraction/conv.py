@@ -35,12 +35,9 @@ def get_all(cx, keys=None, ignore_keys=None, include_post=True):
     """
     out = {
         **get_counters(cx, keys, ignore_keys),
-        **get_floats(cx, keys, ignore_keys),
+        **get_floats(cx, keys, ignore_keys, include_post),
         **get_ints(cx, keys, ignore_keys),
     }
-
-    if include_post:
-        out = {**agg_post_stats(cx, keys, ignore_keys), **out}
 
     return out
 
@@ -69,7 +66,7 @@ def get_counters(cx, keys=None, ignore_keys=None):
     }, keyset=keys, ignore=ignore_keys, convo=cx)
 
 
-def get_floats(cx, keys=None, ignore_keys=None):
+def get_floats(cx, keys=None, ignore_keys=None, include_post=True):
     """
     Returns all integer features specified in keys or all features minus what is specified in ignore_keys.
 
@@ -78,12 +75,13 @@ def get_floats(cx, keys=None, ignore_keys=None):
     cx : Conversation
     keys : None or Iterable(str)
     ignore_keys : None or Iterable(str)
+    include_post : bool
 
     Returns
     -------
     dict(str, int)
     """
-    return {
+    out = {
         **apply_extraction({
             'density':        density,
             'duration':       duration,
@@ -94,6 +92,11 @@ def get_floats(cx, keys=None, ignore_keys=None):
             'mixing_M_avg': lambda convo: mixing_features(convo)['M_avg'],
         }, keyset=keys, ignore=ignore_keys, convo=cx),
     }
+
+    if include_post:
+        out = {**agg_post_stats(cx, keys, ignore_keys), **out}
+
+    return out
 
 
 def get_ints(cx, keys=None, ignore_keys=None):
