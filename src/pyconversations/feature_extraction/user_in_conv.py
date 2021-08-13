@@ -121,11 +121,11 @@ def get_floats(ux, cx, keys=None, ignore_keys=None, include_post=True):
     """
     out = {
         **apply_extraction({
-            'mixing_k1':      lambda user, convo: mixing_features(user, convo)['k1'],
-            'mixing_theta':   lambda user, convo: mixing_features(user, convo)['theta'],
+            'mixing_k1': lambda user, convo: mixing_features(user, convo)['k1'],
+            'mixing_theta': lambda user, convo: mixing_features(user, convo)['theta'],
             'mixing_entropy': lambda user, convo: mixing_features(user, convo)['entropy'],
-            'mixing_N_avg':   lambda user, convo: mixing_features(user, convo)['N_avg'],
-            'mixing_M_avg':   lambda user, convo: mixing_features(user, convo)['M_avg'],
+            'mixing_N_avg': lambda user, convo: mixing_features(user, convo)['N_avg'],
+            'mixing_M_avg': lambda user, convo: mixing_features(user, convo)['M_avg'],
         }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux)
     }
 
@@ -156,7 +156,7 @@ def get_ints(ux, cx, keys=None, ignore_keys=None):
     return {
         **apply_extraction({
             'message_count': messages_by_user,
-            'types':         lambda user, convo: len(type_frequency_distribution(user, convo)),
+            'types': lambda user, convo: len(type_frequency_distribution(user, convo)),
         }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux),
         **sum_post_bools(get_user_posts(ux, cx)),
         **sum_post_ints(get_user_posts(ux, cx)),

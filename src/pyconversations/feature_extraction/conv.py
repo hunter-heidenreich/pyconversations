@@ -10,8 +10,8 @@ from .params import CACHE_SIZE
 from .post import get_all as post_get_all
 from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats
-from .post_in_conv import get_all as pic_get_all
 from .post_in_conv import depth_dist
+from .post_in_conv import get_all as pic_get_all
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
 from .user_in_conv import messages_per_user
@@ -87,11 +87,11 @@ def get_floats(cx, keys=None, ignore_keys=None):
         **apply_extraction({
             'density':        density,
             'duration':       duration,
-            'mixing_k1':      lambda convo: mixing_features(convo)['k1'],
-            'mixing_theta':   lambda convo: mixing_features(convo)['theta'],
+            'mixing_k1': lambda convo: mixing_features(convo)['k1'],
+            'mixing_theta': lambda convo: mixing_features(convo)['theta'],
             'mixing_entropy': lambda convo: mixing_features(convo)['entropy'],
-            'mixing_N_avg':   lambda convo: mixing_features(convo)['N_avg'],
-            'mixing_M_avg':   lambda convo: mixing_features(convo)['M_avg'],
+            'mixing_N_avg': lambda convo: mixing_features(convo)['N_avg'],
+            'mixing_M_avg': lambda convo: mixing_features(convo)['M_avg'],
         }, keyset=keys, ignore=ignore_keys, convo=cx),
     }
 
@@ -112,12 +112,12 @@ def get_ints(cx, keys=None, ignore_keys=None):
     """
     return {
         **apply_extraction({
-            'messages':    lambda convo: len(convo.posts),
+            'messages': lambda convo: len(convo.posts),
             'tree_degree': tree_degree,
             'tree_depth':  tree_depth,
             'tree_width':  tree_width,
-            'types':       lambda convo: len(type_frequency_distribution(convo)),
-            'users':       lambda convo: len(messages_per_user(convo)),
+            'types': lambda convo: len(type_frequency_distribution(convo)),
+            'users': lambda convo: len(messages_per_user(convo)),
         }, keyset=keys, ignore=ignore_keys, convo=cx),
         **sum_post_bools(cx),
         **sum_post_ints(cx),

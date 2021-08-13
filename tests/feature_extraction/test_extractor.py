@@ -1,8 +1,7 @@
-import pytest
+from datetime import datetime as dt
 
 import numpy as np
-
-from datetime import datetime as dt
+import pytest
 
 from pyconversations.convo import Conversation
 from pyconversations.feature_extraction import PostVectorizer

@@ -6,9 +6,9 @@ from demoji import findall_list
 from .harmonic import mixing
 from .harmonic import novelty
 from .params import CACHE_SIZE
-from .regex import get_all as get_all_regex
 from .regex import HASHTAG_REGEX
 from .regex import URL_REGEX
+from .regex import get_all as get_all_regex
 from .utils import apply_extraction
 
 
@@ -53,8 +53,23 @@ def get_bools(px, keys=None, ignore_keys=None):
     dict(str, bool)
     """
     return apply_extraction({
-        'is_source': lambda post: out_degree(post) == 0,
+        'is_source': is_source,
     }, keyset=keys, ignore=ignore_keys, post=px)
+
+
+def is_source(post):
+    """
+    Returns a bool to indicate if this post is a source (or a reply)
+
+    Parameters
+    ----------
+    post : UniMessage
+
+    Returns
+    -------
+    bool
+    """
+    return out_degree(post) == 0
 
 
 def get_categorical(px, keys=None, ignore_keys=None):
@@ -74,7 +89,7 @@ def get_categorical(px, keys=None, ignore_keys=None):
     dict(str, str)
     """
     return apply_extraction({
-        'author':   lambda post: post.author,
+        'author': lambda post: post.author,
         'language': lambda post: post.lang,
         'platform': lambda post: post.platform,
     }, keyset=keys, ignore=ignore_keys, post=px)
@@ -98,11 +113,11 @@ def get_floats(px, keys=None, ignore_keys=None):
     dict(str, float)
     """
     return apply_extraction({
-        'mixing_k1':      lambda post: mixing_features(post)['k1'],
-        'mixing_theta':   lambda post: mixing_features(post)['theta'],
+        'mixing_k1': lambda post: mixing_features(post)['k1'],
+        'mixing_theta': lambda post: mixing_features(post)['theta'],
         'mixing_entropy': lambda post: mixing_features(post)['entropy'],
-        'mixing_N_avg':   lambda post: mixing_features(post)['N_avg'],
-        'mixing_M_avg':   lambda post: mixing_features(post)['M_avg'],
+        'mixing_N_avg': lambda post: mixing_features(post)['N_avg'],
+        'mixing_M_avg': lambda post: mixing_features(post)['M_avg'],
     }, keyset=keys, ignore=ignore_keys, post=px)
 
 
@@ -125,18 +140,18 @@ def get_ints(px, keys=None, ignore_keys=None):
         A dictionary of integer stats
     """
     return apply_extraction({
-        '?_count':         lambda post: len(get_all_regex(post, r'[?]')),
-        '!_count':         lambda post: len(get_all_regex(post, r'[!]')),
-        'char_count':      lambda post: len(post.text),
-        'emoji_count':     lambda post: len(emojis(post)),
-        'hashtag_count':   lambda post: len(hashtags(post)),
-        'mention_count':   lambda post: len(mentions(post)),
+        '?_count': lambda post: len(get_all_regex(post, r'[?]')),
+        '!_count': lambda post: len(get_all_regex(post, r'[!]')),
+        'char_count': lambda post: len(post.text),
+        'emoji_count': lambda post: len(emojis(post)),
+        'hashtag_count': lambda post: len(hashtags(post)),
+        'mention_count': lambda post: len(mentions(post)),
         'degree_out':      out_degree,
-        'punct_count':     lambda post: len(get_all_regex(post, r'[,.?!;\'"]')),
-        'token_count':     lambda post: len(post.tokens),
-        'type_count':      lambda post: len(type_frequency_distribution(post)),
+        'punct_count': lambda post: len(get_all_regex(post, r'[,.?!;\'"]')),
+        'token_count': lambda post: len(post.tokens),
+        'type_count': lambda post: len(type_frequency_distribution(post)),
         'uppercase_count': lambda post: len(get_all_regex(post, r'[A-Z]')),
-        'url_count':       lambda post: len(urls(post)),
+        'url_count': lambda post: len(urls(post)),
     }, keyset=keys, ignore=ignore_keys, post=px)
 
 
@@ -161,7 +176,7 @@ def get_substrings(px, keys=None, ignore_keys=None):
         'emojis':   emojis,
         'hashtags': hashtags,
         'mentions': mentions,
-        'tokens':   lambda post: post.tokens,
+        'tokens': lambda post: post.tokens,
         'urls':     urls,
     }, keyset=keys, ignore=ignore_keys, post=px)
 

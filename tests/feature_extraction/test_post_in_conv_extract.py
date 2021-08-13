@@ -1,6 +1,6 @@
-import pytest
-
 from datetime import datetime as dt
+
+import pytest
 
 from pyconversations.convo import Conversation
 from pyconversations.feature_extraction.post_in_conv import avg_token_entropy_all_splits

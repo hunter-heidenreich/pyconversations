@@ -1,9 +1,8 @@
 from collections import Counter
 from collections import defaultdict
 
-from scipy.optimize import minimize
-
 import numpy as np
+from scipy.optimize import minimize
 
 
 def rebound(x, bounds):
