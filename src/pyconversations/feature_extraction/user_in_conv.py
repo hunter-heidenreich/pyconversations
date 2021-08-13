@@ -2,6 +2,7 @@ from collections import Counter
 from functools import lru_cache
 from functools import reduce
 
+from ..convo import Conversation
 from .harmonic import mixing
 from .harmonic import novelty
 from .params import CACHE_SIZE
@@ -9,8 +10,52 @@ from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
-
 from .utils import apply_extraction
+
+
+def collapse_convos(convos):
+    """
+    Given a list of conversations,
+    collpases them into one mega container.
+
+    Parameters
+    ----------
+    convos : List(Conversation)
+
+    Returns
+    -------
+    Conversation
+    """
+    all_posts = Conversation()
+    for convo in convos:
+        all_posts += convo
+
+    return all_posts
+
+
+def iter_over_users(convo):
+    """
+    Creates an iterator over the unique users within a conversation
+
+    Parameters
+    ----------
+    convo : Conversation
+
+    Yields
+    -------
+    str
+        A user
+    """
+    users = set()
+    for pid in convo.posts:
+        user = convo.posts[pid].author
+
+        if user in users:
+            continue
+
+        yield user
+
+        users.add(user)
 
 
 def get_all(ux, cx, keys=None, ignore_keys=None, include_post=True):
@@ -31,15 +76,9 @@ def get_all(ux, cx, keys=None, ignore_keys=None, include_post=True):
     """
     out = {
         **get_bools(ux, cx, keys, ignore_keys),
-        **get_floats(ux, cx, keys, ignore_keys),
+        **get_floats(ux, cx, keys, ignore_keys, include_post),
         **get_ints(ux, cx, keys, ignore_keys),
     }
-
-    if include_post:
-        out['post_agg'] = agg_post_stats(cx, ignore={
-            'mixing_k1', 'mixing_theta', 'mixing_entropy',
-            'mixing_N_avg', 'mixing_M_avg',
-        }, filter_by=lambda p: p.author == ux)
 
     return out
 
@@ -64,7 +103,7 @@ def get_bools(ux, cx, keys=None, ignore_keys=None):
     }, keyset=keys, ignore=ignore_keys, user=ux, convo=cx)
 
 
-def get_floats(ux, cx, keys=None, ignore_keys=None):
+def get_floats(ux, cx, keys=None, ignore_keys=None, include_post=True):
     """
     Returns the float features for a user in a conversation.
 
@@ -74,12 +113,13 @@ def get_floats(ux, cx, keys=None, ignore_keys=None):
     cx : Conversation
     keys : None or Iterable(str)
     ignore_keys : None or Iterable(str)
+    include_post : bool
 
     Returns
     -------
     dict(str, float)
     """
-    return {
+    out = {
         **apply_extraction({
             'mixing_k1':      lambda user, convo: mixing_features(user, convo)['k1'],
             'mixing_theta':   lambda user, convo: mixing_features(user, convo)['theta'],
@@ -88,6 +128,14 @@ def get_floats(ux, cx, keys=None, ignore_keys=None):
             'mixing_M_avg':   lambda user, convo: mixing_features(user, convo)['M_avg'],
         }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux)
     }
+
+    if include_post:
+        out = {**out, **agg_post_stats(cx, keys=keys, ignore={
+            'mixing_k1', 'mixing_theta', 'mixing_entropy',
+            'mixing_N_avg', 'mixing_M_avg',
+        } | set([] if ignore_keys is None else ignore_keys), filter_by=lambda p: p.author == ux)}
+
+    return out
 
 
 def get_ints(ux, cx, keys=None, ignore_keys=None):

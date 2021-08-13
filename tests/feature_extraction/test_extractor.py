@@ -58,8 +58,16 @@ def test_post_vec_with_posts(mock_tweet):
     assert type(xs) == np.ndarray
 
 
+def test_post_vec_with_posts_and_users(mock_tweet):
+    v = PostVectorizer(include_user=True)
+    v.fit(posts=[mock_tweet])
+    xs = v.transform(posts=[mock_tweet])
+
+    assert type(xs) == np.ndarray
+
+
 def test_post_vec_with_conv(mock_convo):
-    v = PostVectorizer()
+    v = PostVectorizer(include_conversation=True, include_user=True)
     v.fit(conv=mock_convo)
     xs = v.transform(conv=mock_convo)
 

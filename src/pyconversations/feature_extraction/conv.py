@@ -40,7 +40,7 @@ def get_all(cx, keys=None, ignore_keys=None, include_post=True):
     }
 
     if include_post:
-        out['post_agg'] = agg_post_stats(cx)
+        out = {**agg_post_stats(cx, keys, ignore_keys), **out}
 
     return out
 

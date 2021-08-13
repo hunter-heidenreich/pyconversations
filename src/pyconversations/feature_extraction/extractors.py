@@ -2,19 +2,45 @@ from collections import defaultdict
 
 import numpy as np
 
+from ..convo import Conversation
+from .conv import get_floats as conv_floats
+from .conv import get_ints as conv_ints
 from .post import get_bools as post_bools
 from .post import get_floats as post_floats
 from .post import get_ints as post_ints
 from .post_in_conv import get_bools as pic_bools
 from .post_in_conv import get_floats as pic_floats
 from .post_in_conv import get_ints as pic_ints
+from .user_in_conv import collapse_convos
+from .user_in_conv import get_bools as user_bools
+from .user_in_conv import get_floats as user_floats
+from .user_in_conv import get_ints as user_ints
+from .user_in_conv import iter_over_users
 
 
 class PostVectorizer:
 
-    def __init__(self, normalization=None):
+    """
+    Vectorization engine for social media post featurization
+    """
+
+    def __init__(self, normalization=None, include_conversation=False, include_user=False):
+        """
+        Constructor for PostVectorizer
+
+        Parameters
+        ----------
+        normalization : None or str
+            Can be None, 'minmax', 'mean', or 'standard'
+        include_conversation : bool
+            Default: False
+        include_user : bool
+            Default : bool
+        """
         # Can be None, 'minmax', 'mean', or 'standard'
         self._norm = normalization
+        self._include_conversation = include_conversation
+        self._include_user = include_user
 
         self._stats = defaultdict(dict)
 
@@ -58,19 +84,19 @@ class PostVectorizer:
             return
         elif self._norm == 'minmax':
             for k, vs in values.items():
-                self._stats[k]['min'] = np.min(vs)
-                self._stats[k]['max'] = np.max(vs)
+                self._stats[k]['min'] = np.nanmin(vs)
+                self._stats[k]['max'] = np.nanmax(vs)
                 self._stats[k]['range'] = self._stats[k]['max'] - self._stats[k]['min']
         elif self._norm == 'mean':
             for k, vs in values.items():
-                self._stats[k]['min'] = np.min(vs)
-                self._stats[k]['max'] = np.max(vs)
+                self._stats[k]['min'] = np.nanmin(vs)
+                self._stats[k]['max'] = np.nanmax(vs)
                 self._stats[k]['range'] = self._stats[k]['max'] - self._stats[k]['min']
-                self._stats[k]['mean'] = np.mean(vs)
+                self._stats[k]['mean'] = np.nanmean(vs)
         elif self._norm == 'standard':
             for k, vs in values.items():
-                self._stats[k]['mean'] = np.mean(vs)
-                self._stats[k]['std'] = np.std(vs)
+                self._stats[k]['mean'] = np.nanmean(vs)
+                self._stats[k]['std'] = np.nanstd(vs)
         else:
             raise ValueError
 
@@ -95,6 +121,14 @@ class PostVectorizer:
                 for k, v in f(post).items():
                     vals[k].append(v)
 
+        if self._include_user:
+            cx = Conversation(posts={post.uid: post for post in posts})
+            ufs = [user_floats, user_ints]
+            for user in iter_over_users(cx):
+                for f in ufs:
+                    for k, v in f(user, cx).items():
+                        vals['user_' + k].append(v)
+
         self._fit_params(vals)
 
     def _fit_by_convs(self, convs):
@@ -118,6 +152,20 @@ class PostVectorizer:
                 for f in funcs:
                     for k, v in f(post, conv).items():
                         vals[k].append(v)
+
+            if self._include_conversation:
+                conv_fs = [conv_floats, conv_ints]
+                for f in conv_fs:
+                    for k, v in f(conv).items():
+                        vals['convo_' + k].append(v)
+
+        if self._include_user:
+            cx = collapse_convos(convs)
+            ufs = [user_floats, user_ints]
+            for user in iter_over_users(cx):
+                for f in ufs:
+                    for k, v in f(user, cx).items():
+                        vals['user_' + k].append(v)
 
         self._fit_params(vals)
 
@@ -150,7 +198,20 @@ class PostVectorizer:
         raise ValueError
 
     def _transform_by_posts(self, posts):
+        """
+        Transforms a collection of posts into vectors
+        based on fit parameters
+
+        Parameters
+        ----------
+        posts : List(UniMessage)
+
+        Returns
+        -------
+        np.array
+        """
         out = []
+        cx = Conversation(posts={post.uid: post for post in posts})
 
         funcs = [post_floats, post_ints]
         for post in posts:
@@ -162,12 +223,34 @@ class PostVectorizer:
             for _, v in sorted(post_bools(post).items(), key=lambda kv: kv[0]):
                 vec.append(1 if v else 0)
 
+            if self._include_user:
+                ufs = [user_floats, user_ints]
+                for f in ufs:
+                    vs = [self._normalize('user_' + k, v) for k, v in sorted(f(post.author, cx).items(), key=lambda kv: kv[0])]
+                    vec.extend(vs)
+
+                for _, v in sorted(user_bools(post.author, cx).items(), key=lambda kv: kv[0]):
+                    vec.append(1 if v else 0)
+
             out.append(np.array(vec))
 
         return np.array(out)
 
     def _transform_by_convs(self, convs):
+        """
+        Transforms a collection of conversations into vectors for each post
+        based on fit parameters
+
+        Parameters
+        ----------
+        convs : List(Conversation)
+
+        Returns
+        -------
+        np.array
+        """
         out = []
+        cx = collapse_convos(convs)
 
         funcs = [pic_floats, pic_ints]
         for conv in convs:
@@ -179,6 +262,22 @@ class PostVectorizer:
 
                 for _, v in sorted(pic_bools(post, conv).items(), key=lambda kv: kv[0]):
                     vec.append(1 if v else 0)
+
+                if self._include_conversation:
+                    conv_fs = [conv_floats, conv_ints]
+                    for f in conv_fs:
+                        vs = [self._normalize('convo_' + k, v) for k, v in sorted(f(conv).items(), key=lambda kv: kv[0])]
+                        vec.extend(vs)
+
+                if self._include_user:
+                    ufs = [user_floats, user_ints]
+                    for f in ufs:
+                        vs = [self._normalize('user_' + k, v) for k, v in
+                              sorted(f(post.author, cx).items(), key=lambda kv: kv[0])]
+                        vec.extend(vs)
+
+                    for _, v in sorted(user_bools(post.author, cx).items(), key=lambda kv: kv[0]):
+                        vec.append(1 if v else 0)
 
                 out.append(np.array(vec))
 
@@ -219,5 +318,18 @@ class PostVectorizer:
             raise ValueError
 
     def fit_transform(self, posts=None, convs=None, conv=None):
+        """
+        Applies both the fit and transform steps for a set of posts
+
+        Parameters
+        ----------
+        posts : List(UniMessage)
+        convs : List(Conversation)
+        conv : Conversation
+
+        Returns
+        -------
+        np.array
+        """
         self.fit(posts, convs, conv)
         return self.transform(posts, convs, conv)

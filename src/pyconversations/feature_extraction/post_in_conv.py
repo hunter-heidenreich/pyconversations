@@ -61,10 +61,9 @@ def get_bools(px, cx, keys=None, ignore_keys=None, include_static=True):
     dict(str, bool)
     """
     out = apply_extraction({
-        'is_leaf':                 lambda post, convo: in_degrees_by_uid(convo)[post.uid] == 0,
-        'is_internal':             lambda post, convo: in_degrees_by_uid(convo)[post.uid] != 0 and not
-        post_get_all(post, keys={'is_source'})['is_source'],
-        'is_author_source_author': lambda post, conv: post.author in source_authors(conv),
+        'is_leaf':                 is_leaf,
+        'is_internal':             is_internal,
+        'is_author_source_author': is_author_source_author,
     }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
 
     if include_static:
@@ -91,8 +90,8 @@ def get_floats(px, cx, keys=None, ignore_keys=None, include_static=True):
     dict(str, float)
     """
     out = apply_extraction({
-        'relative_age':  lambda post, convo: post_to_source(post, convo),
-        'response_time': lambda post, convo: post_reply_time(post, convo),
+        'relative_age':  post_to_source,
+        'response_time': post_reply_time,
     }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
 
     kx = 'avg_token_entropy'
@@ -123,18 +122,74 @@ def get_ints(px, cx, keys=None, ignore_keys=None, include_static=True):
     dict(str, int)
     """
     out = apply_extraction({
-        'degree':               lambda post, convo: in_degrees_by_uid(convo)[post.uid] +
-                                                    post_get_all(post, keys={'degree_out'})[
-                                                        'degree_out'],
-        'degree_in':            lambda post, convo: in_degrees_by_uid(convo)[post.uid],
-        'depth':                post_depth,
-        'width':                post_width,
+        'degree':    post_degree,
+        'degree_in': post_in_degree,
+        'depth':     post_depth,
+        'width':     post_width,
     }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
 
     if include_static:
         out = {**out, **post_get_ints(px, keys, ignore_keys)}
 
     return out
+
+
+def is_leaf(post, convo):
+    """
+    Returns a bool indicating if this post is a leaf within this conversation
+
+    Parameters
+    ----------
+    post : UniMessage
+    convo : Conversation
+
+    Returns
+    -------
+    bool
+    """
+    return in_degrees_by_uid(convo)[post.uid] == 0
+
+
+def is_internal(post, convo):
+    """
+    Returns a bool indicating if this post is an internal node within this conversation
+
+    Parameters
+    ----------
+    post : UniMessage
+    convo : Conversation
+
+    Returns
+    -------
+    bool
+    """
+    return in_degrees_by_uid(convo)[post.uid] != 0 and not \
+        post_get_all(post, keys={'is_source'})['is_source']
+
+
+def is_author_source_author(post, convo):
+    """
+    Returns a bool indicating whether the author of this post is the author
+    of a source post within the conversation as well
+
+    Parameters
+    ----------
+    post : UniMessage
+    convo : Conversation
+
+    Returns
+    -------
+    bool
+    """
+    return post.author in source_authors(convo)
+
+
+def post_degree(post, convo):
+    return in_degrees_by_uid(convo)[post.uid] + post_get_all(post, keys={'degree_out'})['degree_out']
+
+
+def post_in_degree(post, convo):
+    return in_degrees_by_uid(convo)[post.uid]
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -305,7 +360,7 @@ def avg_token_entropy_conv(conv_a, conv_b):
         return 0
 
     left_dist = reduce(lambda x, y: x + y,
-                        [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in conv_a.posts.values()])
+                       [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in conv_a.posts.values()])
     left_m = sum(left_dist.values())
 
     if not left_m:
@@ -471,16 +526,15 @@ def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
         for k, v in get_ints(p, convo, keys=keys, ignore_keys=ignore).items():
             agg[k].append(v)
 
-    return {
-        k: {
-            'min': np.min(vs),
-            'max': np.max(vs),
-            'std': np.std(vs),
-            'mean': np.mean(vs),
-            'median': np.median(vs),
-        }
-        for k, vs in agg.items()
-    }
+    out = {}
+    for k, vs in agg.items():
+        out[f'post_{k}_min'] = float(np.nanmin(vs))
+        out[f'post_{k}_max'] = float(np.nanmax(vs))
+        out[f'post_{k}_mean'] = float(np.nanmean(vs))
+        out[f'post_{k}_median'] = float(np.median(vs))
+        out[f'post_{k}_std'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
+
+    return out
 
 
 def sum_booleans_across_convo(convo, keys=None, ignore=None):
@@ -533,7 +587,3 @@ def sum_ints_across_convo(convo, keys=None, ignore=None):
             cnt[k] += v
 
     return dict(cnt)
-
-
-
-
