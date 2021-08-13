@@ -1,3 +1,5 @@
+from abc import ABC
+from abc import abstractmethod
 from collections import defaultdict
 
 import numpy as np
@@ -18,54 +20,64 @@ from .user_in_conv import get_ints as user_ints
 from .user_in_conv import iter_over_users
 
 
-class PostVectorizer:
+class Vectorizer(ABC):
 
     """
-    Vectorization engine for social media post featurization
+    Abstract vectorization class.
+    Implements normalization.
     """
 
-    def __init__(self, normalization=None, include_conversation=False, include_user=False):
-        """
-        Constructor for PostVectorizer
-
-        Parameters
-        ----------
-        normalization : None or str
-            Can be None, 'minmax', 'mean', or 'standard'
-        include_conversation : bool
-            Default: False
-        include_user : bool
-            Default : bool
-        """
-        # Can be None, 'minmax', 'mean', or 'standard'
-        self._norm = normalization
-        self._include_conversation = include_conversation
-        self._include_user = include_user
-
+    def __init__(self, normalization):
         self._stats = defaultdict(dict)
 
-    def fit(self, posts=None, convs=None, conv=None):
+        # Can be None, 'minmax', 'mean', or 'standard'
+        self._norm = normalization
+
+    @abstractmethod
+    def fit(self, **kwargs):
         """
-        Fits the parameters necessary for normalization and vectorization of posts.
+        Abstract method for fitting normalization and vectorization parameters
+        to data in `kwargs`
 
         Parameters
         ----------
-        posts : List(UniMessage)
-        convs : List(Conversation)
-        conv : Conversation
+        kwargs : dict
 
         Returns
         -------
-        None
+        Vectorizer
+            This object should return itself
         """
-        if posts:
-            self._fit_by_posts(posts)
-        elif convs:
-            self._fit_by_convs(convs)
-        elif conv:
-            self._fit_by_convs([conv])
-        else:
-            raise ValueError
+        pass
+
+    @abstractmethod
+    def transform(self, **kwargs):
+        """
+        Abstract method for transforming data into a vector (or vectors)
+
+        Parameters
+        ----------
+        kwargs : dict
+
+        Returns
+        -------
+        np.ndarray
+        """
+        pass
+
+    def fit_transform(self, **kwargs):
+        """
+        Applies both the fit and transform steps of vectorizer
+
+        Parameters
+        ----------
+        kwargs : dict
+
+        Returns
+        -------
+        np.ndarray
+        """
+        return self.fit(**kwargs).transform(**kwargs)
 
     def _fit_params(self, values):
         """
@@ -100,6 +112,88 @@ class PostVectorizer:
         else:
             raise ValueError
 
+    def _normalize(self, key, value):
+        """
+        Normalizes a particular key-value pair based on the fit values
+
+        Parameters
+        ----------
+        key : str
+        value : int or float
+
+        Returns
+        -------
+        float
+            The normalized value
+        """
+        if self._norm is None:
+            return value
+        elif self._norm == 'minmax':
+            if self._stats[key]['range']:
+                return (value - self._stats[key]['min']) / self._stats[key]['range']
+            else:
+                return value
+        elif self._norm == 'mean':
+            if self._stats[key]['range']:
+                return (value - self._stats[key]['mean']) / self._stats[key]['range']
+            else:
+                return value
+        elif self._norm == 'standard':
+            if self._stats[key]['std']:
+                return (value - self._stats[key]['mean']) / self._stats[key]['std']
+            else:
+                return value
+        else:
+            raise ValueError
+
+
+class PostVectorizer(Vectorizer):
+
+    """
+    Vectorization engine for social media post featurization
+    """
+
+    def __init__(self, normalization=None, include_conversation=False, include_user=False):
+        """
+        Constructor for PostVectorizer
+
+        Parameters
+        ----------
+        normalization : None or str
+            Can be None, 'minmax', 'mean', or 'standard'
+        include_conversation : bool
+            Default: False
+        include_user : bool
+            Default : bool
+        """
+        super(PostVectorizer, self).__init__(normalization)
+
+        self._include_conversation = include_conversation
+        self._include_user = include_user
+
+    def fit(self, posts=None, convs=None, conv=None):
+        """
+        Fits the parameters necessary for normalization and vectorization of posts.
+
+        Parameters
+        ----------
+        posts : List(UniMessage)
+        convs : List(Conversation)
+        conv : Conversation
+
+        Returns
+        -------
+        None
+        """
+        if posts:
+            return self._fit_by_posts(posts)
+        elif convs:
+            return self._fit_by_convs(convs)
+        elif conv:
+            return self._fit_by_convs([conv])
+        else:
+            raise ValueError
+
     def _fit_by_posts(self, posts):
         """
         Fits the parameters for standardization based on an arbitrary collection of posts
@@ -130,6 +224,8 @@ class PostVectorizer:
                         vals['user_' + k].append(v)
 
         self._fit_params(vals)
+
+        return self
 
     def _fit_by_convs(self, convs):
         """
@@ -168,6 +264,8 @@ class PostVectorizer:
                         vals['user_' + k].append(v)
 
         self._fit_params(vals)
+
+        return self
 
     def transform(self, posts=None, convs=None, conv=None):
         """
@@ -282,54 +380,3 @@ class PostVectorizer:
                 out.append(np.array(vec))
 
         return np.array(out)
-
-    def _normalize(self, key, value):
-        """
-        Normalizes a particular key-value pair based on the fit values
-
-        Parameters
-        ----------
-        key : str
-        value : int or float
-
-        Returns
-        -------
-        float
-            The normalized value
-        """
-        if self._norm is None:
-            return value
-        elif self._norm == 'minmax':
-            if self._stats[key]['range']:
-                return (value - self._stats[key]['min']) / self._stats[key]['range']
-            else:
-                return value
-        elif self._norm == 'mean':
-            if self._stats[key]['range']:
-                return (value - self._stats[key]['mean']) / self._stats[key]['range']
-            else:
-                return value
-        elif self._norm == 'standard':
-            if self._stats[key]['std']:
-                return (value - self._stats[key]['mean']) / self._stats[key]['std']
-            else:
-                return value
-        else:
-            raise ValueError
-
-    def fit_transform(self, posts=None, convs=None, conv=None):
-        """
-        Applies both the fit and transform steps for a set of posts
-
-        Parameters
-        ----------
-        posts : List(UniMessage)
-        convs : List(Conversation)
-        conv : Conversation
-
-        Returns
-        -------
-        np.array
-        """
-        self.fit(posts, convs, conv)
-        return self.transform(posts, convs, conv)
