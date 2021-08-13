@@ -49,7 +49,7 @@ def mixing(frequency):
     for f, r in zip(fs, rs):
         sizeranks[f] = max([r, 0 if (f not in sizeranks) else sizeranks[f]])
 
-    ## regresses the avg doc size and THEN computes theta.
+    # regresses the avg doc size and THEN computes theta.
     N = len(fs)
     M = sum(fs)
     HN = (1 / np.arange(1, N + 1)).sum()
@@ -60,7 +60,11 @@ def mixing(frequency):
     Mavg = M * float(k1)
     theta = np.log10(fs[0] * Mavg / M) / np.log10(Mavg)
     Navg = (1 - theta) * Mavg
-    fmodel = lambda r: ((r - theta) ** (-theta)) * (1 - (1 + ravg / r) ** (-Navg / ravg))
+
+    def _f(rx):
+        return ((rx - theta) ** (-theta)) * (1 - (1 + ravg / rx) ** (-Navg / ravg))
+    fmodel = _f
+
     fhat = fmodel(np.array([sizeranks[f] for f in fs]))
     fnorm = sum(fhat)
     phat = fhat / fnorm
@@ -84,7 +88,7 @@ def novelty(frequency):
     fsum = fs.cumsum()
     mn = (fsum / fs)
 
-    ## this complex object specifies the rank-endpoints for plateaux
+    # this complex object specifies the rank-endpoints for plateaux
     srs = {s: (min(rs[fs == s]), max(rs[fs == s])) for s in nums}
     As1 = np.ones(len(fs))
     As2 = np.ones(len(fs))
