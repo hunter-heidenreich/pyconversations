@@ -1,8 +1,10 @@
 from collections import Counter
+from collections import defaultdict
 from functools import lru_cache
 from functools import reduce
 
 import networkx as nx
+import numpy as np
 
 from .harmonic import mixing
 from .harmonic import novelty
@@ -373,3 +375,39 @@ def novelty_vector(convo):
     np.array
     """
     return novelty(type_frequency_distribution(convo))
+
+
+def agg_convo_stats(convos, keys=None, ignore=None):
+    """
+    Computes a set of aggregate conversation statistical measures.
+    This is only computed for the integer and float subsets.
+    Specifically, the following stats are measured:
+    min, max, mean, median, standard deviation
+
+
+    Parameters
+    ----------
+    convos : List(Conversation)
+    keys : None or Iterable(str)
+    ignore : None or Iterable(str)
+
+    Returns
+    -------
+    dict(str, dict(str, float))
+    """
+    agg = defaultdict(list)
+    fs = [get_floats, get_ints]
+    for conv in convos:
+        for f in fs:
+            for k, v in f(conv, keys=keys, ignore_keys=ignore).items():
+                agg[k].append(v)
+
+    out = {}
+    for k, vs in agg.items():
+        out[f'convo_min_{k}'] = float(np.nanmin(vs))
+        out[f'convo_max_{k}'] = float(np.nanmax(vs))
+        out[f'convo_mean_{k}'] = float(np.nanmean(vs))
+        out[f'convo_median_{k}'] = float(np.median(vs))
+        out[f'convo_std_{k}'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
+
+    return out

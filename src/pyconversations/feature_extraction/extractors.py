@@ -5,6 +5,7 @@ from collections import defaultdict
 import numpy as np
 
 from ..convo import Conversation
+from .conv import agg_convo_stats
 from .conv import get_floats as conv_floats
 from .conv import get_ints as conv_ints
 from .post import get_bools as post_bools
@@ -454,11 +455,10 @@ class ConversationVectorizer(Vectorizer):
 
 class UserVectorizer(Vectorizer):
 
-    def __init__(self, normalization=None, agg_post_fts=False, agg_conv_fts=False):
+    def __init__(self, normalization=None, agg_post_fts=False):
         super(UserVectorizer, self).__init__(normalization)
 
         self._agg_post_fts = agg_post_fts
-        self._agg_conv_fts = agg_conv_fts
 
     def fit(self, conv=None, convs=None):
         if conv is not None:
