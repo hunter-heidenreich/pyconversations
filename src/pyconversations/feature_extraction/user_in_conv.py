@@ -8,6 +8,7 @@ from .harmonic import novelty
 from .params import CACHE_SIZE
 from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats
+from .post_in_conv import avg_token_entropy_conv
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
 from .utils import apply_extraction
@@ -16,7 +17,7 @@ from .utils import apply_extraction
 def collapse_convos(convos):
     """
     Given a list of conversations,
-    collpases them into one mega container.
+    collapses them into one mega container.
 
     Parameters
     ----------
@@ -126,6 +127,7 @@ def get_floats(ux, cx, keys=None, ignore_keys=None, include_post=True):
             'mixing_entropy': lambda user, convo: mixing_features(user, convo)['entropy'],
             'mixing_N_avg': lambda user, convo: mixing_features(user, convo)['N_avg'],
             'mixing_M_avg': lambda user, convo: mixing_features(user, convo)['M_avg'],
+            'avg_token_entropy': avg_user_token_entropy,
         }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux)
     }
 
@@ -282,3 +284,21 @@ def novelty_vector(user, convo):
     np.array
     """
     return novelty(type_frequency_distribution(user, convo))
+
+
+@lru_cache(maxsize=CACHE_SIZE)
+def avg_user_token_entropy(user, convo):
+    """
+    Returns the average token entropy when comparing a user
+    to a conversation (containing said user's posts)
+
+    Parameters
+    ----------
+    user : str
+    convo : Conversation
+
+    Returns
+    -------
+    float
+    """
+    return float(avg_token_entropy_conv(convo.filter(by_author=user), convo))
