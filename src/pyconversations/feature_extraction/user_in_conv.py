@@ -1,6 +1,9 @@
 from collections import Counter
+from collections import defaultdict
 from functools import lru_cache
 from functools import reduce
+
+import numpy as np
 
 from ..convo import Conversation
 from .harmonic import mixing
@@ -132,10 +135,11 @@ def get_floats(ux, cx, keys=None, ignore_keys=None, include_post=True):
     }
 
     if include_post:
-        out = {**out, **agg_post_stats(cx, keys=keys, ignore={
-            'mixing_k1', 'mixing_theta', 'mixing_entropy',
-            'mixing_N_avg', 'mixing_M_avg',
-        } | set([] if ignore_keys is None else ignore_keys), filter_by=lambda p: p.author == ux)}
+        # out = {**out, **agg_post_stats(cx, keys=keys, ignore={
+        #     'mixing_k1', 'mixing_theta', 'mixing_entropy',
+        #     'mixing_N_avg', 'mixing_M_avg',
+        # } | set([] if ignore_keys is None else ignore_keys), filter_by=lambda p: p.author == ux)}
+        out = {**out, **agg_post_stats(cx, keys=keys, ignore=ignore_keys, filter_by=lambda p: p.author == ux)}
 
     return out
 
@@ -302,3 +306,39 @@ def avg_user_token_entropy(user, convo):
     float
     """
     return float(avg_token_entropy_conv(convo.filter(by_author=user), convo))
+
+
+def agg_user_stats(convo, keys=None, ignore=None):
+    """
+    Computes a set of aggregate user statistical measures.
+    This is only computed for the integer and float subsets.
+    Specifically, the following stats are measured:
+    min, max, mean, median, standard deviation
+
+
+    Parameters
+    ----------
+    convo : Conversation
+    keys : None or Iterable(str)
+    ignore : None or Iterable(str)
+
+    Returns
+    -------
+    dict(str, dict(str, float))
+    """
+    agg = defaultdict(list)
+    fs = [get_floats, get_ints]
+    for user in iter_over_users(convo):
+        for f in fs:
+            for k, v in f(user, convo, keys=keys, ignore_keys=ignore).items():
+                agg[k].append(v)
+
+    out = {}
+    for k, vs in agg.items():
+        out[f'user_min_{k}'] = float(np.nanmin(vs))
+        out[f'user_max_{k}'] = float(np.nanmax(vs))
+        out[f'user_mean_{k}'] = float(np.nanmean(vs))
+        out[f'user_median_{k}'] = float(np.median(vs))
+        out[f'user_std_{k}'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
+
+    return out

@@ -14,11 +14,12 @@ from .post_in_conv import depth_dist
 from .post_in_conv import get_all as pic_get_all
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
+from .user_in_conv import agg_user_stats
 from .user_in_conv import messages_per_user
 from .utils import apply_extraction
 
 
-def get_all(cx, keys=None, ignore_keys=None, include_post=True):
+def get_all(cx, keys=None, ignore_keys=None, include_post=True, include_user=True):
     """
     Returns all features specified in keys or all features minus what is specified in ignore_keys.
 
@@ -28,6 +29,7 @@ def get_all(cx, keys=None, ignore_keys=None, include_post=True):
     keys : None or Iterable(str)
     ignore_keys : None or Iterable(str)
     include_post : bool
+    include_user : bool
 
     Returns
     -------
@@ -35,7 +37,7 @@ def get_all(cx, keys=None, ignore_keys=None, include_post=True):
     """
     out = {
         **get_counters(cx, keys, ignore_keys),
-        **get_floats(cx, keys, ignore_keys, include_post),
+        **get_floats(cx, keys, ignore_keys, include_post, include_user),
         **get_ints(cx, keys, ignore_keys),
     }
 
@@ -66,7 +68,7 @@ def get_counters(cx, keys=None, ignore_keys=None):
     }, keyset=keys, ignore=ignore_keys, convo=cx)
 
 
-def get_floats(cx, keys=None, ignore_keys=None, include_post=True):
+def get_floats(cx, keys=None, ignore_keys=None, include_post=True, include_user=True):
     """
     Returns all integer features specified in keys or all features minus what is specified in ignore_keys.
 
@@ -76,6 +78,7 @@ def get_floats(cx, keys=None, ignore_keys=None, include_post=True):
     keys : None or Iterable(str)
     ignore_keys : None or Iterable(str)
     include_post : bool
+    include_user : bool
 
     Returns
     -------
@@ -95,6 +98,9 @@ def get_floats(cx, keys=None, ignore_keys=None, include_post=True):
 
     if include_post:
         out = {**agg_post_stats(cx, keys, ignore_keys), **out}
+
+    if include_user:
+        out = {**agg_user_stats(cx, keys, ignore_keys), **out}
 
     return out
 

@@ -528,11 +528,11 @@ def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
 
     out = {}
     for k, vs in agg.items():
-        out[f'post_{k}_min'] = float(np.nanmin(vs))
-        out[f'post_{k}_max'] = float(np.nanmax(vs))
-        out[f'post_{k}_mean'] = float(np.nanmean(vs))
-        out[f'post_{k}_median'] = float(np.median(vs))
-        out[f'post_{k}_std'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
+        out[f'post_min_{k}'] = float(np.nanmin(vs))
+        out[f'post_max_{k}'] = float(np.nanmax(vs))
+        out[f'post_mean_{k}'] = float(np.nanmean(vs))
+        out[f'post_median_{k}'] = float(np.median(vs))
+        out[f'post_std_{k}'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
 
     return out
 
