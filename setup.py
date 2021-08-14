@@ -76,7 +76,8 @@ setup(
         'numpy>=1.12',
         'tqdm>=4.59',
         'nltk>=3.0',
-        'demoji>=1.0'
+        'demoji>=1.0',
+        'scipy>=1.7.0'
     ],
     extras_require={
         # eg:

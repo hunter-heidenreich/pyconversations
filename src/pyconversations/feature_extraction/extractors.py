@@ -5,7 +5,6 @@ from collections import defaultdict
 import numpy as np
 
 from ..convo import Conversation
-from .conv import agg_convo_stats
 from .conv import get_floats as conv_floats
 from .conv import get_ints as conv_ints
 from .post import get_bools as post_bools
@@ -163,9 +162,7 @@ class PostVectorizer(Vectorizer):
         normalization : None or str
             Can be None, 'minmax', 'mean', or 'standard'
         include_conversation : bool
-            Default: False
         include_user : bool
-            Default : bool
         """
         super(PostVectorizer, self).__init__(normalization)
 
@@ -184,7 +181,7 @@ class PostVectorizer(Vectorizer):
 
         Returns
         -------
-        None
+        PostVectorizer
         """
         if posts:
             return self._fit_by_posts(posts)
@@ -206,7 +203,7 @@ class PostVectorizer(Vectorizer):
 
         Returns
         -------
-        None
+        PostVectorizer
         """
         funcs = [post_floats, post_ints]
 
@@ -239,7 +236,7 @@ class PostVectorizer(Vectorizer):
 
         Returns
         -------
-        None
+        PostVectorizer
         """
         funcs = [pic_floats, pic_ints]
 
@@ -385,7 +382,25 @@ class PostVectorizer(Vectorizer):
 
 class ConversationVectorizer(Vectorizer):
 
+    """
+    Vectorization engine for social media conversation featurization
+    """
+
     def __init__(self, normalization=None, agg_post_fts=False, agg_user_fts=False, include_source_user=True):
+        """
+        Constructor for ConversationVectorizer
+
+        Parameters
+        ----------
+        normalization : None or str
+            Can be None, 'minmax', 'mean', or 'standard'
+        agg_post_fts : bool
+            Get aggregated measures across posts grouped by disjoint conversations
+        agg_user_fts : bool
+            Get aggregated measures across users grouped by disjoint conversations
+        include_source_user : bool
+            Associate user vector of source author with conversation vector
+        """
         super(ConversationVectorizer, self).__init__(normalization)
 
         self._agg_post_fts = agg_post_fts
@@ -393,6 +408,18 @@ class ConversationVectorizer(Vectorizer):
         self._include_source_user = include_source_user
 
     def fit(self, conv=None, convs=None):
+        """
+        Fits the normalization parameters
+
+        Parameters
+        ----------
+        conv : Conversation
+        convs : List(Conversation)
+
+        Returns
+        -------
+        ConversationVectorizer
+        """
         if conv is not None:
             return self.fit(convs=[conv])
         elif convs is not None:
@@ -420,6 +447,18 @@ class ConversationVectorizer(Vectorizer):
             raise ValueError()
 
     def transform(self, conv=None, convs=None):
+        """
+        Returns a set of vectors, one for each supplied conversation.
+
+        Parameters
+        ----------
+        conv : Conversation
+        convs : List(Conversation)
+
+        Returns
+        -------
+        np.ndarray
+        """
         if conv is not None:
             return self.transform(convs=[conv])
         elif convs is not None:
@@ -455,12 +494,37 @@ class ConversationVectorizer(Vectorizer):
 
 class UserVectorizer(Vectorizer):
 
+    """
+    Vectorizer for creating user parameter vectors
+    """
+
     def __init__(self, normalization=None, agg_post_fts=False):
+        """
+        Constructor for UserVectorizer
+
+        Parameters
+        ----------
+        normalization : None or str
+            Can be None, 'minmax', 'mean', or 'standard'
+        agg_post_fts : bool
+        """
         super(UserVectorizer, self).__init__(normalization)
 
         self._agg_post_fts = agg_post_fts
 
     def fit(self, conv=None, convs=None):
+        """
+        Fits normalization parameters
+
+        Parameters
+        ----------
+        conv : Conversation
+        convs : List(Conversation)
+
+        Returns
+        -------
+        UserVectorizer
+        """
         if conv is not None:
             return self.fit(convs=[conv])
         elif convs is not None:
@@ -480,6 +544,18 @@ class UserVectorizer(Vectorizer):
             raise ValueError()
 
     def transform(self, conv=None, convs=None):
+        """
+        Returns a set of user vectors for each unique user found
+
+        Parameters
+        ----------
+        conv : Conversation
+        convs : List(Conversation)
+
+        Returns
+        -------
+        np.ndarray
+        """
         if conv is not None:
             return self.transform(convs=[conv])
         elif convs is not None:

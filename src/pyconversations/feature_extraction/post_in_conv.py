@@ -32,9 +32,9 @@ def get_all(px, cx, keys=None, ignore_keys=None, include_static=True):
     dict(str, Any)
     """
     out = {
-        **get_bools(px, cx, keys, ignore_keys),
-        **get_floats(px, cx, keys, ignore_keys),
-        **get_ints(px, cx, keys, ignore_keys),
+        **get_bools(px, cx, keys, ignore_keys, False),
+        **get_floats(px, cx, keys, ignore_keys, False),
+        **get_ints(px, cx, keys, ignore_keys, False),
     }
 
     if include_static:

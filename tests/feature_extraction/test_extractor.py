@@ -55,12 +55,11 @@ def all_user_vecs():
     params = product(*[
         [None, 'minmax', 'mean', 'standard'],
         [True, False],
-        [True, False],
     ])
 
     return [
-        UserVectorizer(normalization=n, agg_post_fts=p, agg_conv_fts=c)
-        for (n, p, c) in params
+        UserVectorizer(normalization=n, agg_post_fts=p)
+        for (n, p) in params
     ]
 
 

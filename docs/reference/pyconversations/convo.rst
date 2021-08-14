@@ -5,5 +5,7 @@ pyconversations.convo
 
     from pyconversations.convo import *
 
-.. automodule:: pyconversations.convo
+.. autoclass:: pyconversations.convo.Conversation
     :members:
+    :special-members:
+    :private-members:

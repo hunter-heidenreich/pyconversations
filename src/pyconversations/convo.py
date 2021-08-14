@@ -4,7 +4,9 @@ from .message import get_constructor_by_platform
 
 
 class Conversation:
-    """A conversational container for the PyConversations package."""
+    """
+    A container class for managing collections of UniMessage (post) objects.
+    """
 
     def __init__(self, posts=None, convo_id=None):
         """
