@@ -19,17 +19,35 @@ def resonator_simple(k1, fs, rs):
     N = rs[-1]
     HN = (1 / np.arange(1, N + 1)).sum()
     ravg = N / HN
-    Mavg = sum(fs) * k1
-    theta = np.log10(fs[0] * Mavg / sum(fs)) / np.log10(Mavg)
+
+    if not ravg:
+        return np.zeros_like(rs)
+
+    sum_fs = sum(fs)
+    Mavg = sum_fs * k1
+
+    if Mavg <= 1:
+        return np.zeros_like(rs)
+
+    if not sum_fs:
+        return np.zeros_like(rs)
+
+    theta = np.log10(fs[0] * Mavg / sum_fs) / np.log10(Mavg)
     Navg = (1 - theta) * Mavg
     fhat = ((rs - theta) ** (-theta)) * (1 - (1 + ravg / rs) ** (-Navg / ravg))
+
     return fhat
 
 
 def NLL_simple(x, fs, rs, bounds):
     x = rebound([x], bounds)
     fhat = resonator_simple(*x, fs, rs)
-    return -(fs * np.log10(fhat / sum(fhat))).sum()
+
+    M = sum(fhat)
+    if not M:
+        return 0
+
+    return -(fs * np.log10(fhat / M)).sum()
 
 
 def params_simple(fs, rs, x0):
@@ -54,14 +72,42 @@ def mixing(frequency):
     HN = (1 / np.arange(1, N + 1)).sum()
     ravg = N / HN
     srs = np.array([sizeranks[f] for f in fs])
-
     k1 = params_simple(fs, srs, N / M)
     Mavg = M * float(k1)
+
+    if not ravg:
+        return {
+            'k1':      float(k1),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(Mavg),
+        }
+
+    if Mavg <= 1:
+        return {
+            'k1':      float(k1),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(Mavg),
+        }
+
+    if not M:
+        return {
+            'k1':      float(k1),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(Mavg),
+        }
+
     theta = np.log10(fs[0] * Mavg / M) / np.log10(Mavg)
     Navg = (1 - theta) * Mavg
 
     def _f(rx):
         return ((rx - theta) ** (-theta)) * (1 - (1 + ravg / rx) ** (-Navg / ravg))
+
     fmodel = _f
 
     fhat = fmodel(np.array([sizeranks[f] for f in fs]))

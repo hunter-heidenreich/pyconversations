@@ -320,10 +320,19 @@ def avg_token_entropy(post, conv):
     conv_m = sum(convo_dist.values())
     post_m = sum(post_dist.values())
 
-    if not post_m or not conv_m:
+    if not post_m:
         return 0
 
-    entropy = -(np.log([convo_dist[w] / conv_m for w in post_dist]) / (np.log(conv_n) * post_m)).sum()
+    if conv_n < 2:
+        return 0
+
+    if not conv_m:
+        return 0
+
+    numer = np.log([convo_dist[w] / conv_m for w in post_dist])
+    denom = (np.log(conv_n) * post_m)
+    entropy = -(numer / denom).sum()
+
     return entropy
 
 
@@ -346,27 +355,38 @@ def avg_token_entropy_conv(conv_a, conv_b):
     float
         The entropy
     """
+    # Nothing to compare if no posts...
     if not len(conv_a.posts) or not len(conv_b.posts):
         return 0
 
     joint_conv = conv_a + conv_b
+
+    # Nothing to compare if their identical
+    if len(joint_conv.posts) == len(conv_a.posts):
+        return 0
+
     joint_dist = reduce(lambda x, y: x + y,
                         [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in joint_conv.posts.values()])
 
     joint_n = len(joint_dist)
     joint_m = sum(joint_dist.values())
 
-    if not joint_m or not joint_n:
+    # Nothing to compare if no types or tokens
+    if not joint_m or joint_n < 2:
         return 0
 
     left_dist = reduce(lambda x, y: x + y,
                        [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in conv_a.posts.values()])
     left_m = sum(left_dist.values())
 
+    # Nothing to compare if no tokens
     if not left_m:
         return 0
 
-    entropy = -(np.log([joint_dist[w] / joint_m for w in left_dist]) / (np.log(joint_n) * left_m)).sum()
+    numer = np.log([joint_dist[w] / joint_m for w in left_dist])
+    denom = (np.log(joint_n) * left_m)
+    entropy = -(numer / denom).sum()
+
     return entropy
 
 
