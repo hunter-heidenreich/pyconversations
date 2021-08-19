@@ -11,6 +11,7 @@ from .post import get_all as post_get_all
 from .post import get_bools as post_get_bools
 from .post import get_floats as post_get_floats
 from .post import get_ints as post_get_ints
+from .post import type_frequency_distribution as post_freq
 from .utils import apply_extraction
 
 
@@ -252,13 +253,16 @@ def post_reply_time(post, conv):
     float
        The time between the `post` and its parent. If multiple parents, returns the minimum response difference
     """
+    if post.created_at is None:
+        return -1
+
     diffs = [
         (post.created_at - conv.posts[rid].created_at).total_seconds()
-        for rid in post.reply_to if rid in conv.posts
+        for rid in post.reply_to if rid in conv.posts and conv.posts[rid].created_at is not None
     ]
 
     if not diffs:
-        return 0.0
+        return -1
 
     return min(diffs)
 
@@ -284,9 +288,28 @@ def post_to_source(post, conv):
     timeorder = conv.time_order()
 
     if not timeorder:
-        return 0.0
+        return -1
+
+    if post.created_at is None or conv.posts[timeorder[0]].created_at is None:
+        return -1
 
     return (post.created_at - conv.posts[timeorder[0]].created_at).total_seconds()
+
+
+@lru_cache(maxsize=CACHE_SIZE)
+def conversation_type_frequency_distribution(convo):
+    """
+    Returns the type frequency (unigram) distribution for the convo.
+
+    Parameters
+    ----------
+    convo : Conversation
+
+    Returns
+    -------
+    collections.Counter
+    """
+    return reduce(lambda x, y: x + y, map(post_freq, convo.posts.values()))
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -312,9 +335,8 @@ def avg_token_entropy(post, conv):
         cx.add_post(post)
         conv = cx
 
-    post_dist = post_get_all(post, keys={'type_frequency'})['type_frequency']
-    convo_dist = reduce(lambda x, y: x + y,
-                        [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in conv.posts.values()])
+    post_dist = post_freq(post)
+    convo_dist = conversation_type_frequency_distribution(conv)
 
     conv_n = len(convo_dist)
     conv_m = sum(convo_dist.values())
@@ -365,8 +387,7 @@ def avg_token_entropy_conv(conv_a, conv_b):
     if len(joint_conv.posts) == len(conv_a.posts):
         return 0
 
-    joint_dist = reduce(lambda x, y: x + y,
-                        [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in joint_conv.posts.values()])
+    joint_dist = conversation_type_frequency_distribution(joint_conv)
 
     joint_n = len(joint_dist)
     joint_m = sum(joint_dist.values())
@@ -375,8 +396,7 @@ def avg_token_entropy_conv(conv_a, conv_b):
     if not joint_m or joint_n < 2:
         return 0
 
-    left_dist = reduce(lambda x, y: x + y,
-                       [post_get_all(p, keys={'type_frequency'})['type_frequency'] for p in conv_a.posts.values()])
+    left_dist = conversation_type_frequency_distribution(conv_a)
     left_m = sum(left_dist.values())
 
     # Nothing to compare if no tokens
@@ -392,6 +412,18 @@ def avg_token_entropy_conv(conv_a, conv_b):
 
 @lru_cache(maxsize=CACHE_SIZE)
 def avg_token_entropy_all_splits(post, conv):
+    splits = {
+        'post':        post,
+        'full':        conv,
+
+        'ancestors':   conv.get_ancestors(post.uid, include_post=True),
+        # 'after':       conv.get_after(post.uid, include_post=True),
+        # 'before':      conv.get_before(post.uid, include_post=True),
+        'children':    conv.get_children(post.uid, include_post=True),
+        'descendants': conv.get_descendants(post.uid, include_post=True),
+        'parents':     conv.get_parents(post.uid, include_post=True),
+        'siblings':    conv.get_siblings(post.uid, include_post=True),
+    }
     """
     Returns a dictionary of average per token normed entropy between
     conversational splits based on `post`.
@@ -409,18 +441,6 @@ def avg_token_entropy_all_splits(post, conv):
     dict(str, float)
         Mapping from a conversation split pair considered to the entropy measured
     """
-    splits = {
-        'post':        post,
-        'full':        conv,
-
-        'ancestors':   conv.get_ancestors(post.uid, include_post=True),
-        'after':       conv.get_after(post.uid, include_post=True),
-        'before':      conv.get_before(post.uid, include_post=True),
-        'children':    conv.get_children(post.uid, include_post=True),
-        'descendants': conv.get_descendants(post.uid, include_post=True),
-        'parents':     conv.get_parents(post.uid, include_post=True),
-        'siblings':    conv.get_siblings(post.uid, include_post=True),
-    }
     ks = sorted(splits.keys())
     entropy = {}
     for ix, ko in enumerate(ks):

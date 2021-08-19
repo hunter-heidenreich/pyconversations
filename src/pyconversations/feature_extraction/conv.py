@@ -1,7 +1,6 @@
 from collections import Counter
 from collections import defaultdict
 from functools import lru_cache
-from functools import reduce
 
 import networkx as nx
 import numpy as np
@@ -10,8 +9,8 @@ from .harmonic import mixing
 from .harmonic import novelty
 from .params import CACHE_SIZE
 from .post import get_all as post_get_all
-from .post import type_frequency_distribution as post_freq
 from .post_in_conv import agg_post_stats
+from .post_in_conv import conversation_type_frequency_distribution as type_frequency_distribution
 from .post_in_conv import depth_dist
 from .post_in_conv import get_all as pic_get_all
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
@@ -288,7 +287,7 @@ def tree_degree(conv):
 
 
 @lru_cache(maxsize=CACHE_SIZE)
-def time_series(conv, normalize_by_first=False):
+def time_series(conv, normalize_by_first=True):
     """
     Returns the list of timestamps of when posts where added to this Conversation.
     If `normalize_by_first`, then all timestamps are reduced by the start time of the first message.
@@ -297,7 +296,7 @@ def time_series(conv, normalize_by_first=False):
     ----------
     conv : Conversation
     normalize_by_first : bool
-        Default: False
+        Default: True
 
     Returns
     -------
@@ -305,7 +304,7 @@ def time_series(conv, normalize_by_first=False):
     """
     order = conv.time_order()
     out = [conv.posts[uid].created_at.timestamp() for uid in order] if order else []
-    if normalize_by_first:
+    if normalize_by_first and out:
         start = out[0]
         out = [o - start for o in out]
 
@@ -326,23 +325,11 @@ def duration(conv):
     float
     """
     ts = time_series(conv)
+
+    if not ts:
+        return -1
+
     return ts[-1] - ts[0]
-
-
-@lru_cache(maxsize=CACHE_SIZE)
-def type_frequency_distribution(convo):
-    """
-    Returns the type frequency (unigram) distribution for the convo.
-
-    Parameters
-    ----------
-    convo : Convrersation
-
-    Returns
-    -------
-    collections.Counter
-    """
-    return reduce(lambda x, y: x + y, map(post_freq, convo.posts.values()))
 
 
 @lru_cache(maxsize=CACHE_SIZE)

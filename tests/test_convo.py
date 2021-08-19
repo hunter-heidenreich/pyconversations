@@ -117,19 +117,19 @@ def test_conversation_filter_min_char(mock_convo_path):
     mock_convo_path.posts[0].text = ''
 
     filt = mock_convo_path.filter(min_chars=1)
-    assert len(filt.posts) == 1
+    assert len(filt) == 1
 
 
 def test_conversation_filter_by_langs(mock_convo_path):
     assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(by_langs={'en'})
-    assert len(filt.posts) == 0
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_tags(mock_convo_path):
     assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(by_tags={'#FakeNews'})
-    assert len(filt.posts) == 0
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_before(mock_convo_path):
@@ -137,7 +137,7 @@ def test_conversation_filter_by_before(mock_convo_path):
 
     assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
-    assert len(filt.posts) == 0
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_after(mock_convo_path):
@@ -145,17 +145,17 @@ def test_conversation_filter_by_after(mock_convo_path):
 
     assert len(mock_convo_path.posts) == 2
     filt = mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
-    assert len(filt.posts) == 0
+    assert len(filt) == 0
 
 
 def test_filter_by_platform(mock_convo_path):
     assert len(mock_convo_path.posts) == 2
 
     filt = mock_convo_path.filter(by_platform={'Twitter'})
-    assert len(filt.posts) == 2
+    assert len(filt) == 2
 
     filt = mock_convo_path.filter(by_platform={'4chan'})
-    assert len(filt.posts) == 0
+    assert len(filt) == 0
 
 
 @pytest.fixture

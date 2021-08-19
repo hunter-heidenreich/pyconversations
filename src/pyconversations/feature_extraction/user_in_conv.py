@@ -236,7 +236,8 @@ def get_user_posts(user, conv):
     -------
     Conversation
     """
-    return conv.filter(by_author=user)
+    return Conversation(posts={pid: conv.posts[pid] for pid in conv.filter(by_author=user)},
+                        convo_id=f'{conv.convo_id}-{user}')
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -305,7 +306,7 @@ def avg_user_token_entropy(user, convo):
     -------
     float
     """
-    return float(avg_token_entropy_conv(convo.filter(by_author=user), convo))
+    return float(avg_token_entropy_conv(get_user_posts(user, convo), convo))
 
 
 def agg_user_stats(convo, keys=None, ignore=None):

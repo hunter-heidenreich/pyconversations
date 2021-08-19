@@ -1,3 +1,5 @@
+from collections import defaultdict
+
 import networkx as nx
 
 from .message import get_constructor_by_platform
@@ -21,8 +23,10 @@ class Conversation:
             posts = {}
 
         self._posts = posts  # uid -> post object
-
         self._convo_id = convo_id
+
+        self._relation_map = defaultdict(dict)
+        self._author_set = set()
 
     def __add__(self, other):
         """
@@ -71,6 +75,13 @@ class Conversation:
         """
         return self._convo_id if self._convo_id else 'CONV_' + '-'.join(map(str, sorted(self.get_sources())))
 
+    @property
+    def authors(self):
+        if not self._author_set:
+            self._author_set = set([self.posts[pid].author for pid in self.posts])
+
+        return self._author_set
+
     def add_post(self, post):
         """
         Adds a post to the conversational container.
@@ -89,6 +100,8 @@ class Conversation:
         else:
             self._posts[post.uid] = post
 
+        self._author_set.add(post.author)
+
     def remove_post(self, uid):
         """
         Deletes a post from the conversational container using its UID.
@@ -103,6 +116,7 @@ class Conversation:
         None
         """
         del self._posts[uid]
+        self._author_set = set()
 
     def as_graph(self):
         """
@@ -192,7 +206,7 @@ class Conversation:
 
     def filter(self, by_langs=None, min_chars=0, before=None, after=None, by_tags=None, by_platform=None, by_author=None):
         """
-        Removes posts from this Conversation based on specified parameters.
+        Returns the set of post UIDs that meet the parameterized criteria
 
         Parameters
         ---------
@@ -213,8 +227,8 @@ class Conversation:
 
         Returns
         -------
-        Conversation
-            A conversation with only the posts retained that meet the specified criteria
+        set(hashable)
+            Set of UIDs
         """
         drop = set()
         keep = set(self.posts.keys())
@@ -247,9 +261,7 @@ class Conversation:
                 continue
 
         keep -= drop
-        filt_ps = {pid: post for pid, post in self.posts.items() if pid in keep}
-
-        return Conversation(posts=filt_ps)
+        return keep
 
     def time_order(self):
         """
@@ -321,27 +333,23 @@ class Conversation:
         Conversation
             The collection of ancestor posts
         """
-        ancestors = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-ancestors')
+        if 'ancestors' in self._relation_map and uid in self._relation_map['ancestors']:
+            pids = self._relation_map['ancestors'][uid]
+            filt_ps = {pid: self.posts[pid] for pid in pids}
+        else:
+            # get parents
+            ps = self.get_parents(uid)
+            filt_ps = dict(ps.posts)
 
-        queue = [uid]
-        done = set()
-        while queue:
-            # retrieve post ID
-            x = queue.pop()
-
-            # add to list of processed
-            done.add(x)
-
-            # retrieve parent posts
-            ps = self.get_parents(x)
-
-            # add new posts to queue
+            # for each parent, add its ancestors
             for pid in ps.posts:
-                if pid not in done and pid not in queue:
-                    queue.append(pid)
+                for xid in self.get_ancestors(pid).posts:
+                    if xid not in filt_ps:
+                        filt_ps[xid] = self.posts[xid]
 
-            # aggregate parents into ancestors
-            ancestors += ps
+            self._relation_map['ancestors'][uid] = set(filt_ps.keys())
+
+        ancestors = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-ancestors')
 
         if include_post:
             ancestors.add_post(self.posts[uid])
@@ -365,27 +373,23 @@ class Conversation:
         Conversation
             The collection of descendant posts
         """
-        descendants = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-descendant')
+        if 'descendant' in self._relation_map and uid in self._relation_map['descendant']:
+            pids = self._relation_map['descendant'][uid]
+            filt_ps = {pid: self.posts[pid] for pid in pids}
+        else:
+            # get children
+            ps = self.get_children(uid)
+            filt_ps = dict(ps.posts)
 
-        queue = [uid]
-        done = set()
-        while queue:
-            # retrieve post ID
-            x = queue.pop()
+            # for each child, add its descendants
+            for pid in ps.posts:
+                for xid in self.get_descendants(pid).posts:
+                    if xid not in filt_ps:
+                        filt_ps[xid] = self.posts[xid]
 
-            # add to list of processed
-            done.add(x)
+            self._relation_map['descendant'][uid] = set(filt_ps.keys())
 
-            # retrieve child posts
-            cs = self.get_children(x)
-
-            # add new posts to queue
-            for pid in cs.posts:
-                if pid not in done and pid not in queue:
-                    queue.append(pid)
-
-            # aggregate children into descendants
-            descendants += cs
+        descendants = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-descendant')
 
         if include_post:
             descendants.add_post(self.posts[uid])
@@ -409,7 +413,13 @@ class Conversation:
         Conversation
             The collection of parent posts
         """
-        filt_ps = {pid: post for pid, post in self.posts.items() if pid in self.posts[uid].reply_to}
+        if 'parents' in self._relation_map and uid in self._relation_map['parents']:
+            pids = self._relation_map['parents'][uid]
+            filt_ps = {pid: self.posts[pid] for pid in pids}
+        else:
+            filt_ps = {pid: post for pid, post in self.posts.items() if pid in self.posts[uid].reply_to}
+            self._relation_map['parents'][uid] = set(filt_ps.keys())
+
         cx = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-parents')
 
         if include_post:
@@ -434,7 +444,13 @@ class Conversation:
         Conversation
             The collection of children posts
         """
-        filt_ps = {pid: post for pid, post in self.posts.items() if uid in self.posts[pid].reply_to}
+        if 'children' in self._relation_map and uid in self._relation_map['children']:
+            pids = self._relation_map['children'][uid]
+            filt_ps = {pid: self.posts[pid] for pid in pids}
+        else:
+            filt_ps = {pid: post for pid, post in self.posts.items() if uid in self.posts[pid].reply_to}
+            self._relation_map['children'][uid] = set(filt_ps.keys())
+
         cx = Conversation(posts=filt_ps, convo_id=self.convo_id + '-' + str(uid) + '-children')
 
         if include_post:
@@ -460,10 +476,18 @@ class Conversation:
         Conversation
             The collection of sibling posts
         """
-        parents = self.get_parents(uid)
-        siblings = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-siblings')
-        for pid in parents.posts:
-            siblings += self.get_children(pid)
+        if 'siblings' in self._relation_map and uid in self._relation_map['siblings']:
+            pids = self._relation_map['siblings'][uid]
+            siblings = Conversation(posts={pid: self.posts[pid] for pid in pids}, convo_id=self.convo_id + '-' + str(uid) + '-siblings')
+        else:
+            # just caches the parent IDs
+            self.get_parents(uid)
+
+            siblings = Conversation(convo_id=self.convo_id + '-' + str(uid) + '-siblings')
+            for pid in self._relation_map['parents'][uid]:
+                siblings += self.get_children(pid)
+
+            self._relation_map['siblings'][uid] = set(siblings.posts.keys())
 
         if uid in siblings.posts and not include_post:
             siblings.remove_post(uid)
@@ -483,21 +507,27 @@ class Conversation:
         uid : Hashable
             The UID of the post that is the pivot
 
+        include_post : bool
+            Whether the post should be included in returned collection. Default: False
+
         Returns
         -------
         Conversation
             The collection of posts posted before uid
-
-        include_post : bool
-            Whether the post should be included in returned collection. Default: False
 
         Raises
         ------
         KeyError
             When `uid` is not in the Conversation
         """
-        cx = self.filter(before=self._posts[uid].created_at)
-        cx = Conversation(posts=cx.posts, convo_id=self.convo_id + '-' + str(uid) + '-before')
+        if 'before' in self._relation_map and uid in self._relation_map['before']:
+            pids = self._relation_map['before'][uid]
+            filt_posts = {pid: self.posts[pid] for pid in pids}
+        else:
+            filt_posts = {pid: self.posts[pid] for pid in self.filter(before=self._posts[uid].created_at)}
+            self._relation_map['before'][uid] = set(filt_posts.keys())
+
+        cx = Conversation(posts=filt_posts, convo_id=self.convo_id + '-' + str(uid) + '-before')
 
         if include_post:
             cx.add_post(self.posts[uid])
@@ -527,8 +557,14 @@ class Conversation:
         KeyError
             When `uid` is not in the Conversation
         """
-        cx = self.filter(after=self._posts[uid].created_at)
-        cx = Conversation(posts=cx.posts, convo_id=self.convo_id + '-' + str(uid) + '-after')
+        if 'after' in self._relation_map and uid in self._relation_map['after']:
+            pids = self._relation_map['after'][uid]
+            filt_posts = {pid: self.posts[pid] for pid in pids}
+        else:
+            filt_posts = {pid: self.posts[pid] for pid in self.filter(after=self._posts[uid].created_at)}
+            self._relation_map['after'][uid] = set(filt_posts.keys())
+
+        cx = Conversation(posts=filt_posts, convo_id=self.convo_id + '-' + str(uid) + '-after')
 
         if include_post:
             cx.add_post(self.posts[uid])

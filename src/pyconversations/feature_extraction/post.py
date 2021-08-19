@@ -313,6 +313,15 @@ def mixing_features(post):
     -------
     dict(str, float)
     """
+    if not post.text:
+        return {
+            'k1':      float(0),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(0),
+        }
+
     return mixing(type_frequency_distribution(post))
 
 
