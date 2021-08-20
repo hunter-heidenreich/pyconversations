@@ -7,132 +7,60 @@ import numpy as np
 
 from ..convo import Conversation
 from .params import CACHE_SIZE
-from .post import get_all as post_get_all
-from .post import get_bools as post_get_bools
-from .post import get_floats as post_get_floats
-from .post import get_ints as post_get_ints
+from .post import PostFeatures
+from .post import is_source
+from .post import out_degree
 from .post import type_frequency_distribution as post_freq
-from .utils import apply_extraction
 
 
-def get_all(px, cx, keys=None, ignore_keys=None, include_static=True):
-    """
-    Returns all features specified in keys or all features minus what is specified in ignore_keys.
+class PostInConvoFeatures:
 
-    Parameters
-    ----------
-    px : UniMessage
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_static : bool
-        Default True
+    @staticmethod
+    def bools(post, convo):
+        out = PostFeatures.bools(post)
+        out['is_leaf'] = is_leaf(post, convo)
+        out['is_internal'] = is_internal(post, convo)
+        out['is_author_source_author'] = is_author_source_author(post, convo)
+        return out
 
-    Returns
-    -------
-    dict(str, Any)
-    """
-    out = {
-        **get_bools(px, cx, keys, ignore_keys, False),
-        **get_floats(px, cx, keys, ignore_keys, False),
-        **get_ints(px, cx, keys, ignore_keys, False),
-    }
+    @staticmethod
+    def categoricals(post, convo):
+        out = PostFeatures.categoricals(post)
 
-    if include_static:
-        out = {**out, **post_get_all(px, keys, ignore_keys)}
+        return out
 
-    return out
+    @staticmethod
+    def counter(post, convo):
+        out = PostFeatures.counter(post)
 
+        return out
 
-def get_bools(px, cx, keys=None, ignore_keys=None, include_static=True):
-    """
-    Returns all boolean features specified in keys or all features minus what is specified in ignore_keys.
+    @staticmethod
+    def floats(post, convo):
+        out = PostFeatures.floats(post)
+        out['relative_age'] = post_to_source(post, convo)
+        out['response_time'] = post_reply_time(post, convo)
 
-    Parameters
-    ----------
-    px : UniMessage
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_static : bool
-        Default True
+        for k, v in avg_token_entropy_all_splits(post, convo).items():
+            out[k] = v
 
-    Returns
-    -------
-    dict(str, bool)
-    """
-    out = apply_extraction({
-        'is_leaf':                 is_leaf,
-        'is_internal':             is_internal,
-        'is_author_source_author': is_author_source_author,
-    }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
+        return out
 
-    if include_static:
-        out = {**out, **post_get_bools(px, keys, ignore_keys)}
+    @staticmethod
+    def ints(post, convo):
+        out = PostFeatures.ints(post)
+        out['degree'] = post_depth(post, convo)
+        out['in_degree'] = post_in_degree(post, convo)
+        out['depth'] = post_depth(post, convo)
+        out['width'] = post_width(post, convo)
 
-    return out
+        return out
 
+    @staticmethod
+    def strs(post, convo):
+        out = PostFeatures.strs(post)
 
-def get_floats(px, cx, keys=None, ignore_keys=None, include_static=True):
-    """
-    Returns all float features specified in keys or all features minus what is specified in ignore_keys.
-
-    Parameters
-    ----------
-    px : UniMessage
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_static : bool
-        Default True
-
-    Returns
-    -------
-    dict(str, float)
-    """
-    out = apply_extraction({
-        'relative_age':  post_to_source,
-        'response_time': post_reply_time,
-    }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
-
-    kx = 'avg_token_entropy'
-    if kx in keys if keys is not None else (kx not in ignore_keys if ignore_keys is not None else True):
-        out = {**out, **avg_token_entropy_all_splits(px, cx)}
-
-    if include_static:
-        out = {**out, **post_get_floats(px, keys, ignore_keys)}
-
-    return out
-
-
-def get_ints(px, cx, keys=None, ignore_keys=None, include_static=True):
-    """
-    Returns all integer features specified in keys or all features minus what is specified in ignore_keys.
-
-    Parameters
-    ----------
-    px : UniMessage
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_static : bool
-        Default True
-
-    Returns
-    -------
-    dict(str, int)
-    """
-    out = apply_extraction({
-        'degree':    post_degree,
-        'degree_in': post_in_degree,
-        'depth':     post_depth,
-        'width':     post_width,
-    }, keyset=keys, ignore=ignore_keys, post=px, convo=cx)
-
-    if include_static:
-        out = {**out, **post_get_ints(px, keys, ignore_keys)}
-
-    return out
+        return out
 
 
 def is_leaf(post, convo):
@@ -164,8 +92,7 @@ def is_internal(post, convo):
     -------
     bool
     """
-    return in_degrees_by_uid(convo)[post.uid] != 0 and not \
-        post_get_all(post, keys={'is_source'})['is_source']
+    return in_degrees_by_uid(convo)[post.uid] != 0 and not is_source(post)
 
 
 def is_author_source_author(post, convo):
@@ -186,7 +113,7 @@ def is_author_source_author(post, convo):
 
 
 def post_degree(post, convo):
-    return in_degrees_by_uid(convo)[post.uid] + post_get_all(post, keys={'degree_out'})['degree_out']
+    return in_degrees_by_uid(convo)[post.uid] + out_degree(post)
 
 
 def post_in_degree(post, convo):
@@ -257,7 +184,7 @@ def post_reply_time(post, conv):
         return -1
 
     diffs = [
-        (post.created_at - conv.posts[rid].created_at).total_seconds()
+        abs((post.created_at - conv.posts[rid].created_at).total_seconds())
         for rid in post.reply_to if rid in conv.posts and conv.posts[rid].created_at is not None
     ]
 
@@ -536,7 +463,7 @@ def post_width(post, conv):
     return depth_dist(conv)[post_depth(post, conv)]
 
 
-def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
+def agg_post_stats(convo, filter_by=None):
     """
     Computes a set of aggregate post statistical measures.
     This is only computed for the integer and float subsets.
@@ -547,8 +474,26 @@ def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
     Parameters
     ----------
     convo : Conversation
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
+    filter_by : function (UniMessage -> bool)
+
+    Returns
+    -------
+    dict(str, dict(str, float))
+    """
+    return agg_post_stats_([convo], filter_by=filter_by)
+
+
+def agg_post_stats_(convos, filter_by=None):
+    """
+    Computes a set of aggregate post statistical measures.
+    This is only computed for the integer and float subsets.
+    Specifically, the following stats are measured:
+    min, max, mean, median, standard deviation
+
+
+    Parameters
+    ----------
+    convos : List(Conversation)
     filter_by : function (UniMessage -> bool)
 
     Returns
@@ -556,15 +501,16 @@ def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
     dict(str, dict(str, float))
     """
     agg = defaultdict(list)
-    for p in convo.posts.values():
-        if filter_by is not None and not filter_by(p):
-            continue
+    for convo in convos:
+        for p in convo.posts.values():
+            if filter_by is not None and not filter_by(p):
+                continue
 
-        for k, v in get_floats(p, convo, keys=keys, ignore_keys=ignore).items():
-            agg[k].append(v)
+            for k, v in PostInConvoFeatures.floats(p, convo).items():
+                agg[k].append(v)
 
-        for k, v in get_ints(p, convo, keys=keys, ignore_keys=ignore).items():
-            agg[k].append(v)
+            for k, v in PostInConvoFeatures.ints(p, convo).items():
+                agg[k].append(v)
 
     out = {}
     for k, vs in agg.items():
@@ -572,20 +518,18 @@ def agg_post_stats(convo, keys=None, ignore=None, filter_by=None):
         out[f'post_max_{k}'] = float(np.nanmax(vs))
         out[f'post_mean_{k}'] = float(np.nanmean(vs))
         out[f'post_median_{k}'] = float(np.median(vs))
-        out[f'post_std_{k}'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
+        out[f'post_std_{k}'] = float(np.nanstd(vs))
 
     return out
 
 
-def sum_booleans_across_convo(convo, keys=None, ignore=None):
+def sum_booleans_across_convo(convo):
     """
     Aggregates the boolean properties of this conversation.
 
     Parameters
     ----------
     convo : Conversation
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
@@ -593,22 +537,20 @@ def sum_booleans_across_convo(convo, keys=None, ignore=None):
     """
     cnt = Counter()
     for p in convo.posts.values():
-        for k, v in get_bools(p, convo, keys=keys, ignore_keys=ignore).items():
+        for k, v in PostInConvoFeatures.ints(p, convo).items():
             kx = k.replace('is_', '') + '_count'
             cnt[kx] += 1 if v else 0
 
     return dict(cnt)
 
 
-def sum_ints_across_convo(convo, keys=None, ignore=None):
+def sum_ints_across_convo(convo):
     """
     Aggregates the boolean properties of this conversation.
 
     Parameters
     ----------
     convo : Conversation
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
@@ -620,7 +562,7 @@ def sum_ints_across_convo(convo, keys=None, ignore=None):
     }
     cnt = Counter()
     for p in convo.posts.values():
-        for k, v in get_ints(p, convo, keys=keys, ignore_keys=ignore).items():
+        for k, v in PostInConvoFeatures.ints(p, convo).items():
             if k in skipset:
                 continue
 

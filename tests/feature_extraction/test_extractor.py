@@ -163,7 +163,7 @@ def test_user_vec_conv(mock_convo, all_user_vecs):
 
         assert type(xs) == np.ndarray
         assert xs.shape[0] == 2
-        assert xs.shape[1] == 321
+        assert xs.shape[1] == 333
 
 
 def test_user_vec_convs(mock_convo, all_user_vecs):
@@ -172,7 +172,7 @@ def test_user_vec_convs(mock_convo, all_user_vecs):
 
         assert type(xs) == np.ndarray
         assert xs.shape[0] == 2
-        assert xs.shape[1] == 1607
+        assert xs.shape[1] == 332
 
 
 def test_user_vec_fail():

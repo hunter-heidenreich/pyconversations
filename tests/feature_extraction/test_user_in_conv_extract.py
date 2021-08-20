@@ -3,10 +3,7 @@ from datetime import datetime as dt
 import pytest
 
 from pyconversations.convo import Conversation
-from pyconversations.feature_extraction.user_in_conv import get_all
-from pyconversations.feature_extraction.user_in_conv import get_bools
-from pyconversations.feature_extraction.user_in_conv import get_floats
-from pyconversations.feature_extraction.user_in_conv import get_ints
+from pyconversations.feature_extraction.user_in_conv import UserInConvoFeatures as UiCF
 from pyconversations.feature_extraction.user_in_conv import mixing_features
 from pyconversations.feature_extraction.user_in_conv import novelty_vector
 from pyconversations.feature_extraction.user_in_conv import type_frequency_distribution
@@ -38,17 +35,14 @@ def mock_convo(mock_tweet):
 
 
 def test_type_check_extractors(mock_tweet, mock_convo):
-    for v in get_bools(mock_tweet.author, mock_convo).values():
+    for v in UiCF.bools(mock_tweet.author, mock_convo).values():
         assert type(v) == bool
 
-    for v in get_floats(mock_tweet.author, mock_convo).values():
+    for v in UiCF.floats(mock_tweet.author, mock_convo).values():
         assert type(v) == float
 
-    for v in get_ints(mock_tweet.author, mock_convo).values():
+    for v in UiCF.ints(mock_tweet.author, mock_convo).values():
         assert type(v) == int
-
-    for bx in [True, False]:
-        assert type(get_all(mock_tweet.author, mock_convo, include_post=bx)) == dict
 
 
 def test_harmonic_feature_existence(mock_tweet, mock_convo):

@@ -16,24 +16,24 @@ def apply_extraction(funcs, keyset=None, ignore=None, **kwargs):
         The returns from the lambda functions
     """
 
-    def _select_applicator(f):
+    def _selects_args():
         if 'post' in kwargs and 'convo' in kwargs:
-            return f(kwargs['post'], kwargs['convo'])
+            return kwargs['post'], kwargs['convo']
         elif 'user' in kwargs and 'convo' in kwargs:
-            return f(kwargs['user'], kwargs['convo'])
+            return kwargs['user'], kwargs['convo']
         elif 'post' in kwargs:
-            return f(kwargs['post'])
+            return kwargs['post'],
         elif 'convo' in kwargs:
-            return f(kwargs['convo'])
+            return kwargs['convo'],
         else:
             raise KeyError
 
-    if keyset is None:
-        keyset = set(funcs.keys())
+    args = _selects_args()
+
+    if keyset is not None:
+        funcs = {k: funcs[k] for k in keyset if k in funcs}
 
     if ignore is not None:
-        for i in ignore:
-            if i in keyset:
-                keyset.remove(i)
+        funcs = {k: funcs[k] for k in funcs if k not in ignore}
 
-    return {label: _select_applicator(func) for label, func in funcs.items() if label in keyset}
+    return {label: func(*args) for label, func in funcs.items()}

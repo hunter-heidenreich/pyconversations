@@ -9,52 +9,64 @@ from .params import CACHE_SIZE
 from .regex import HASHTAG_REGEX
 from .regex import URL_REGEX
 from .regex import get_all as get_all_regex
-from .utils import apply_extraction
 
 
-def get_all(px, keys=None, ignore_keys=None):
+class PostFeatures:
+
     """
-    Returns all features specified in keys or all features minus what is specified in ignore_keys.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, Any)
+    Container of feature extraction for posts in isolation
     """
-    return {
-        **get_bools(px, keys, ignore_keys),
-        **get_categorical(px, keys, ignore_keys),
-        **get_counters(px, keys, ignore_keys),
-        **get_floats(px, keys, ignore_keys),
-        **get_ints(px, keys, ignore_keys),
-        **get_substrings(px, keys, ignore_keys),
-    }
 
+    @staticmethod
+    def bools(post):
+        return {
+            'is_source': is_source(post),
+        }
 
-def get_bools(px, keys=None, ignore_keys=None):
-    """
-    Returns the boolean features.
-    In keys, one may specify a subset of features to extract.
-    Alternatively, one can specify a set of keys to ignore.
+    @staticmethod
+    def categoricals(post):
+        return {
+            'author':   post.author,
+            'lang':     post.lang,
+            'platform': post.platform,
+        }
 
-    Parameters
-    ----------
-    px : UniMessage
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
+    @staticmethod
+    def counter(post):
+        return {
+            'type_freq': type_frequency_distribution(post),
+        }
 
-    Returns
-    -------
-    dict(str, bool)
-    """
-    return apply_extraction({
-        'is_source': is_source,
-    }, keyset=keys, ignore=ignore_keys, post=px)
+    @staticmethod
+    def floats(post):
+        return mixing_features(post)
+
+    @staticmethod
+    def ints(post):
+        return {
+            '?_count':         len(get_all_regex(post, r'[?]')),
+            '!_count':         len(get_all_regex(post, r'[!]')),
+            'char_count':      len(post.text),
+            'emoji_count':     len(emojis(post)),
+            'hashtag_count':   len(hashtags(post)),
+            'mention_count':   len(mentions(post)),
+            'out_degree':      out_degree(post),
+            'punct_count':     len(get_all_regex(post, r'[,.?!;\'"]')),
+            'token_count':     len(post.tokens),
+            'type_count':      len(type_frequency_distribution(post)),
+            'uppercase_count': len(get_all_regex(post, r'[A-Z]')),
+            'url_count':       len(urls(post)),
+        }
+
+    @staticmethod
+    def strs(post):
+        return {
+            'emojis':   emojis(post),
+            'hashtags': hashtags(post),
+            'mentions': mentions(post),
+            'tokens':   post.tokens,
+            'urls':     urls(post),
+        }
 
 
 def is_source(post):
@@ -70,137 +82,6 @@ def is_source(post):
     bool
     """
     return out_degree(post) == 0
-
-
-def get_categorical(px, keys=None, ignore_keys=None):
-    """
-    Returns the categorical string features.
-    In keys, one may specify a subset of features to extract.
-    Alternatively, one can specify a set of keys to ignore.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, str)
-    """
-    return apply_extraction({
-        'author': lambda post: post.author,
-        'language': lambda post: post.lang,
-        'platform': lambda post: post.platform,
-    }, keyset=keys, ignore=ignore_keys, post=px)
-
-
-def get_floats(px, keys=None, ignore_keys=None):
-    """
-    Returns the floating point features measured directly from the post.
-    By specifying keys with the optional `keys` parameter,
-    a subset of the features may be returned.
-    Alternatively, one can specify a set of keys to ignore.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, float)
-    """
-    return apply_extraction({
-        'mixing_k1': lambda post: mixing_features(post)['k1'],
-        'mixing_theta': lambda post: mixing_features(post)['theta'],
-        'mixing_entropy': lambda post: mixing_features(post)['entropy'],
-        'mixing_N_avg': lambda post: mixing_features(post)['N_avg'],
-        'mixing_M_avg': lambda post: mixing_features(post)['M_avg'],
-    }, keyset=keys, ignore=ignore_keys, post=px)
-
-
-def get_ints(px, keys=None, ignore_keys=None):
-    """
-    Given a post, returns all supported features that are integers.
-    By specifying keys with the optional `keys` parameter,
-    a subset of the features may be returned.
-    Alternatively, one can specify a set of keys to ignore.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, int)
-        A dictionary of integer stats
-    """
-    return apply_extraction({
-        '?_count': lambda post: len(get_all_regex(post, r'[?]')),
-        '!_count': lambda post: len(get_all_regex(post, r'[!]')),
-        'char_count': lambda post: len(post.text),
-        'emoji_count': lambda post: len(emojis(post)),
-        'hashtag_count': lambda post: len(hashtags(post)),
-        'mention_count': lambda post: len(mentions(post)),
-        'degree_out':      out_degree,
-        'punct_count': lambda post: len(get_all_regex(post, r'[,.?!;\'"]')),
-        'token_count': lambda post: len(post.tokens),
-        'type_count': lambda post: len(type_frequency_distribution(post)),
-        'uppercase_count': lambda post: len(get_all_regex(post, r'[A-Z]')),
-        'url_count': lambda post: len(urls(post)),
-    }, keyset=keys, ignore=ignore_keys, post=px)
-
-
-def get_substrings(px, keys=None, ignore_keys=None):
-    """
-    Given a post, returns all supported features that are lists of substrings.
-    By specifying keys with the optional `keys` parameter,
-    a subset of the features may be returned.
-    Alternatively, one can specify a set of keys to ignore.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, list(str))
-    """
-    return apply_extraction({
-        'emojis':   emojis,
-        'hashtags': hashtags,
-        'mentions': mentions,
-        'tokens': lambda post: post.tokens,
-        'urls':     urls,
-    }, keyset=keys, ignore=ignore_keys, post=px)
-
-
-def get_counters(px, keys=None, ignore_keys=None):
-    """
-    Returns a set of Counter objects generated from this post.
-    By specifying keys with the optional `keys` parameter,
-    a subset of the features may be returned.
-    Alternatively, one can specify a set of keys to ignore.
-
-    Parameters
-    ----------
-    px : UniMessage
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, Counter)
-    """
-    return apply_extraction({
-        'type_frequency': type_frequency_distribution,
-    }, keyset=keys, ignore=ignore_keys, post=px)
 
 
 def out_degree(post):

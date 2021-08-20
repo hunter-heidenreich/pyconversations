@@ -8,130 +8,75 @@ import numpy as np
 from .harmonic import mixing
 from .harmonic import novelty
 from .params import CACHE_SIZE
-from .post import get_all as post_get_all
 from .post_in_conv import agg_post_stats
 from .post_in_conv import conversation_type_frequency_distribution as type_frequency_distribution
 from .post_in_conv import depth_dist
-from .post_in_conv import get_all as pic_get_all
+from .post_in_conv import out_degree
+from .post_in_conv import post_degree
+from .post_in_conv import post_in_degree
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
 from .user_in_conv import agg_user_stats
 from .user_in_conv import messages_per_user
-from .utils import apply_extraction
 
 
-def get_all(cx, keys=None, ignore_keys=None, include_post=True, include_user=True):
-    """
-    Returns all features specified in keys or all features minus what is specified in ignore_keys.
+class ConvoFeatures:
 
-    Parameters
-    ----------
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_post : bool
-    include_user : bool
+    @staticmethod
+    def bools(convo):
+        return {}
 
-    Returns
-    -------
-    dict(str, Any)
-    """
-    out = {
-        **get_counters(cx, keys, ignore_keys),
-        **get_floats(cx, keys, ignore_keys, include_post, include_user),
-        **get_ints(cx, keys, ignore_keys),
-    }
+    @staticmethod
+    def categoricals(convo):
+        return {}
 
-    return out
+    @staticmethod
+    def counter(convo):
+        return {
+            'degree_size_distribution':     degree_size_distribution(convo),
+            'degree_in_size_distribution':  degree_in_size_distribution(convo),
+            'degree_out_size_distribution': degree_out_size_distribution(convo),
+            'depth_distribution':           depth_dist(convo),
+            'type_frequency_distribution':  type_frequency_distribution(convo),
+            'user_size_distribution':       user_size_dist(convo),
+        }
 
+    @staticmethod
+    def floats(convo):
+        out = mixing_features(convo)
+        out['duration'] = duration(convo)
+        out['density'] = density(convo)
 
-def get_counters(cx, keys=None, ignore_keys=None):
-    """
-    Returns all Counter-features specified in keys or all features minus what is specified in ignore_keys.
+        for k, v in agg_post_stats(convo).items():
+            out[k] = v
 
-    Parameters
-    ----------
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
+        for k, v in agg_user_stats(convo).items():
+            out[k] = v
 
-    Returns
-    -------
-    dict(str, Counter)
-    """
-    return apply_extraction({
-        'degree_size_distribution':     degree_size_distribution,
-        'degree_in_size_distribution':  degree_in_size_distribution,
-        'degree_out_size_distribution': degree_out_size_distribution,
-        'depth_distribution':           depth_dist,
-        'type_frequency_distribution':  type_frequency_distribution,
-        'user_size_distribution':       user_size_dist,
-    }, keyset=keys, ignore=ignore_keys, convo=cx)
+        return out
 
+    @staticmethod
+    def ints(convo):
+        out = {
+            'messages':    len(convo.posts),
+            'tree_degree': tree_degree(convo),
+            'tree_depth':  tree_depth(convo),
+            'tree_width':  tree_width(convo),
+            'types':       len(type_frequency_distribution(convo)),
+            'users':       len(messages_per_user(convo)),
+        }
 
-def get_floats(cx, keys=None, ignore_keys=None, include_post=True, include_user=True):
-    """
-    Returns all integer features specified in keys or all features minus what is specified in ignore_keys.
+        for k, v in sum_post_bools(convo).items():
+            out[k] = v
 
-    Parameters
-    ----------
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_post : bool
-    include_user : bool
+        for k, v in sum_post_ints(convo).items():
+            out[k] = v
 
-    Returns
-    -------
-    dict(str, int)
-    """
-    out = {
-        **apply_extraction({
-            'density':        density,
-            'duration':       duration,
-            'mixing_k1': lambda convo: mixing_features(convo)['k1'],
-            'mixing_theta': lambda convo: mixing_features(convo)['theta'],
-            'mixing_entropy': lambda convo: mixing_features(convo)['entropy'],
-            'mixing_N_avg': lambda convo: mixing_features(convo)['N_avg'],
-            'mixing_M_avg': lambda convo: mixing_features(convo)['M_avg'],
-        }, keyset=keys, ignore=ignore_keys, convo=cx),
-    }
+        return out
 
-    if include_post:
-        out = {**agg_post_stats(cx, keys, ignore_keys), **out}
-
-    if include_user:
-        out = {**agg_user_stats(cx, keys, ignore_keys), **out}
-
-    return out
-
-
-def get_ints(cx, keys=None, ignore_keys=None):
-    """
-    Returns all integer features specified in keys or all features minus what is specified in ignore_keys.
-
-    Parameters
-    ----------
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, int)
-    """
-    return {
-        **apply_extraction({
-            'messages': lambda convo: len(convo.posts),
-            'tree_degree': tree_degree,
-            'tree_depth':  tree_depth,
-            'tree_width':  tree_width,
-            'types': lambda convo: len(type_frequency_distribution(convo)),
-            'users': lambda convo: len(messages_per_user(convo)),
-        }, keyset=keys, ignore=ignore_keys, convo=cx),
-        **sum_post_bools(cx),
-        **sum_post_ints(cx),
-    }
+    @staticmethod
+    def strs(convo):
+        return {}
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -149,7 +94,7 @@ def degree_size_distribution(convo):
     -------
     collections.Counter
     """
-    return Counter([pic_get_all(p, convo, keys={'degree'})['degree'] for p in convo.posts.values()])
+    return Counter([post_degree(p, convo) for p in convo.posts.values()])
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -167,7 +112,7 @@ def degree_in_size_distribution(convo):
     -------
     collections.Counter
     """
-    return Counter([pic_get_all(p, convo, keys={'degree_in'})['degree_in'] for p in convo.posts.values()])
+    return Counter([post_in_degree(p, convo) for p in convo.posts.values()])
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -185,7 +130,7 @@ def degree_out_size_distribution(convo):
     -------
     collections.Counter
     """
-    return Counter([post_get_all(p, keys={'degree_out'})['degree_out'] for p in convo.posts.values()])
+    return Counter([out_degree(p) for p in convo.posts.values()])
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -364,7 +309,7 @@ def novelty_vector(convo):
     return novelty(type_frequency_distribution(convo))
 
 
-def agg_convo_stats(convos, keys=None, ignore=None):
+def agg_convo_stats(convos):
     """
     Computes a set of aggregate conversation statistical measures.
     This is only computed for the integer and float subsets.
@@ -375,18 +320,16 @@ def agg_convo_stats(convos, keys=None, ignore=None):
     Parameters
     ----------
     convos : List(Conversation)
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
     dict(str, dict(str, float))
     """
     agg = defaultdict(list)
-    fs = [get_floats, get_ints]
+    fs = [ConvoFeatures.floats, ConvoFeatures.ints]
     for conv in convos:
         for f in fs:
-            for k, v in f(conv, keys=keys, ignore_keys=ignore).items():
+            for k, v in f(conv).items():
                 agg[k].append(v)
 
     out = {}

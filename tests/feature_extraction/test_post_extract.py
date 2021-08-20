@@ -1,13 +1,7 @@
 import pytest
 
+from pyconversations.feature_extraction.post import PostFeatures as PF
 from pyconversations.feature_extraction.post import emojis
-from pyconversations.feature_extraction.post import get_all
-from pyconversations.feature_extraction.post import get_bools
-from pyconversations.feature_extraction.post import get_categorical
-from pyconversations.feature_extraction.post import get_counters
-from pyconversations.feature_extraction.post import get_floats
-from pyconversations.feature_extraction.post import get_ints
-from pyconversations.feature_extraction.post import get_substrings
 from pyconversations.feature_extraction.post import hashtags
 from pyconversations.feature_extraction.post import mentions
 from pyconversations.feature_extraction.post import mixing_features
@@ -68,26 +62,24 @@ def test_harmonic_feature_existence(mock_tweet):
 
 
 def test_type_check_extractors(mock_tweet):
-    for v in get_bools(mock_tweet).values():
+    for v in PF.bools(mock_tweet).values():
         assert type(v) == bool
 
-    for v in get_categorical(mock_tweet).values():
+    for v in PF.categoricals(mock_tweet).values():
         if v is not None:
             assert type(v) == str
 
     from collections import Counter
-    for v in get_counters(mock_tweet).values():
+    for v in PF.counter(mock_tweet).values():
         assert type(v) == Counter
 
-    for v in get_floats(mock_tweet).values():
+    for v in PF.floats(mock_tweet).values():
         assert type(v) == float
 
-    for v in get_ints(mock_tweet).values():
+    for v in PF.ints(mock_tweet).values():
         assert type(v) == int
 
-    for v in get_substrings(mock_tweet).values():
+    for v in PF.strs(mock_tweet).values():
         assert type(v) == list
         for x in v:
             assert type(x) == str
-
-    assert type(get_all(mock_tweet)) == dict

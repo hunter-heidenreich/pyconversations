@@ -3,11 +3,8 @@ from datetime import datetime as dt
 import pytest
 
 from pyconversations.convo import Conversation
+from pyconversations.feature_extraction.conv import ConvoFeatures as CF
 from pyconversations.feature_extraction.conv import duration
-from pyconversations.feature_extraction.conv import get_all
-from pyconversations.feature_extraction.conv import get_counters
-from pyconversations.feature_extraction.conv import get_floats
-from pyconversations.feature_extraction.conv import get_ints
 from pyconversations.feature_extraction.conv import mixing_features
 from pyconversations.feature_extraction.conv import novelty_vector
 from pyconversations.feature_extraction.conv import time_series
@@ -44,17 +41,17 @@ def mock_convo(mock_tweet):
 
 def test_type_check_extractors(mock_convo):
     from collections import Counter
-    for v in get_counters(mock_convo).values():
+    for v in CF.counter(mock_convo).values():
         assert type(v) == Counter
 
-    for v in get_floats(mock_convo).values():
+    for v in CF.floats(mock_convo).values():
         assert type(v) == float
 
-    for v in get_ints(mock_convo).values():
+    for v in CF.ints(mock_convo).values():
         assert type(v) == int
 
-    for bx in [True, False]:
-        assert type(get_all(mock_convo, include_post=bx)) == dict
+    for v in CF.bools(mock_convo).values():
+        assert type(v) == bool
 
 
 def test_harmonic_feature_existence(mock_convo):

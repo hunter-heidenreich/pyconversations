@@ -14,27 +14,56 @@ from .post_in_conv import agg_post_stats
 from .post_in_conv import avg_token_entropy_conv
 from .post_in_conv import sum_booleans_across_convo as sum_post_bools
 from .post_in_conv import sum_ints_across_convo as sum_post_ints
-from .utils import apply_extraction
 
 
-def collapse_convos(convos):
-    """
-    Given a list of conversations,
-    collapses them into one mega container.
+class UserInConvoFeatures:
 
-    Parameters
-    ----------
-    convos : List(Conversation)
+    @staticmethod
+    def bools(user, convo):
+        return {
+            'is_source_author': is_source_author(user, convo),
+        }
 
-    Returns
-    -------
-    Conversation
-    """
-    all_posts = Conversation()
-    for convo in convos:
-        all_posts += convo
+    @staticmethod
+    def categoricals(user, convo):
+        return {
 
-    return all_posts
+        }
+
+    @staticmethod
+    def counter(user, convo):
+        return {
+            'type_freq': type_frequency_distribution(user, convo),
+        }
+
+    @staticmethod
+    def floats(user, convo):
+        out = mixing_features(user, convo)
+        out['avg_user_token_entropy'] = avg_user_token_entropy(user, convo)
+
+        for k, v in agg_post_stats(convo, filter_by=lambda p: p.author == user).items():
+            out[k] = v
+
+        return out
+
+    @staticmethod
+    def ints(user, convo):
+        out = {
+            'message_count': messages_by_user(user, convo),
+            'types':         len(type_frequency_distribution(user, convo)),
+        }
+
+        for k, v in sum_post_bools(get_user_posts(user, convo)).items():
+            out[k] = v
+
+        for k, v in sum_post_ints(get_user_posts(user, convo)).items():
+            out[k] = v
+
+        return out
+
+    @staticmethod
+    def strs(user, convo):
+        return {}
 
 
 def iter_over_users(convo):
@@ -60,113 +89,6 @@ def iter_over_users(convo):
         yield user
 
         users.add(user)
-
-
-def get_all(ux, cx, keys=None, ignore_keys=None, include_post=True):
-    """
-    Returns all features for a user in a conversation
-
-    Parameters
-    ----------
-    ux : str
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_post : bool
-
-    Returns
-    -------
-    dict(str, Any)
-    """
-    out = {
-        **get_bools(ux, cx, keys, ignore_keys),
-        **get_floats(ux, cx, keys, ignore_keys, include_post),
-        **get_ints(ux, cx, keys, ignore_keys),
-    }
-
-    return out
-
-
-def get_bools(ux, cx, keys=None, ignore_keys=None):
-    """
-    Returns the boolean features for a user in a conversation.
-
-    Parameters
-    ----------
-    ux : str
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, bool)
-    """
-    return apply_extraction({
-        'is_source_author': is_source_author,
-    }, keyset=keys, ignore=ignore_keys, user=ux, convo=cx)
-
-
-def get_floats(ux, cx, keys=None, ignore_keys=None, include_post=True):
-    """
-    Returns the float features for a user in a conversation.
-
-    Parameters
-    ----------
-    ux : str
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-    include_post : bool
-
-    Returns
-    -------
-    dict(str, float)
-    """
-    out = {
-        **apply_extraction({
-            'mixing_k1': lambda user, convo: mixing_features(user, convo)['k1'],
-            'mixing_theta': lambda user, convo: mixing_features(user, convo)['theta'],
-            'mixing_entropy': lambda user, convo: mixing_features(user, convo)['entropy'],
-            'mixing_N_avg': lambda user, convo: mixing_features(user, convo)['N_avg'],
-            'mixing_M_avg': lambda user, convo: mixing_features(user, convo)['M_avg'],
-            'avg_token_entropy': avg_user_token_entropy,
-        }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux)
-    }
-
-    if include_post:
-        # out = {**out, **agg_post_stats(cx, keys=keys, ignore={
-        #     'mixing_k1', 'mixing_theta', 'mixing_entropy',
-        #     'mixing_N_avg', 'mixing_M_avg',
-        # } | set([] if ignore_keys is None else ignore_keys), filter_by=lambda p: p.author == ux)}
-        out = {**out, **agg_post_stats(cx, keys=keys, ignore=ignore_keys, filter_by=lambda p: p.author == ux)}
-
-    return out
-
-
-def get_ints(ux, cx, keys=None, ignore_keys=None):
-    """
-    Returns all integer features for a user in a conversation
-
-    Parameters
-    ----------
-    ux : str
-    cx : Conversation
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, int)
-    """
-    return {
-        **apply_extraction({
-            'message_count': messages_by_user,
-            'types': lambda user, convo: len(type_frequency_distribution(user, convo)),
-        }, keyset=keys, ignore=ignore_keys, convo=cx, user=ux),
-        **sum_post_bools(get_user_posts(ux, cx)),
-        **sum_post_ints(get_user_posts(ux, cx)),
-    }
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -309,7 +231,7 @@ def avg_user_token_entropy(user, convo):
     return float(avg_token_entropy_conv(get_user_posts(user, convo), convo))
 
 
-def agg_user_stats(convo, keys=None, ignore=None):
+def agg_user_stats(convo):
     """
     Computes a set of aggregate user statistical measures.
     This is only computed for the integer and float subsets.
@@ -320,18 +242,16 @@ def agg_user_stats(convo, keys=None, ignore=None):
     Parameters
     ----------
     convo : Conversation
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
     dict(str, dict(str, float))
     """
     agg = defaultdict(list)
-    fs = [get_floats, get_ints]
+    fs = [UserInConvoFeatures.floats, UserInConvoFeatures.ints]
     for user in iter_over_users(convo):
         for f in fs:
-            for k, v in f(user, convo, keys=keys, ignore_keys=ignore).items():
+            for k, v in f(user, convo).items():
                 agg[k].append(v)
 
     out = {}

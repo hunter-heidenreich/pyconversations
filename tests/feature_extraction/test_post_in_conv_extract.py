@@ -3,11 +3,8 @@ from datetime import datetime as dt
 import pytest
 
 from pyconversations.convo import Conversation
+from pyconversations.feature_extraction.post_in_conv import PostInConvoFeatures as PiCF
 from pyconversations.feature_extraction.post_in_conv import avg_token_entropy_all_splits
-from pyconversations.feature_extraction.post_in_conv import get_all
-from pyconversations.feature_extraction.post_in_conv import get_bools
-from pyconversations.feature_extraction.post_in_conv import get_floats
-from pyconversations.feature_extraction.post_in_conv import get_ints
 from pyconversations.feature_extraction.post_in_conv import post_depth
 from pyconversations.feature_extraction.post_in_conv import post_reply_time
 from pyconversations.feature_extraction.post_in_conv import post_to_source
@@ -40,17 +37,14 @@ def mock_convo(mock_tweet):
 
 
 def test_type_check_extractors(mock_tweet, mock_convo):
-    for bx in [True, False]:
-        for v in get_bools(mock_tweet, mock_convo, include_static=bx).values():
-            assert type(v) == bool
+    for v in PiCF.bools(mock_tweet, mock_convo).values():
+        assert type(v) == bool
 
-        for v in get_floats(mock_tweet, mock_convo, include_static=bx).values():
-            assert type(v) == float
+    for v in PiCF.floats(mock_tweet, mock_convo).values():
+        assert type(v) == float
 
-        for v in get_ints(mock_tweet, mock_convo, include_static=bx).values():
-            assert type(v) == int
-
-        assert type(get_all(mock_tweet, mock_convo, include_static=bx)) == dict
+    for v in PiCF.ints(mock_tweet, mock_convo).values():
+        assert type(v) == int
 
 
 def test_width(mock_tweet, mock_convo):

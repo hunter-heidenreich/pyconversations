@@ -6,21 +6,12 @@ from tqdm import tqdm
 
 from ..convo import Conversation
 from ..message import UniMessage
-from .conv import get_floats as conv_floats
-from .conv import get_ints as conv_ints
+from .conv import ConvoFeatures
 from .conv import messages_per_user
-from .post import get_bools as post_bools
-from .post import get_floats as post_floats
-from .post import get_ints as post_ints
-from .post_in_conv import get_bools as pic_bools
-from .post_in_conv import get_floats as pic_floats
-from .post_in_conv import get_ints as pic_ints
-from .user_across_conv import get_floats as uac_floats
-from .user_across_conv import get_ints as uac_ints
-from .user_in_conv import get_bools as user_bools
-from .user_in_conv import get_floats as user_floats
-from .user_in_conv import get_ints as user_ints
-from .user_in_conv import iter_over_users
+from .post import PostFeatures
+from .post_in_conv import PostInConvoFeatures
+from .user_across_conv import UserAcrossConvoFeatures
+from .user_in_conv import UserInConvoFeatures
 
 
 class Vectorizer(ABC):
@@ -34,21 +25,21 @@ class Vectorizer(ABC):
         self._stats = {}
 
         # feature name to column index
-        self._ft2col = {}
-        self._num_bool = 0
+        self._num2col = {}
+        self._bool2col = {}
 
         # Can be None, 'minmax', 'mean', or 'standard'
         self._norm = normalization
 
     @abstractmethod
-    def fit(self, **kwargs):
+    def fit(self, *args):
         """
         Abstract method for fitting normalization and vectorization parameters
         to data in `kwargs`
 
         Parameters
         ----------
-        kwargs : dict
+        args : list
 
         Returns
         -------
@@ -58,13 +49,13 @@ class Vectorizer(ABC):
         pass
 
     @abstractmethod
-    def transform(self, **kwargs):
+    def transform(self, *args):
         """
         Abstract method for transforming data into a vector (or vectors)
 
         Parameters
         ----------
-        kwargs : dict
+        args : list
 
         Returns
         -------
@@ -163,6 +154,12 @@ class PostVectorizer(Vectorizer):
         """
         super(PostVectorizer, self).__init__(normalization)
 
+        self._bool_fns = [PostFeatures.bools]
+        self._ic_bool_fns = [PostInConvoFeatures.bools]
+
+        self._num_fns = [PostFeatures.floats, PostFeatures.ints]
+        self._ic_num_fns = [PostInConvoFeatures.floats, PostInConvoFeatures.ints]
+
     def fit(self, xs):
         """
         Fits the parameters necessary for normalization and vectorization of posts.
@@ -175,6 +172,8 @@ class PostVectorizer(Vectorizer):
         -------
         PostVectorizer
         """
+        self._num2col = {}
+        self._bool2col = {}
 
         if type(xs) == list:
             if isinstance(xs[0], Conversation):
@@ -202,17 +201,20 @@ class PostVectorizer(Vectorizer):
         """
         values = None
         for ix, post in tqdm(enumerate(posts), desc='PostVec: Fitting by posts'):
-            params = {**post_floats(post), **post_ints(post)}
+            if not ix:
+                for f in self._bool_fns:
+                    for k in f(post):
+                        self._bool2col[k] = len(self._bool2col)
 
-            if values is None:
-                values = np.zeros((len(posts), len(params)))
-                self._ft2col = {}
-                self._num_bool = len(post_bools(post))
-                for k in params:
-                    self._ft2col[k] = len(self._ft2col)
+                for f in self._num_fns:
+                    for k in f(post):
+                        self._num2col[k] = len(self._num2col)
 
-            for k, v in params.items():
-                values[ix, self._ft2col[k]] = v
+                values = np.zeros((len(posts), len(self._num2col)))
+
+            for f in self._num_fns:
+                for k, v in f(post).items():
+                    values[ix, self._num2col[k]] = v
 
         self._fit_params(values)
 
@@ -231,23 +233,26 @@ class PostVectorizer(Vectorizer):
         -------
         PostVectorizer
         """
-        values = None
         ix = 0
         total_posts = sum(map(lambda c: len(c.posts), convs))
+        values = None
 
         for conv in tqdm(convs, desc='PostVec: Fitting by conversations'):
             for post in conv.posts.values():
-                params = {**pic_floats(post, conv), **pic_ints(post, conv)}
+                if not ix:
+                    for f in self._ic_bool_fns:
+                        for k in f(post, conv):
+                            self._bool2col[k] = len(self._bool2col)
 
-                if values is None:
-                    values = np.zeros((total_posts, len(params)))
-                    self._ft2col = {}
-                    self._num_bool = len(pic_bools(post, conv))
-                    for k in params:
-                        self._ft2col[k] = len(self._ft2col)
+                    for f in self._ic_num_fns:
+                        for k in f(post, conv):
+                            self._num2col[k] = len(self._num2col)
 
-                for k, v in params.items():
-                    values[ix, self._ft2col[k]] = v
+                    values = np.zeros((total_posts, len(self._num2col)))
+
+                for f in self._ic_num_fns:
+                    for k, v in f(post, conv).items():
+                        values[ix, self._num2col[k]] = v
 
                 ix += 1
 
@@ -296,17 +301,17 @@ class PostVectorizer(Vectorizer):
         np.array
         """
         ids = {}
-        out = np.zeros((len(posts), len(self._ft2col)))
-        out_bools = np.zeros((len(posts), self._num_bool))
+        out = np.zeros((len(posts), len(self._num2col)))
+        out_bools = np.zeros((len(posts), len(self._bool2col)))
 
-        funcs = [post_floats, post_ints]
         for ix, post in tqdm(enumerate(posts), desc='PostVec: Transforming by posts'):
-            for f in funcs:
+            for f in self._num_fns:
                 for k, v in f(post).items():
-                    out[ix, self._ft2col[k]] = v
+                    out[ix, self._num2col[k]] = v
 
-            for ik, (_, v) in enumerate(sorted(post_bools(post).items(), key=lambda kv: kv[0])):
-                out_bools[ix, ik] = 1 if v else 0
+            for f in self._bool_fns:
+                for k, v in f(post).items():
+                    out_bools[ix, self._bool2col[k]] = 1 if v else 0
 
             ids[post.uid] = ix
 
@@ -335,21 +340,21 @@ class PostVectorizer(Vectorizer):
         ix = 0
         ids = {}
         total_posts = sum(map(lambda c: len(c.posts), convs))
-        out = np.zeros((total_posts, len(self._ft2col)))
-        out_bools = np.zeros((total_posts, self._num_bool))
+        out = np.zeros((total_posts, len(self._num2col)))
+        out_bools = np.zeros((total_posts, len(self._bool2col)))
 
-        funcs = [pic_floats, pic_ints]
         for conv in tqdm(convs, desc='PostVec: Transforming by conversations'):
             for post in conv.posts.values():
-                for f in funcs:
+                for f in self._ic_num_fns:
                     for k, v in f(post, conv).items():
-                        out[ix, self._ft2col[k]] = v
+                        out[ix, self._num2col[k]] = v
 
-                for ik, (_, v) in enumerate(sorted(pic_bools(post, conv).items(), key=lambda kv: kv[0])):
-                    out_bools[ix, ik] = 1 if v else 0
+                for f in self._ic_bool_fns:
+                    for k, v in f(post, conv).items():
+                        out[ix, self._bool2col[k]] = 1 if v else 0
 
-                ix += 1
                 ids[(conv.convo_id, post.uid)] = ix
+                ix += 1
 
         out = self._normalize(out)
         out = np.hstack((out, out_bools))
@@ -376,6 +381,8 @@ class ConversationVectorizer(Vectorizer):
             Can be None, 'minmax', 'mean', or 'standard'
         """
         super(ConversationVectorizer, self).__init__(normalization)
+        self._num_fns = [ConvoFeatures.floats, ConvoFeatures.ints]
+        self._bool_fns = []
 
     def fit(self, xs):
         """
@@ -393,18 +400,24 @@ class ConversationVectorizer(Vectorizer):
             return self.fit([xs])
         elif type(xs) == list and isinstance(xs[0], Conversation):
             values = None
+            self._num2col = {}
+            self._bool2col = {}
+
             for ix, conv in tqdm(enumerate(xs), desc='ConvVec: Fitting by conversations', total=len(xs)):
-                params = {**conv_floats(conv), **conv_ints(conv)}
+                if not ix:
+                    for f in self._bool_fns:
+                        for k in f(conv):
+                            self._bool2col[k] = len(self._bool2col)
 
-                if values is None:
-                    values = np.zeros((len(xs), len(params)))
-                    self._ft2col = {}
-                    # self._num_bool = len(post_bools(post))
-                    for k in params:
-                        self._ft2col[k] = len(self._ft2col)
+                    for f in self._num_fns:
+                        for k in f(conv):
+                            self._num2col[k] = len(self._num2col)
 
-                for k, v in params.items():
-                    values[ix, self._ft2col[k]] = v
+                    values = np.zeros((len(xs), len(self._num2col)))
+
+                for f in self._num_fns:
+                    for k, v in f(conv).items():
+                        values[ix, self._num2col[k]] = v
 
             self._fit_params(values)
 
@@ -429,14 +442,12 @@ class ConversationVectorizer(Vectorizer):
             return self.transform([xs], include_ids=include_ids)
         elif type(xs) == list and isinstance(xs[0], Conversation):
             ids = {}
-            out = np.zeros((len(xs), len(self._ft2col)))
+            out = np.zeros((len(xs), len(self._num2col)))
 
             for ix, conv in tqdm(enumerate(xs), desc='ConvVec: Transforming by conversations', total=len(xs)):
-                for k, v in conv_floats(conv).items():
-                    out[ix, self._ft2col[k]] = v
-
-                for k, v in conv_ints(conv).items():
-                    out[ix, self._ft2col[k]] = v
+                for f in self._num_fns:
+                    for k, v in f(conv).items():
+                        out[ix, self._num2col[k]] = v
 
                 if include_ids:
                     ids[conv.convo_id] = ix
@@ -468,6 +479,28 @@ class UserVectorizer(Vectorizer):
         """
         super(UserVectorizer, self).__init__(normalization)
 
+        self._bool_fns = [UserInConvoFeatures.bools]
+        self._ac_bool_fns = [UserAcrossConvoFeatures.bools]
+
+        self._num_fns = [UserInConvoFeatures.ints, UserInConvoFeatures.floats]
+        self._ac_num_fns = [UserAcrossConvoFeatures.ints, UserAcrossConvoFeatures.floats]
+
+        self._across = False
+
+    def _get_user_cnt(self, xs):
+        # compute total users
+        seen_user = set()
+        for conv in xs:
+            for pid in conv.posts:
+                author = conv.posts[pid].author
+                if author in seen_user:
+                    continue
+
+                seen_user.add(author)
+        total_users = len(seen_user)
+
+        return total_users, seen_user
+
     def fit(self, xs):
         """
         Fits normalization parameters
@@ -480,43 +513,30 @@ class UserVectorizer(Vectorizer):
         -------
         UserVectorizer
         """
+        self._num2col = {}
+        self._bool2col = {}
+
         if type(xs) == list:
             if isinstance(xs[0], Conversation):
                 values = None
+                total_users, users = self._get_user_cnt(xs)
+                for ix, user in tqdm(enumerate(users), desc='UserVec: Fitting by user', total=total_users):
+                    if not ix:
+                        self._across = True
 
-                # compute total users
-                seen_user = set()
-                for conv in xs:
-                    for pid in conv.posts:
-                        author = conv.posts[pid].author
-                        if author in seen_user:
-                            continue
+                        for f in self._ac_bool_fns:
+                            for k in f(user, xs):
+                                self._bool2col[k] = len(self._bool2col)
 
-                        seen_user.add(author)
-                total_users = len(seen_user)
+                        for f in self._ac_num_fns:
+                            for k in f(user, xs):
+                                self._num2col[k] = len(self._num2col)
 
-                # actual fit loop
-                seen_user = set()
-                ix = 0
-                for conv in tqdm(xs, desc='UserVec: Fitting by conversations', total=len(xs)):
-                    for pid in conv.posts:
-                        author = conv.posts[pid].author
-                        if author in seen_user:
-                            continue
+                        values = np.zeros((total_users, len(self._num2col)))
 
-                        params = {**uac_floats(author, xs), **uac_ints(author, xs)}
-                        if values is None:
-                            values = np.zeros((total_users, len(params)))
-                            self._ft2col = {}
-                            # self._num_bool = len(user_bools(user, conv))
-                            for k in params:
-                                self._ft2col[k] = len(self._ft2col)
-
-                        for k, v in params.items():
-                            values[ix, self._ft2col[k]] = v
-
-                        seen_user.add(author)
-                        ix += 1
+                    for f in self._ac_num_fns:
+                        for k, v in f(user, xs).items():
+                            values[ix, self._num2col[k]] = v
 
                 self._fit_params(values)
 
@@ -527,18 +547,19 @@ class UserVectorizer(Vectorizer):
         elif isinstance(xs, Conversation):
             values = None
             total_users = len(messages_per_user(xs))
-            for ix, user in tqdm(enumerate(iter_over_users(xs)), desc='fitting users', total=total_users):
-                params = {**user_floats(user, xs), **user_ints(user, xs)}
+            users = xs.authors
+            for ix, user in tqdm(enumerate(users), desc='UserVec: Fitting by users', total=total_users):
+                if not ix:
+                    self._across = False
+                    for f in self._bool_fns:
+                        for k in f(user, xs):
+                            self._bool2col[k] = len(self._bool2col)
 
-                if values is None:
-                    values = np.zeros((total_users, len(params)))
-                    self._ft2col = {}
-                    self._num_bool = len(user_bools(user, xs))
-                    for k in params:
-                        self._ft2col[k] = len(self._ft2col)
+                    for f in self._num_fns:
+                        for k in f(user, xs):
+                            self._num2col[k] = len(self._num2col)
 
-                for k, v in params.items():
-                    values[ix, self._ft2col[k]] = v
+                    values = np.zeros((total_users, len(self._num2col)))
 
             self._fit_params(values)
 
@@ -562,39 +583,18 @@ class UserVectorizer(Vectorizer):
         ids = {}
         if type(xs) == list:
             if isinstance(xs[0], Conversation):
-                # compute total users
-                seen_user = set()
-                for conv in xs:
-                    for pid in conv.posts:
-                        author = conv.posts[pid].author
-                        if author in seen_user:
-                            continue
+                total_users, users = self._get_user_cnt(xs)
 
-                        seen_user.add(author)
-                total_users = len(seen_user)
+                out = np.zeros((total_users, len(self._num2col)))
+                # out_bools = np.zeros((total_users, len(self._bool2col)))
 
-                out = np.zeros((total_users, len(self._ft2col)))
-                # out_bools = np.zeros((total_users, self._num_bool))
+                for ix, user in tqdm(enumerate(users), desc='UserVec: Transforming by users', total=total_users):
+                    for f in self._ac_num_fns:
+                        for k, v in f(user, xs).items():
+                            out[ix, self._num2col[k]] = v
 
-                seen_user = set()
-                ix = 0
-                for conv in tqdm(xs, desc='UserVec: Transforming by conversations', total=len(xs)):
-                    for pid in conv.posts:
-                        author = conv.posts[pid].author
-                        if author in seen_user:
-                            continue
-
-                        for k, v in {**uac_ints(author, xs), **uac_floats(author, xs)}.items():
-                            out[ix, self._ft2col[k]] = v
-
-                        if include_ids:
-                            ids[author] = ix
-
-                        seen_user.add(author)
-                        ix += 1
-
-                    # for ik, (_, v) in enumerate(sorted(user_bools(user, conv).items(), key=lambda kv: kv[0])):
-                    #     out_bools[ix, ik] = 1 if v else 0
+                    if include_ids:
+                        ids[user] = ix
 
                 out = self._normalize(out)
                 # out = np.hstack((out, out_bools))
@@ -607,16 +607,22 @@ class UserVectorizer(Vectorizer):
                 x_ = Conversation(posts={post.uid: post for post in xs})
                 return self.transform(x_, include_ids=include_ids)
         elif isinstance(xs, Conversation):
+            if self._across:
+                return self.transform([xs], include_ids=include_ids)
+
             total_users = len(messages_per_user(xs))
-            out = np.zeros((total_users, len(self._ft2col)))
-            out_bools = np.zeros((total_users, self._num_bool))
+            users = xs.authors
+            out = np.zeros((total_users, len(self._num2col)))
+            out_bools = np.zeros((total_users, len(self._bool2col)))
 
-            for ix, user in tqdm(enumerate(iter_over_users(xs)), desc='UserVec: Transforming users by user', total=total_users):
-                for k, v in {**user_ints(user, xs), **user_floats(user, xs)}.items():
-                    out[ix, self._ft2col[k]] = v
+            for ix, user in tqdm(enumerate(users), desc='UserVec: Transforming users by user', total=total_users):
+                for f in self._num_fns:
+                    for k, v in f(user, xs).items():
+                        out[ix, self._num2col[k]] = v
 
-                for ik, (_, v) in enumerate(sorted(user_bools(user, xs).items(), key=lambda kv: kv[0])):
-                    out_bools[ix, ik] = 1 if v else 0
+                for f in self._bool_fns:
+                    for k, v in f(user, xs).items():
+                        out_bools[ix, self._bool2col[k]] = 1 if v else 0
 
                 if include_ids:
                     ids[user] = ix

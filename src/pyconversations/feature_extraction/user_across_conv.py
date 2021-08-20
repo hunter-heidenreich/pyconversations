@@ -4,95 +4,65 @@ from collections import defaultdict
 import numpy as np
 
 from ..convo import Conversation
-from .user_in_conv import get_bools as uic_bools
-from .user_in_conv import get_floats as uic_floats
-from .user_in_conv import get_ints as uic_ints
+from .post_in_conv import agg_post_stats_
+from .user_in_conv import UserInConvoFeatures
+from .user_in_conv import get_user_posts
 from .user_in_conv import mixing_features
-from .utils import apply_extraction
+from .user_in_conv import type_frequency_distribution
 
 
-def get_all(ux, cxs, keys=None, ignore_keys=None):
-    """
-    Returns all features for a user across multiple conversations
+class UserAcrossConvoFeatures:
+    @staticmethod
+    def bools(user, convos):
+        return {}
 
-    Parameters
-    ----------
-    ux : str
-    cxs : List(Conversation)
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
+    @staticmethod
+    def categoricals(user, convos):
+        return {}
 
-    Returns
-    -------
-    dict(str, Any)
-    """
-    out = {
-        **get_floats(ux, cxs, keys, ignore_keys),
-        **get_ints(ux, cxs, keys, ignore_keys),
-    }
+    @staticmethod
+    def counter(user, convos):
+        return {
+            'type_freq': type_frequency_distribution(user, get_user_posts(user, convos)),
+        }
 
-    return out
+    @staticmethod
+    def floats(user, convos):
+        user_conv = gather_all_user_posts_in_convo(user, convos)
+        out = mixing_features(user, user_conv)
+
+        for k, v in agg_post_stats_(convos, filter_by=lambda p: p.author == user).items():
+            out[k] = v
+
+        return out
+
+    @staticmethod
+    def ints(user, convos):
+        out = sum_user_ints_across_convos(user, convos)
+
+        for k, v in sum_user_booleans_across_convos(user, convos).items():
+            out[k] = v
+
+        return out
+
+    @staticmethod
+    def strs(user, convos):
+        return {}
 
 
-def get_floats(ux, cxs, keys=None, ignore_keys=None):
-    """
-    Returns the float features for a user across multiple conversations
-
-    Parameters
-    ----------
-    ux : str
-    cxs : List(Conversation)
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, float)
-    """
-    user_posts = Conversation(convo_id=ux)
-    for cx in cxs:
-        if ux not in cx.authors:
+def gather_all_user_posts_in_convo(user, convos):
+    x = Conversation(convo_id='all_posts: ' + user)
+    for conv in convos:
+        if user not in conv.authors:
             continue
 
-        for pid in cx.filter(by_author=ux):
-            user_posts.add_post(cx.posts[pid])
+        for pid in conv.filter(by_author=user):
+            x.add_post(conv.posts[pid])
 
-    out = {
-        **apply_extraction({
-            'mixing_k1': lambda user, convo: mixing_features(user, convo)['k1'],
-            'mixing_theta': lambda user, convo: mixing_features(user, convo)['theta'],
-            'mixing_entropy': lambda user, convo: mixing_features(user, convo)['entropy'],
-            'mixing_N_avg': lambda user, convo: mixing_features(user, convo)['N_avg'],
-            'mixing_M_avg': lambda user, convo: mixing_features(user, convo)['M_avg'],
-        }, keyset=keys, ignore=ignore_keys, convo=user_posts, user=ux),
-        **agg_user_stats_across(ux, cxs, keys, ignore_keys),
-    }
-
-    return out
+    return x
 
 
-def get_ints(ux, cxs, keys=None, ignore_keys=None):
-    """
-    Returns all integer features for a user across multiple conversations
-
-    Parameters
-    ----------
-    ux : str
-    cxs : List(Conversation)
-    keys : None or Iterable(str)
-    ignore_keys : None or Iterable(str)
-
-    Returns
-    -------
-    dict(str, int)
-    """
-    return {
-        **sum_user_booleans_across_convos(ux, cxs, keys, ignore_keys),
-        **sum_user_ints_across_convos(ux, cxs, keys, ignore_keys),
-    }
-
-
-def agg_user_stats_across(user, convos, keys=None, ignore=None):
+def agg_user_stats_across(user, convos):
     """
     Computes a set of aggregate user statistical measures.
     This is only computed for the integer and float subsets.
@@ -104,21 +74,19 @@ def agg_user_stats_across(user, convos, keys=None, ignore=None):
     ----------
     user : str
     convos : List(Conversation)
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
     dict(str, dict(str, float))
     """
     agg = defaultdict(list)
-    fs = [uic_floats, uic_ints]
+    fs = [UserInConvoFeatures.floats, UserInConvoFeatures.ints]
     for convo in convos:
         if user not in convo.authors:
             continue
 
         for f in fs:
-            for k, v in f(user, convo, keys=keys, ignore_keys=ignore).items():
+            for k, v in f(user, convo).items():
                 agg[k].append(v)
 
     out = {}
@@ -132,7 +100,7 @@ def agg_user_stats_across(user, convos, keys=None, ignore=None):
     return out
 
 
-def sum_user_booleans_across_convos(user, convos, keys=None, ignore=None):
+def sum_user_booleans_across_convos(user, convos):
     """
     Aggregates the boolean properties of this user across conversations.
 
@@ -140,8 +108,6 @@ def sum_user_booleans_across_convos(user, convos, keys=None, ignore=None):
     ----------
     user : str
     convos : list(Conversation)
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------
@@ -152,14 +118,14 @@ def sum_user_booleans_across_convos(user, convos, keys=None, ignore=None):
         if user not in convo.authors:
             continue
 
-        for k, v in uic_bools(user, convo, keys=keys, ignore_keys=ignore).items():
+        for k, v in UserInConvoFeatures.bools(user, convo).items():
             kx = k.replace('is_', '') + '_count'
             cnt[kx] += 1 if v else 0
 
     return dict(cnt)
 
 
-def sum_user_ints_across_convos(user, convos, keys=None, ignore=None):
+def sum_user_ints_across_convos(user, convos):
     """
     Aggregates the integer properties of this user across conversations.
 
@@ -182,7 +148,7 @@ def sum_user_ints_across_convos(user, convos, keys=None, ignore=None):
         if user not in convo.authors:
             continue
 
-        for k, v in uic_bools(user, convo, keys=keys, ignore_keys=ignore).items():
+        for k, v in UserInConvoFeatures.ints(user, convo).items():
             if k in skipset:
                 continue
 
