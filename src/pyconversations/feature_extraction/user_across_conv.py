@@ -51,6 +51,9 @@ class UserAcrossConvoFeatures:
 
 
 def gather_all_user_posts_in_convo(user, convos):
+    if user is None:
+        return Conversation()
+
     x = Conversation(convo_id='all_posts: ' + user)
     for conv in convos:
         if user not in conv.authors:
