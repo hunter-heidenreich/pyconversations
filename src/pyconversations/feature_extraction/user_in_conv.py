@@ -158,6 +158,8 @@ def get_user_posts(user, conv):
     -------
     Conversation
     """
+    if user is None:
+        return Conversation()
     return Conversation(posts={pid: conv.posts[pid] for pid in conv.filter(by_author=user)},
                         convo_id=f'{conv.convo_id}-{user}')
 
@@ -176,7 +178,7 @@ def type_frequency_distribution(user, convo):
     -------
     collections.Counter
     """
-    return reduce(lambda x, y: x + y, map(post_freq, get_user_posts(user, convo).posts.values()))
+    return reduce(lambda x, y: x + y, map(post_freq, get_user_posts(user, convo).posts.values()), Counter())
 
 
 @lru_cache(maxsize=CACHE_SIZE)

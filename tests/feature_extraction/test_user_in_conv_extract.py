@@ -1,3 +1,4 @@
+from collections import Counter
 from datetime import datetime as dt
 
 import pytest
@@ -53,3 +54,8 @@ def test_harmonic_feature_existence(mock_tweet, mock_convo):
     mix = mixing_features(mock_tweet.author, mock_convo)
     assert type(mix) == dict
     assert len(mix) == 5
+
+
+def test_none_user(mock_convo):
+    freq = type_frequency_distribution(None, mock_convo)
+    assert freq == Counter()
