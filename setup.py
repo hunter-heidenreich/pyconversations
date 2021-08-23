@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='pyconversations',
-    version='0.0.3',
+    version='0.1.0',
     license='MIT',
     description='A package for representing conversations as DAGs for visualization, analysis, and pre-processing.',
     long_description='%s\n%s' % (

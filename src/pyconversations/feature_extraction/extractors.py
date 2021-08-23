@@ -60,6 +60,8 @@ class Vectorizer(ABC):
         Returns
         -------
         np.ndarray
+        dict(Hashable, int)
+            Mapping from UID to integer row
         """
         pass
 
@@ -166,7 +168,7 @@ class PostVectorizer(Vectorizer):
 
         Parameters
         ----------
-        xs : List(UniMessage), List(Conversation), Conversation
+        xs : List(UniMessage) or List(Conversation) or Conversation
 
         Returns
         -------
@@ -268,13 +270,15 @@ class PostVectorizer(Vectorizer):
 
         Parameters
         ----------
-        xs : List(UniMessage), List(Conversation), Conversation
+        xs : List(UniMessage) or List(Conversation) or Conversation
         include_ids : bool
 
         Returns
         -------
         np.array
             (N, d), where N is the number of posts and d is the number of features
+        dict(Hashable, int)
+            Optional. Returned if include_ids=True and creates a map from UID to row in returned array
         """
         if type(xs) == list:
             if isinstance(xs[0], Conversation):
@@ -335,7 +339,7 @@ class PostVectorizer(Vectorizer):
 
         Returns
         -------
-        dict(str, np.array)
+        np.array
         """
         ix = 0
         ids = {}
@@ -436,7 +440,9 @@ class ConversationVectorizer(Vectorizer):
 
         Returns
         -------
-        dict(str, np.array)
+        np.array
+        dict(Hashable, int)
+            Optional. Returned if include_ids=True and creates a map from UID to row in returned array
         """
         if isinstance(xs, Conversation):
             return self.transform([xs], include_ids=include_ids)
@@ -507,7 +513,7 @@ class UserVectorizer(Vectorizer):
 
         Parameters
         ----------
-        xs : Conversation, List(Conversation), List(UniMessage)
+        xs : Conversation or List(Conversation) or List(UniMessage)
 
         Returns
         -------
@@ -578,7 +584,9 @@ class UserVectorizer(Vectorizer):
 
         Returns
         -------
-        dict(str, np.array)
+        np.arrary
+        dict(Hashable, int)
+            Optional. Returned if include_ids=True and creates a map from UID to row in returned array
         """
         ids = {}
         if type(xs) == list:

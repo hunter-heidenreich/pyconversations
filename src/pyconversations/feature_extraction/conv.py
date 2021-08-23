@@ -22,6 +22,10 @@ from .user_in_conv import messages_per_user
 
 class ConvoFeatures:
 
+    """
+    Container of feature extraction for conversations
+    """
+
     @staticmethod
     def bools(convo):
         return {}
@@ -290,7 +294,16 @@ def mixing_features(convo):
     -------
     dict(str, float)
     """
-    return mixing(type_frequency_distribution(convo))
+    freq = type_frequency_distribution(convo)
+    if len(freq) == 0:
+        return {
+            'k1':      float(0),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(0),
+        }
+    return mixing(freq)
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -306,7 +319,12 @@ def novelty_vector(convo):
     -------
     np.array
     """
-    return novelty(type_frequency_distribution(convo))
+    freq = type_frequency_distribution(convo)
+
+    if len(freq) == 0:
+        return []
+
+    return novelty(freq)
 
 
 def agg_convo_stats(convos):

@@ -50,9 +50,6 @@ def test_type_check_extractors(mock_convo):
     for v in CF.ints(mock_convo).values():
         assert type(v) == int
 
-    for v in CF.bools(mock_convo).values():
-        assert type(v) == bool
-
 
 def test_harmonic_feature_existence(mock_convo):
     freq = type_frequency_distribution(mock_convo)

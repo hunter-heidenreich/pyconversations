@@ -12,6 +12,11 @@ from .user_in_conv import type_frequency_distribution
 
 
 class UserAcrossConvoFeatures:
+
+    """
+    Container for feature extraction on users situated within multiple conversations.
+    """
+
     @staticmethod
     def bools(user, convos):
         return {}
@@ -136,8 +141,6 @@ def sum_user_ints_across_convos(user, convos):
     ----------
     user : str
     convos : list(Conversation)
-    keys : None or Iterable(str)
-    ignore : None or Iterable(str)
 
     Returns
     -------

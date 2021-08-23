@@ -2,7 +2,7 @@
 Changelog
 =========
 
-0.0.3
+0.1.0 (2021-08-23)
 ------------------
 
 * Reading raw formats
@@ -17,6 +17,7 @@ Changelog
 * Tokenizer
     * Alter tokenizers into an object centered format (no longer a functional one)
     * Add a wrapper for generic tokenizer types
+* Complete overhaul of feature extraction system!
 
 0.0.2 (2021-07-01)
 ------------------

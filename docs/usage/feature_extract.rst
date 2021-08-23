@@ -19,79 +19,36 @@ from a post in isolation,
 but even more features are available when a post
 and the Conversation it exists in are available.
 
-All of these information levels feature a `get_all(...)` function
-that gets all available features for that data.
-Alternatively, one can use a more specific extraction function like
-`get_ints(...)` to get all features that are of integer type.
-All of these functions feature optional parameters
-`keys=` which specifies a set of feature names that will only be extracted
-or `ignore_keys=` which specifies  set of feature names that will be skipped.
-All returns are of form `dict(str, Any)` where `Any` is the extracted feature.
+Each of these levels have an associated static extraction object.
+These objects may be used to extract features directly from the data available
+in a manner that produces dictionaries where keys are named features
+and values are the actual extracted value.
+These features are grouped according to their type
+and each extraction object returns a (potentially empty) dictionary of features.
 
-^^^^
-Post
-^^^^
+Currently supported extract types include:
 
-For a post `px`, there exists the following feature functions::
+* bools - True/False values (e.g., is_source)
+* categoricals - string categorical variables (e.g., language code)
+* counter - Counter objects that represent a distribution (e.g., word frequency distribution for a post/conversation/user)
+* floats - floating point features (e.g., aggregate post statistics within a conversation)
+* ints - integer features (e.g., post in-degree)
+* strs - substrings of interest (e.g., emojis used within a post)
 
-    from pyconversations.feature_extraction.post import *
+The different levels of extraction are:
 
-    get_all(px)  # all features
-    get_bools(px)  # all True/False features
-    get_categorical(px)  # all features that categorical, e.g. language or platform
-    get_counters(px)  # all Counter features (e.g., token frequency)
-    get_floats(px)  # all decimal features
-    get_ints(px)  # all integer features
-    get_substrings(px)  # all list of strings features
+* `PostFeatures` - A post in isolation (i.e., no conversational data to enrich post features)
+* `PostInConvoFeatures` - A post + conversation
+* `ConvoFeatures` - Aggregate conversation features
+* `UserInConvoFeatures` - Features about a user within a conversation
+* `UserAcrossConvoFeatures` - Features about a user across multiple conversations
 
-^^^^^^^^^^^^^^^^^^^
-Post & Conversation
-^^^^^^^^^^^^^^^^^^^
+All may be imported from `pyconversations.feature_extraction`.
+Features are extracted by statically calling the features desired
+and supplying the necessary information.
+E.g., post boolean features with conversational data::
 
-For a post `px` and the conversation `cx` it came in, there exists::
-
-    from pyconversations.feature_extraction.post_in_conv import *
-
-    get_all(px, cx)  # all features
-    get_bools(px, cx)  # all True/False features
-    get_floats(px, cx)  # all floating point features
-    get_ints(px, cx)  # all integer features
-
-All of these functions have an additional `include_static=True` parameter
-that controls whether the post features (above) are combined with these features.
-
-^^^^^^^^^^^^^^^^^^^
-User & Conversation
-^^^^^^^^^^^^^^^^^^^
-
-For a user `ux` and the conversation `cx` they participated in, there exists::
-
-    from pyconversations.feature_extraction.user_in_conv import *
-
-    get_all(ux, cx)  # all features
-    get_bools(ux, cx)  # all True/False features
-    get_floats(ux, cx)  # all floating point features
-    get_ints(ux, cx)  # all integer features
-
-For `get_all()` and `get_floats()`,
-there are optional `include_post=True` parameters
-that compute aggregate statistics (min, max, mean, std. dev., and median)
-across the post features of posts in `cx` created by `ux`.
-
-
-^^^^^^^^^^^^
-Conversation
-^^^^^^^^^^^^
-
-If you have a conversation `cx`,
-there exists the following::
-
-    from pyconversations.feature_extraction.conv import *
-
-    get_all(cx)  # all features
-    get_counters(cx)  # all counter features
-    get_floats(cx)  # all decimal features
-    get_ints(cx)  # all integer features
+    PostInConvoFeatures.bools(post, convo)  # returns a dictionary of type dict(str, bool)
 
 -------------
 Vectorization
@@ -101,7 +58,7 @@ Vectorization
 for machine learning algorithms.
 Similar to `sklearn`, this project uses an interface
 where `Vectorizers` can be `.fit()` to specific data,
-`.transform()` data using the learned paramters (for normalization),
+`.transform()` data using the learned parameters (for normalization),
 or both (`.fit_transform()`).
 
 All `Vectorizers` take a normalization parameter at construction which can be:
@@ -110,6 +67,9 @@ All `Vectorizers` take a normalization parameter at construction which can be:
 * `minmax` - MinMax scaling will be performed on float and integer features
 * `mean` - Mean scaling will be performed on float and integer features
 * `standard` - Standard scaling will be performed on float and integer features
+
+Additionally, vectorizers can return a map from unique ID to row in returned np.array
+by adding `include_ids=True` in the `.transform` method.
 
 ^^^^^^^^^^^^^^
 PostVectorizer
@@ -121,17 +81,12 @@ Functions can be supplied with post data either through
 `conv=<Conversation>,
 or `convs=<iterable of Conversations>`.
 
-Additionally, at construction, one can
-set `include_conversation=True` or `include_user=True`
-to get conversation and/or user information included
-within the post vector.
-
 Example::
 
     from pyconversations.feature_extraction import PostVectorizer
 
     convos = <iterable of conversations>
-    vec = PostVectorizer(normalization='standard', include_conversation=True, include_user=True)
+    vec = PostVectorizer(normalization='standard')
     xs = vec.fit_transform(convs=convos)
 
 If `convos` had `N` posts in total,
@@ -148,13 +103,6 @@ If vectors for conversations are desired instead, then use::
 
     from pyconversations.feature_extraction import ConversationVectorizer
 
-In addition to a normalization method,
-`ConversationVectorizer` also has the following optional construction parameters:
-
-* `agg_post_fts=False` - Include information about post contained within a conversation (in aggregate)
-* `agg_user_fts=False` - Include information about users contained within a conversation (in aggregate)
-* `include_source_user=True` - Include information about the source user
-
 ^^^^^^^^^^^^^^
 UserVectorizer
 ^^^^^^^^^^^^^^
@@ -163,6 +111,24 @@ Likewise, there is a vectorizer for user vectors::
 
     from pyconversations.feature_extraction import UserVectorizer
 
-It features the following (optional) construction parameters:
+^^^^^^^^^^^^^^^^^
+Recommended Usage
+^^^^^^^^^^^^^^^^^
 
-* `agg_post_fts=False` - Include information about post created by this user (in aggregate)
+A good way to use these vectorizers is to fit the type of vectorizers you want (post, conversation, user)
+and then transform each level of data using the `include_ids=True` parameter.
+In doing so, you get a vector for each unit (post, conversation, user)
+and a map from unique unit identifier to row in the transformed data.
+
+This is very useful for constructing complex input using this package.
+For example, one might want to classify every post in a conversation
+but may find it beneficial to supply post and user information not only about
+the post of interest, but about the parent post as well.
+By transforming the data once and retaining this mapping,
+you can easily create vectors that correspond to feature sets tuned for the task at hand.
+
+For a concrete example of this,
+see the tutorial that applies this idea in a very basic fashion
+to the SemEval-2019 task RumourEval:
+
+`Classifying Support Labels (RumourEval from SemEval-2019 Task 7a) <https://github.com/hunter-heidenreich/pyconversations/blob/master/tutorial/RumourEval-SDQC.ipynb>`_

@@ -10,13 +10,15 @@ from .harmonic import mixing
 from .harmonic import novelty
 from .params import CACHE_SIZE
 from .post import type_frequency_distribution as post_freq
+from .post_in_conv import PostInConvoFeatures as PICF
 from .post_in_conv import agg_post_stats
 from .post_in_conv import avg_token_entropy_conv
-from .post_in_conv import sum_booleans_across_convo as sum_post_bools
-from .post_in_conv import sum_ints_across_convo as sum_post_ints
 
 
 class UserInConvoFeatures:
+    """
+    Container for feature extraction on users situated within a single conversation.
+    """
 
     @staticmethod
     def bools(user, convo):
@@ -53,10 +55,10 @@ class UserInConvoFeatures:
             'types':         len(type_frequency_distribution(user, convo)),
         }
 
-        for k, v in sum_post_bools(get_user_posts(user, convo)).items():
+        for k, v in sum_post_bools_by_user(user, convo).items():
             out[k] = v
 
-        for k, v in sum_post_ints(get_user_posts(user, convo)).items():
+        for k, v in sum_post_ints_by_user(user, convo).items():
             out[k] = v
 
         return out
@@ -195,7 +197,17 @@ def mixing_features(user, convo):
     -------
     dict(str, float)
     """
-    return mixing(type_frequency_distribution(user, convo))
+    freq = type_frequency_distribution(user, convo)
+    if len(freq) == 0:
+        return {
+            'k1':      float(0),
+            'theta':   float(0),
+            'entropy': float(0),
+            'N_avg':   float(0),
+            'M_avg':   float(0),
+        }
+
+    return mixing(freq)
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -212,7 +224,11 @@ def novelty_vector(user, convo):
     -------
     np.array
     """
-    return novelty(type_frequency_distribution(user, convo))
+    freq = type_frequency_distribution(user, convo)
+    if len(freq) == 0:
+        return []
+
+    return novelty(freq)
 
 
 @lru_cache(maxsize=CACHE_SIZE)
@@ -265,3 +281,36 @@ def agg_user_stats(convo):
         out[f'user_std_{k}'] = float(np.nanstd(vs) if len(vs) > 1 else 1)
 
     return out
+
+
+def sum_post_bools_by_user(user, convo):
+    cnt = Counter()
+
+    for p in convo.posts.values():
+        if p.author != user:
+            continue
+
+        for k, v in PICF.bools(p, convo).items():
+            kx = k.replace('is_', '') + '_count'
+            cnt[kx] += 1 if v else 0
+
+    return dict(cnt)
+
+
+def sum_post_ints_by_user(user, convo):
+    skipset = {
+        'type_count',  # must be aggregated in set theoretic way
+        'depth', 'width',  # nonsensical accumulation stats
+    }
+    cnt = Counter()
+    for p in convo.posts.values():
+        if p.author != user:
+            continue
+
+        for k, v in PICF.ints(p, convo).items():
+            if k in skipset:
+                continue
+
+            cnt[k] += v
+
+    return dict(cnt)

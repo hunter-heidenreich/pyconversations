@@ -15,6 +15,11 @@ from .post import type_frequency_distribution as post_freq
 
 class PostInConvoFeatures:
 
+    """
+    Container of feature extraction for posts in the conversation they appeared in.
+    Features for posts in isolation are nested within this extraction.
+    """
+
     @staticmethod
     def bools(post, convo):
         out = PostFeatures.bools(post)
@@ -537,7 +542,7 @@ def sum_booleans_across_convo(convo):
     """
     cnt = Counter()
     for p in convo.posts.values():
-        for k, v in PostInConvoFeatures.ints(p, convo).items():
+        for k, v in PostInConvoFeatures.bools(p, convo).items():
             kx = k.replace('is_', '') + '_count'
             cnt[kx] += 1 if v else 0
 

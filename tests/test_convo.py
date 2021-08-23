@@ -247,7 +247,7 @@ def test_get_parents(mock_temporal_convo):
             assert ids == set()
         elif post.uid == 1 or post.uid == 2:
             assert ids == {0}
-        elif post.uid == 3:
+        else:
             assert ids == {1}
 
 
@@ -260,7 +260,7 @@ def test_get_children(mock_temporal_convo):
             assert ids == {1, 2}
         elif post.uid == 1:
             assert ids == {3}
-        elif post.uid == 2 or post.uid == 3:
+        else:
             assert ids == set()
 
 
@@ -275,7 +275,7 @@ def test_get_siblings(mock_temporal_convo):
             assert ids == {2}
         elif post.uid == 2:
             assert ids == {1}
-        elif post.uid == 3:
+        else:
             assert ids == set()
 
 
@@ -290,7 +290,7 @@ def test_get_ancestors(mock_temporal_convo):
             assert ids == {0}
         elif post.uid == 2:
             assert ids == {0}
-        elif post.uid == 3:
+        else:
             assert ids == {0, 1}
 
 
@@ -305,5 +305,5 @@ def test_get_descendants(mock_temporal_convo):
             assert ids == {3}
         elif post.uid == 2:
             assert ids == set()
-        elif post.uid == 3:
+        else:
             assert ids == set()
