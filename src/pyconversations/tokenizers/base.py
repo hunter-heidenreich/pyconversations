@@ -7,11 +7,14 @@ class BaseTokenizer:
     The abstract Tokenizer class.
     """
 
-    NAME = 'BaseTokenizer'
+    def __init__(self, name):
+        self._name = name
 
-    @staticmethod
+    def __call__(self, s):
+        return self.tokenize(s)
+
     @abstractmethod
-    def tokenize(s):
+    def tokenize(self, s):
         """
         Splits a string into tokens.
 
@@ -24,5 +27,10 @@ class BaseTokenizer:
         -------
         list(str)
             A list of tokens
+
+        Raises
+        ------
+        NotImplementedError
+            Must be implemented in extensions
         """
-        pass
+        raise NotImplementedError

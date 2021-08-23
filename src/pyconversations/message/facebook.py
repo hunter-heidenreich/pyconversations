@@ -9,6 +9,14 @@ class FBPost(UniMessage):
     FB-specific FB Post object with Facebook specific features
     """
 
+    CLASS_STR = 'FBPost'
+
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = 'Facebook'
+
+        super(FBPost, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -26,25 +34,6 @@ class FBPost(UniMessage):
             The parsed datetime
         """
         return datetime.strptime(x, '%Y-%m-%dT%H:%M:%S+0000')
-
-    @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields
-
-        Parameters
-        ----------
-        data : JSON/dict
-            Raw JSON data
-
-        Returns
-        -------
-        FBPost
-            The loaded post
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return FBPost(**data)
 
     @staticmethod
     def parse_raw(data, post_type='post', in_reply_to=None, lang_detect=False):
@@ -105,7 +94,6 @@ class FBPost(UniMessage):
             return
 
         post_cons = {
-            'platform': 'Facebook',
             'lang_detect': lang_detect,
             'author': in_reply_to,
             'text': '',
@@ -170,7 +158,6 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook',
                 'lang_detect': lang_detect,
             }
 
@@ -230,7 +217,6 @@ class FBPost(UniMessage):
 
         for comment in data:
             post_cons = {
-                'platform': 'Facebook',
                 'lang_detect': lang_detect,
             }
 

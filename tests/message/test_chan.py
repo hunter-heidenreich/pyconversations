@@ -61,7 +61,7 @@ def test_null_post(null_post):
     assert null_post.author is None
     assert null_post.created_at is None
     assert null_post.reply_to == set()
-    assert null_post.platform is None
+    assert null_post.platform == '4chan'
     assert null_post.tags == set()
     assert null_post.lang is None
 
@@ -73,7 +73,7 @@ def test_update_post(null_post, mock_json_post):
     null_post.author = mock_json_post['author']
     assert null_post.author == mock_json_post['author']
 
-    null_post.set_created_at(mock_json_post['created_at'])
+    null_post.created_at = mock_json_post['created_at']
     assert null_post.created_at.timestamp() == mock_json_post['created_at']
 
     for uid in mock_json_post['reply_to']:
@@ -141,7 +141,7 @@ def test_read_raw_post(mock_raw_post):
     assert post.author == 'Anonymous'
     assert post.created_at == datetime(2286, 11, 20, 12, 46, 39)
     assert post.reply_to == {12345}
-    assert post.platform == '4Chan'
+    assert post.platform == '4chan'
     assert post.tags == set()
     assert post.lang is None
 

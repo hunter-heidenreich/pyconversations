@@ -10,6 +10,15 @@ class Tweet(UniMessage):
     Twitter post object with additional Twitter-specific features
     """
 
+    MENTION_REGEX = r'(^|[^@\w])@(\w{1,15})\b'
+    CLASS_STR = 'Tweet'
+
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = 'Twitter'
+
+        super(Tweet, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -31,24 +40,10 @@ class Tweet(UniMessage):
         Returns a set of usernames.
         """
         # twitter mention regex
-        names = re.findall(r'@[a-zA-Z0-9_]{1,15}', self.text)
-        names = [name[1:] for name in names]
+        names = re.findall(self.MENTION_REGEX, self.text)
+        names = [name[1] for name in names]
 
         return super(Tweet, self).get_mentions() | set(names)
-
-    @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields
-
-        Parameters
-        ----------
-        data
-            Raw JSON data
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return Tweet(**data)
 
     @staticmethod
     def parse_raw(data, lang_detect=False):
@@ -65,7 +60,6 @@ class Tweet(UniMessage):
             A boolean which specifies whether language detection should be activated. (Default: False)
         """
         cons_vals = {
-            'platform': 'Twitter',
             'reply_to': set(),
             'lang_detect': lang_detect
         }
@@ -79,7 +73,8 @@ class Tweet(UniMessage):
             'retweeted', 'metadata', 'extended_entities', 'possibly_sensitive',
             'quoted_status_id_str', 'quoted_status_permalink', 'withheld_in_countries',
             'in_reply_to_status_created_at', 'possibly_sensitive_appealable', 'scopes',
-            'withheld_scope', 'withheld_copyright'
+            'withheld_scope', 'withheld_copyright',
+            'filter_level', 'trends',
         }
         for key, value in data.items():
             if key in ignore_keys:
@@ -109,7 +104,7 @@ class Tweet(UniMessage):
         # Do entities last
         if 'entities' in data:
             ignore_keys = {
-                'hashtags', 'symbols', 'user_mentions'
+                'hashtags', 'symbols', 'user_mentions', 'trends'
             }
             for key, value in data['entities'].items():
                 if key in ignore_keys:
@@ -122,7 +117,7 @@ class Tweet(UniMessage):
                     for v in value:
                         cons_vals['text'] = re.sub(v['url'], v['expanded_url'], cons_vals.get('text', ''))
                 else:
-                    raise KeyError(f'Tweet:parse_raw - Unrecognized key: {key} --> {value}')
+                    raise KeyError(f'Tweet:parse_raw (entities) - Unrecognized key: {key} --> {value}')
 
         if 'text' in cons_vals and cons_vals['text']:
             out.append(Tweet(**cons_vals))

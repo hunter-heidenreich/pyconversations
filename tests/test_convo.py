@@ -54,43 +54,26 @@ def test_build_conversation(mock_tweet):
     conversation = Conversation()
 
     uid = mock_tweet.uid
-    rep_to = mock_tweet.reply_to
 
     conversation.add_post(mock_tweet)
     assert uid in conversation.posts
-    assert uid in conversation.edges
-    assert conversation.edges[uid] == rep_to
 
     conversation.remove_post(uid)
     assert uid not in conversation.posts
-    assert uid not in conversation.edges
 
     with pytest.raises(KeyError):
         conversation.remove_post(uid)
-
-
-def test_convo_constructor(mock_tweet):
-    pdict = {mock_tweet.uid: mock_tweet}
-    edict = {mock_tweet.uid: mock_tweet.reply_to}
-
-    c = Conversation(posts=pdict, edges=edict)
-
-    assert c.messages == 1
-    assert c.connections == 0
 
 
 def test_add_convo_to_self(mock_tweet):
     conversation = Conversation()
 
     uid = mock_tweet.uid
-    rep_to = mock_tweet.reply_to
 
     conversation.add_post(mock_tweet)
     conversation = conversation + conversation
 
     assert uid in conversation.posts
-    assert uid in conversation.edges
-    assert conversation.edges[uid] == rep_to
 
 
 def test_add_convo(mock_tweet, mock_root_tweet):
@@ -103,11 +86,7 @@ def test_add_convo(mock_tweet, mock_root_tweet):
     full = root_convo + convo
 
     assert 0 in full.posts
-    assert 0 in full.edges
     assert 1 in full.posts
-    assert 1 in full.edges
-    assert full.edges[0] == set()
-    assert full.edges[1] == {0}
 
 
 def test_convo_segmentation(mock_multi_convo):
@@ -122,107 +101,61 @@ def test_convo_segmentation(mock_multi_convo):
 
 def test_to_from_json(mock_convo):
     assert 0 in mock_convo.posts
-    assert 0 in mock_convo.edges
 
     raw_json = mock_convo.to_json()
-    new_convo = Conversation.from_json(raw_json, Tweet)
+    new_convo = Conversation.from_json(raw_json)
 
     assert 0 in new_convo.posts
-    assert 0 in new_convo.edges
 
 
-def test_stats(mock_convo):
-    assert mock_convo.messages == 1
-    assert mock_convo.messages == 1
-
-    assert mock_convo.connections == 0
-    assert mock_convo.connections == 0
-
-    assert mock_convo.users == 1
-    assert mock_convo.users == 1
-
-    assert mock_convo.chars == 15
-    assert mock_convo.chars == 15
-
-    assert mock_convo.tokens == 5
-    assert mock_convo.tokens == 5
-
-    assert mock_convo.token_types == 4
-    assert mock_convo.token_types == 4
-
-    assert mock_convo.sources == {0}
-    assert mock_convo.sources == {0}
-
-    assert mock_convo.density == 0
-    assert mock_convo.degree_hist == [1]
-
-
-def test_stats_path(mock_convo_path):
-    assert mock_convo_path.messages == 2
-    assert mock_convo_path.connections == 1
-    assert mock_convo_path.users == 2
-    assert mock_convo_path.chars == 24
-    assert mock_convo_path.tokens == 8
-    assert mock_convo_path.token_types == 5
-    assert mock_convo_path.sources == {0}
-    assert mock_convo_path.density == 1.0
-    assert mock_convo_path.degree_hist == [0, 2]
-    assert mock_convo_path.in_degree_hist == [1, 0]
-    assert mock_convo_path.out_degree_hist == [1, 0]
-
-    assert mock_convo_path.duration is None
-    assert mock_convo_path.text_stream == ['Root tweet text', 'test text']
-    assert mock_convo_path.time_series is None
-
-
-def test_stats_no_parent(mock_tweet):
-    convo = Conversation()
-    convo.add_post(mock_tweet)
-
-    assert convo.messages == 1
-    assert convo.connections == 0
-    assert convo.users == 1
-    assert convo.chars == 9
-    assert convo.tokens == 3
-    assert convo.sources == {1}
-
-    assert convo.density == 0
-    assert convo.degree_hist == [1]
+def test_text_stream(mock_convo_path):
+    assert mock_convo_path.text_stream() == ['Root tweet text', 'test text']
 
 
 def test_conversation_filter_min_char(mock_convo_path):
-    assert mock_convo_path.messages == 2
+    assert len(mock_convo_path.posts) == 2
     mock_convo_path.posts[0].text = ''
-    mock_convo_path.filter()
-    assert mock_convo_path.messages == 1
+
+    filt = mock_convo_path.filter(min_chars=1)
+    assert len(filt) == 1
 
 
 def test_conversation_filter_by_langs(mock_convo_path):
-    assert mock_convo_path.messages == 2
-    mock_convo_path.filter(by_langs={'en'})
-    assert mock_convo_path.messages == 0
+    assert len(mock_convo_path.posts) == 2
+    filt = mock_convo_path.filter(by_langs={'en'})
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_tags(mock_convo_path):
-    assert mock_convo_path.messages == 2
-    mock_convo_path.filter(by_tags={'#FakeNews'})
-    assert mock_convo_path.messages == 0
+    assert len(mock_convo_path.posts) == 2
+    filt = mock_convo_path.filter(by_tags={'#FakeNews'})
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_before(mock_convo_path):
     from datetime import datetime
 
-    assert mock_convo_path.messages == 2
-    mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
-    assert mock_convo_path.messages == 0
+    assert len(mock_convo_path.posts) == 2
+    filt = mock_convo_path.filter(before=datetime(2020, 12, 1, 11, 11, 11))
+    assert len(filt) == 0
 
 
 def test_conversation_filter_by_after(mock_convo_path):
     from datetime import datetime
 
-    assert mock_convo_path.messages == 2
-    mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
-    assert mock_convo_path.messages == 0
+    assert len(mock_convo_path.posts) == 2
+    filt = mock_convo_path.filter(after=datetime(2020, 12, 1, 11, 11, 11))
+    assert len(filt) == 0
+
+
+def test_filter_by_platform(mock_convo_path):
+    assert len(mock_convo_path.posts) == 2
+
+    filt = mock_convo_path.filter(by_platform={'Twitter'})
+    assert len(filt) == 2
+
+    filt = mock_convo_path.filter(by_platform={'4chan'})
+    assert len(filt) == 0
 
 
 @pytest.fixture
@@ -238,19 +171,13 @@ def mock_temporal_convo():
 
 
 def test_ordered_properties(mock_temporal_convo):
-    from datetime import datetime
-
-    assert mock_temporal_convo.time_order == list(range(4))
-    assert mock_temporal_convo.text_stream == [f'@tweet {i}' for i in range(4)]
-    assert mock_temporal_convo.duration == 7240.0
-    assert mock_temporal_convo.start_time == datetime(2020, 12, 1, 10, 5, 5)
-    assert mock_temporal_convo.end_time == datetime(2020, 12, 1, 12, 5, 45)
-    assert mock_temporal_convo.time_series == [1606835105.0, 1606835135.0, 1606835145.0, 1606842345.0]
+    assert mock_temporal_convo.time_order() == list(range(4))
+    assert mock_temporal_convo.text_stream() == [f'@tweet {i}' for i in range(4)]
 
 
 def test_convo_redaction(mock_temporal_convo):
     mock_temporal_convo.redact()
-    assert mock_temporal_convo.text_stream == [f'@USER0 {i}' for i in range(4)]
+    assert mock_temporal_convo.text_stream() == [f'@USER0 {i}' for i in range(4)]
 
 
 def test_conversation_post_merge(mock_root_tweet, mock_tweet):
@@ -268,7 +195,7 @@ def test_conversation_post_merge_text():
     convo = Conversation()
     convo.add_post(t0)
     convo.add_post(t1)
-    assert convo.messages == 1
+    assert len(convo.posts) == 1
     assert convo.posts[0].text == 'longer text'
 
 
@@ -283,7 +210,7 @@ def test_conversation_post_merge_created_at():
     convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 12)))
     convo.add_post(Tweet(uid=1, created_at=datetime(2020, 12, 1, 12, 12, 19)))
 
-    assert convo.messages == 2
+    assert len(convo.posts) == 2
     assert convo.posts[0].created_at == datetime(2020, 12, 1, 12, 12, 12)
     assert convo.posts[1].created_at == datetime(2020, 12, 1, 12, 12, 12)
 
@@ -295,31 +222,88 @@ def test_conversation_post_merge_lang():
     convo.add_post(Tweet(uid=0, lang='en'))
     convo.add_post(Tweet(uid=0, lang='en'))
 
-    assert convo.messages == 1
+    assert len(convo.posts) == 1
     assert convo.posts[0].lang == 'en'
 
 
-def test_reply_counts(mock_convo):
-    assert mock_convo.reply_counts == [(0, 0, 0)]
+def test_get_before(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_before(post.uid)
+        assert {sid for sid in sub.posts} == set(range(post.uid))
 
 
-def test_get_depth(mock_convo):
-    assert mock_convo.get_depth(0) == 0
-    assert mock_convo.get_depth(0) == 0
-
-    assert mock_convo.depths == [0]
-    assert mock_convo.depths == [0]
-
-    assert mock_convo.tree_depth == 0
-    assert mock_convo.tree_depth == 0
-
-    assert mock_convo.widths == [1]
-    assert mock_convo.widths == [1]
-
-    assert mock_convo.tree_width == 1
-    assert mock_convo.tree_width == 1
+def test_get_after(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_after(post.uid)
+        assert {sid for sid in sub.posts} == set(range(post.uid + 1, 4))
 
 
-def test_path_shape(mock_convo_path):
-    assert mock_convo_path.get_depth(1) == 1
-    assert mock_convo_path.get_depth(1) == 1
+def test_get_parents(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_parents(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1 or post.uid == 2:
+            assert ids == {0}
+        else:
+            assert ids == {1}
+
+
+def test_get_children(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_children(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == {1, 2}
+        elif post.uid == 1:
+            assert ids == {3}
+        else:
+            assert ids == set()
+
+
+def test_get_siblings(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_siblings(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1:
+            assert ids == {2}
+        elif post.uid == 2:
+            assert ids == {1}
+        else:
+            assert ids == set()
+
+
+def test_get_ancestors(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_ancestors(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == set()
+        elif post.uid == 1:
+            assert ids == {0}
+        elif post.uid == 2:
+            assert ids == {0}
+        else:
+            assert ids == {0, 1}
+
+
+def test_get_descendants(mock_temporal_convo):
+    for post in mock_temporal_convo.posts.values():
+        sub = mock_temporal_convo.get_descendants(post.uid)
+
+        ids = {sid for sid in sub.posts}
+        if post.uid == 0:
+            assert ids == {1, 2, 3}
+        elif post.uid == 1:
+            assert ids == {3}
+        elif post.uid == 2:
+            assert ids == set()
+        else:
+            assert ids == set()

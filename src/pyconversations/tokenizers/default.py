@@ -2,14 +2,15 @@ from .base import BaseTokenizer
 
 
 class DefaultTokenizer(BaseTokenizer):
-    name = 'Default'
 
     """
     A tokenizer that just uses Python's basic str.split function.
     """
 
-    @staticmethod
-    def tokenize(s):
+    def __init__(self):
+        super(DefaultTokenizer, self).__init__('Default')
+
+    def tokenize(self, s):
         """
         Splits a string into tokens.
 

@@ -1,15 +1,10 @@
-from abc import ABC
-from abc import abstractmethod
-
-
-class BaseLangDetect(ABC):
+class BaseLangDetect:
 
     """
-    Abstract container for what a language detection module
+    Container for what a language detection module
     should take as input and should return as output
     """
 
-    @abstractmethod
     def get(self, text):
         """
         Uses the language detection module to detect a language

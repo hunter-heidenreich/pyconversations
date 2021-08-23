@@ -14,12 +14,16 @@ class PartitionTokenizer(BaseTokenizer):
     See for more information: https://github.com/jakerylandwilliams/partitioner
     """
 
-    NAME = 'Partitioner'
-    SPACE = True
-    CHARS = pkgutil.get_data(__package__, 'chars.txt').decode('utf-8').strip().replace(" ", "")
+    def __init__(self, space=True, charset=None):
+        super(PartitionTokenizer, self).__init__('Partitioner')
 
-    @staticmethod
-    def tokenize(s):
+        self._space = space
+        self._charset = charset
+
+        if self._charset is None:
+            self._charset = pkgutil.get_data(__package__, 'chars.txt').decode('utf-8').strip().replace(" ", "")
+
+    def tokenize(self, s):
         """
         Splits a string into tokens.
 
@@ -34,14 +38,14 @@ class PartitionTokenizer(BaseTokenizer):
             A list of tokens
         """
         tokens = []
-        for token in re.split("([0-9" + PartitionTokenizer.CHARS + "'-]+)", s):
-            if not PartitionTokenizer.SPACE:
+        for token in re.split("([0-9" + self._charset + "'-]+)", s):
+            if not self._space:
                 token = re.sub("[ ]+", "", token)
 
             if not token:
                 continue
 
-            if re.search("[0-9" + PartitionTokenizer.CHARS + "'-]", token):
+            if re.search("[0-9" + self._charset + "'-]", token):
                 tokens.append(token)
             else:
                 tokens.extend(token)

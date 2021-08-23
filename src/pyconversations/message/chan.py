@@ -11,6 +11,15 @@ class ChanPost(UniMessage):
     4chan post object with additional 4chan-specific features
     """
 
+    CLASS_STR = '4chanPost'
+    MENTION_REGEX = r'>>(\d+)'
+
+    def __init__(self, **kwargs):
+
+        kwargs['platform'] = '4chan'
+
+        super(ChanPost, self).__init__(**kwargs)
+
     @staticmethod
     def parse_datestr(x):
         """
@@ -28,25 +37,6 @@ class ChanPost(UniMessage):
             Creation datetime of 4chan timestamp
         """
         return datetime.fromtimestamp(float(x))
-
-    @staticmethod
-    def from_json(data):
-        """
-        Given an exported JSON object for a Universal Message,
-        this function loads the saved data into its fields.
-
-        Parameters
-        ----------
-        data : JSON/dict
-            Raw JSON data
-
-        Returns
-        -------
-        ChanPost
-            The loaded post
-        """
-        data['created_at'] = datetime.fromtimestamp(data['created_at']) if data['created_at'] else None
-        return ChanPost(**data)
 
     @staticmethod
     def exclude_replies(comment):
@@ -124,7 +114,6 @@ class ChanPost(UniMessage):
             'created_at': datetime.fromtimestamp(data['time']),
             'text':       txt,
             'author':     data['name'] if 'name' in data else None,
-            'platform':   '4Chan',
             'reply_to':   reps,
             'lang_detect': lang_detect
         })

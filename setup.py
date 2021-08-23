@@ -23,7 +23,7 @@ def read(*names, **kwargs):
 
 setup(
     name='pyconversations',
-    version='0.0.2',
+    version='0.1.0',
     license='MIT',
     description='A package for representing conversations as DAGs for visualization, analysis, and pre-processing.',
     long_description='%s\n%s' % (
@@ -71,13 +71,13 @@ setup(
     ],
     python_requires='>=3.6',
     install_requires=[
-        # eg: 'aspectlib==1.1.1', 'six>=1.7',
         'networkx>=2.5',
-        # 'fasttext @ git+https://github.com/facebookresearch/fastText@master#egg=fasttext',
         'langid>=1.1',
         'numpy>=1.12',
         'tqdm>=4.59',
-        'nltk>=3.0'
+        'nltk>=3.0',
+        'demoji>=1.0',
+        'scipy>=1.7.0'
     ],
     extras_require={
         # eg:

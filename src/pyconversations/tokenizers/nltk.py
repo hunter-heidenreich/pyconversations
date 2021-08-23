@@ -4,14 +4,15 @@ from .base import BaseTokenizer
 
 
 class NLTKTokenizer(BaseTokenizer):
-    name = 'NLTK'
 
     """
     An NLTK-based tokenizer
     """
 
-    @staticmethod
-    def tokenize(s):
+    def __init__(self):
+        super(NLTKTokenizer, self).__init__('NLTK')
+
+    def tokenize(self, s):
         """
         Splits a string into tokens.
 
